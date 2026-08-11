@@ -1,0 +1,61 @@
+\section{Related Work}
+\label{sec:related}
+
+\subsection{Spatial Provisioning and Model Placement}
+
+GSLICE adjusts MPS shares and batching, while gpulet combines MPS allocation
+with placement~\cite{gslice2020,gpulet2022}.  BOER searches MIG and MPS
+configurations with a Bayesian optimizer~\cite{boer2025}; ParvaGPU packs
+fine-grained MPS segments into MIG partitions~\cite{parvagpu2024}.  These
+systems improve independent-service utilization.  \sys addresses a different
+contract: a placement includes a request-specific activation edge, and the
+safe temporal share changes when that edge is published.
+
+DeepPlan selects layers for direct host access and overlaps model transfer
+~\cite{deepplan2023}.  It demonstrates that host-resident data can be a
+deliberate data-plane choice rather than an accidental copy penalty.  \sys
+adopts the compatible insight that transport and placement
+must be co-designed, but adds precedence-aware protection and a frozen joint
+request deadline for opaque TensorRT stages.
+
+\subsection{Fine-Grained GPU Scheduling}
+
+Orion pairs compute- and memory-sensitive kernels through CUDA-library
+interposition~\cite{orion2024}.  XSched exposes scheduling-unit queues and
+preemption through an XPU shim~\cite{xsched2025}.  BLESS uses profiled MPS
+contexts and relative-progress kernel squads to fill spatial and temporal
+bubbles~\cite{bless2025}.  These mechanisms provide useful control below a
+request, whereas \sys defines the cross-partition edge and publication event
+that tell a controller when protection can end.  Our native-port rule treats
+the two layers as composable: a scheduler keeps its own queues and policy, and
+the common workload supplies dependency and evidence contracts.
+
+\subsection{Edge Inference Runtimes}
+
+Miriam generates elastic kernels for real-time edge inference
+~\cite{miriam2023}.  Pantheon uses offline DNN chunking and two-tier stream
+priority for preemptive Jetson inference~\cite{pantheon2024}.  EdgeServing
+combines deadline-aware time division, batching, and early exits
+~\cite{edgeserving2026}.  These systems are model aware and can reshape or
+chunk execution.  \sys instead targets prebuilt TensorRT stages and preserves
+their complete intermediate activation.  Pantheon is the closest executable
+edge comparator in our study, but its current integer-deadline adapter remains
+a separately scoped fidelity gate.
+
+Ev-Edge studies concurrent multi-task event-vision execution on Jetson Xavier
+~\cite{evedge2024}.  It is relevant evidence that shared edge resources create
+cross-task scheduling effects, but its camera workload and platform do not
+preserve our opaque two-stage contract.  We therefore use it as a literature
+comparison rather than manufacture a Thor numeric row.
+
+\subsection{Isolation and Shared-Resource Interference}
+
+EdgeIso monitors shared-memory interference on Jetson and incrementally
+controls DVFS and CPU allocation~\cite{edgeiso2020}.  A recent edge-GPU study
+characterizes isolation under MPS, MIG, and Green Context across embedded and
+server platforms~\cite{edgeiso2026}.  MIG and MPS themselves define the
+hardware and process-sharing substrate~\cite{nvidiathormig,nvidiamps}.
+These mechanisms remain complementary to \sys.  Our result is not that
+partition isolation disappears; it is that coherent SoC memory can carry an
+explicit activation between isolated contexts, after which precedence,
+publication, and residual shared-resource contention must be scheduled.

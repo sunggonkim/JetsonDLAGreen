@@ -1,0 +1,95 @@
+\section{Implementation}
+\label{sec:implementation}
+
+\subsection{Runtime and Data Plane}
+
+Our prototype runs on Jetson Linux R39.2 with CUDA 13.2 and TensorRT 10.16.2.
+Bootstrap code creates Thor profile 78 (1g) and profile 83 (2g), validates the
+resulting devices, and starts a private MPS server for best-effort work on the
+1g instance.  CPU affinity places the control path, critical workers, and load
+generator on disjoint cores.
+
+The C++ runtime forks separate producer and consumer processes around a shared
+page-aligned mapping.  Each child selects its assigned MIG UUID before
+registering the mapping.  Registration uses a move-disabled RAII wrapper.
+Both normal and exceptional teardown call
+\texttt{cudaHostUnregister}.
+Tensor sizes are derived from engine metadata with overflow and dynamic-shape
+checks; every CUDA and TensorRT error propagates to the parent rather than
+being converted to a successful trace.
+
+The formal vision workload binds a $[1,1024,14,14]$ FP32 backbone output, an
+802,816-byte payload, directly to the trained classification head.  A learned
+ResNet10 detector split uses a 1,884,160-byte activation, and Whisper-Tiny uses
+a 2,304,000-byte encoder activation.  These paths carry complete tensors.
+Shape-compatible synthetic projections exist only as transport controls and
+are never presented as application-accuracy results.
+
+The standalone ring uses three slots in a shared descriptor and payload
+mapping.  Atomic sequence and ownership fields prevent ABA reuse; producers
+observe backpressure rather than overwrite \texttt{READY} data.  Timeout and
+peer-death paths inspect process liveness, reclaim stale ownership, and unpause
+surviving tenants.  Normal wraparound and delayed-consumer tests complete
+without mismatches; the timeout test exits within its bound, and injected
+consumer death records a stale reclaim.  Integrating this ring with the
+production TensorRT path is future work.
+
+\subsection{Release, Protection, and Trace Collection}
+
+The \texttt{JDGARR1} reader validates each request ID and input digest before
+execution.  The release loop waits on the recorded monotonic offset, preserves
+the declared timestamp, and records the actual timestamp and queue delay.
+Pause and resume use cooperative process control.  The runtime records
+\texttt{pause\_begin}, \texttt{pause\_complete},
+\texttt{publication}, \texttt{resume\_issued}, and
+\texttt{resume\_observed} for every request.
+
+The publication code sends the dependent consumer's transfer record and then
+resumes producer-scoped best-effort workers.  Producer checksum calculation
+follows this transition.  Consumer completion closes the production wall;
+output capture and oracle comparison follow completion.  CSV rows retain
+producer compute and copy time, notification, consumer copy and compute time,
+validation time, wall latency, deadline classification, and lifecycle
+timestamps, so an analyzer can recompute both the metric and its boundary.
+
+Activation capture writes a binary trace.  Its \texttt{JDGACT1} records carry
+the request index, payload bytes, and digest.  Independent-mode startup
+requires this file and rejects a missing, malformed, or shape-incompatible
+trace.  The consumer binds the selected replay record before release and
+validates the live producer activation against the same record after
+publication.  This ensures that the independent arm changes precedence alone.
+
+\subsection{Planner and Reproducibility}
+
+Python tools freeze calibration, build candidate plans, execute
+counterbalanced sessions, monitor \texttt{tegrastats}, and replay raw evidence.
+The lock records the runtime binary, source, TensorRT engines, producer input,
+and operational release hashes.  The selected plan adds UUIDs, quotas,
+transport, protection scope, joint-tail method, guard, lookahead, and residual
+slack.  A prelaunch verifier rejects any mismatch.
+
+Aggregation recomputes Type-7 percentiles from request-level CSV files and the
+exact one-sided Clopper--Pearson upper deadline-miss bound.  It validates
+per-session request counts, deadline decisions, input and output containers,
+treatment order, required \texttt{soc012} and \texttt{tj} temperatures, and
+the VDD\_GPU rail.  The paper-figure generator repeats the artifact SHA-256
+checks and raw p99 replay before emitting a PDF or table.
+
+\subsection{Published-System Ports}
+
+We distinguish an executable native path from a local behavioral
+approximation.  A published name is admitted only when the pinned artifact's
+scheduler and runtime execute the measured request.  The XSched port retains
+its CUDA shim, scheduling-unit queues,
+and policy at upstream commit \texttt{bd494cb7a729}; its Thor patch adds CUDA 13
+and \texttt{cuLaunchKernelEx} compatibility without replacing the scheduler.
+The Pantheon gate retains the online runtime, two-tier stream priorities,
+model repository, and chunked modules at upstream commit
+\texttt{1caa4321fe9f}.
+
+Orion's local port executes its operation queues and resource profiles, but
+its upstream differential-decision evidence remains incomplete.  We therefore
+exclude its numbers.  BOER, ParvaGPU, GSLICE, gpulet, and BLESS are discussed
+structurally unless their original runtime executes the same model, input,
+release, output, and deadline contract.  This rule prevents fixed quotas or
+request-level gating from being relabeled as a published system.

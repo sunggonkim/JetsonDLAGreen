@@ -1,0 +1,114 @@
+\section{Background and Motivation}
+\label{sec:background}
+
+\subsection{Partitioned Inference on a Coherent Edge SoC}
+
+Thor's MIG profiles divide GPU execution resources and isolate MIG-local
+allocations.  We use one 1g instance with eight streaming multiprocessors and
+one 2g instance with twelve.  Each stage owns a distinct CUDA context and an
+opaque, serialized TensorRT engine.  This is a useful fault and resource
+boundary, but it is not an inter-stage data plane: a device allocation made by
+the producer cannot simply become the consumer's binding.
+
+The integrated memory architecture creates a second, orthogonal property.
+CPU mappings and the iGPU ultimately reach the same physical SoC DRAM.  CUDA
+can register a page-aligned system-memory range in each process and return a
+context-local device pointer for that range.  The producer and consumer
+therefore use different virtual device pointers to the same physical payload.
+MIG isolation remains intact because neither process imports the other's
+MIG-local allocation.
+
+This distinction determines our terminology.  The implemented transport is a
+\emph{full-coherent registered system-memory activation edge}.  It is not
+\texttt{cudaMallocManaged}/UVM.  It also does not imply free communication:
+the request still incurs publication ordering, a CPU notification, consumer
+wakeup, and contention on shared SoC resources.  \sys treats those costs as
+measured properties of a placement rather than attributes of the memory API.
+
+\subsection{Why Independent-Client Provisioning Falls Short}
+
+Consider a producer $P$, a consumer $C$, and an unrelated best-effort tenant
+$B$.  A fixed spatial policy can isolate $P$ and $C$, and an MPS quota can
+limit $B$ within the producer instance.  Neither policy represents the
+precedence $P\prec C$.  Three consequences follow.
+
+\textbf{The edge is outside the resource model.}
+The provisioner can select two partitions without knowing the payload size,
+transport, or notification tail between them.  Treating these quantities as a
+constant copy term is incorrect on a coherent SoC: cache state and overlapping
+GPU or memory traffic can dominate the measured handoff.
+
+\textbf{Protection has no release event.}
+Pausing $B$ for the complete request protects both stages but wastes the
+interval in which only $C$ runs on the other partition.  Keeping $B$ active
+throughout the request permits already-issued work to delay $P$.  The
+activation's publication is the earliest event that is both safe and useful
+for returning the producer's capacity.
+
+\textbf{Tail objectives are not end-to-end SLOs.}
+Adding independently measured p99s is not a p99 bound: tail events need not
+occur on the same request.  Admission must use either the measured joint
+arrival-to-completion distribution or an explicit risk allocation, and it
+must include gate acquisition and queue delay.
+
+\begin{table}[t]
+  \centering
+  \small
+  \caption{Scheduling scope under the dependent two-stage contract.  A cross
+  means that the abstraction does not expose the property as a first-class
+  contract; it does not preclude composing additional software around it.}
+  \label{tab:abstraction-gap}
+  \resizebox{\columnwidth}{!}{%
+  \begin{tabular}{lcccc}
+    \toprule
+    Abstraction & Isolated placement & Explicit activation & Publication release & E2E admission \\
+    \midrule
+    MIG / MPS & \cmark & \xmark & \xmark & \xmark \\
+    Independent-service provisioner & \cmark & \xmark & \xmark & partial \\
+    Kernel / stream scheduler & partial & \xmark & \xmark & partial \\
+    \textbf{\sys} & \cmark & \cmark & \cmark & \cmark \\
+    \bottomrule
+  \end{tabular}%
+  }
+\end{table}
+
+Table~\ref{tab:abstraction-gap} summarizes the gap.  \sys does not replace
+hardware isolation or fine-grained scheduling.  It adds the dependency,
+publication, and deadline contracts required to use those mechanisms for a
+cross-partition pipeline.
+
+\subsection{Execution and Evidence Contract}
+
+For request $i$, let $a_i$ be its actual release and $c_i$ the consumer's
+production completion.  The measured response is
+\begin{equation}
+  L_i = c_i-a_i ,
+  \label{eq:production-wall}
+\end{equation}
+and a deadline miss occurs when $L_i>D$.  A declared release is never moved
+forward to hide a busy pipeline.  If the runtime reaches it late, the
+difference is recorded as queue delay and remains inside $L_i$.  Checksum and
+output-oracle work occurs after $c_i$; its duration is recorded but cannot
+inflate the service metric or extend the protection interval.
+
+The current promoted runtime executes a two-stage chain with at most one
+request in flight in each process.  A separate three-slot, external-process
+ring validates ownership, wraparound, backpressure, bounded timeout, and stale
+slot reclamation, but it is not yet the production TensorRT path.  Likewise,
+the planner schema validates larger DAG topologies, while the executed
+application remains two-stage.  We therefore make neither a general-DAG nor a
+multi-inflight performance claim.
+
+These constraints lead to four design requirements:
+\begin{enumerate}[leftmargin=*,itemsep=1pt,topsep=2pt]
+  \item \textbf{R1: exact payload semantics.}  Both stages must bind the full
+  request-specific activation, with no token or constant-payload substitute.
+  \item \textbf{R2: publication-scoped protection.}  The best-effort tenant
+  must be acknowledged idle before producer release and resumed immediately
+  after payload visibility.
+  \item \textbf{R3: joint-tail admission.}  Placement and quotas must fit a
+  frozen arrival-to-completion deadline using a promotable tail model.
+  \item \textbf{R4: fail-closed evidence.}  A stale engine, binary, input,
+  release trace, plan, or output must invalidate the result rather than
+  silently changing its contract.
+\end{enumerate}

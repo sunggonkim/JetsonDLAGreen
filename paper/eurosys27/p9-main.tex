@@ -1,0 +1,92 @@
+\documentclass[sigconf,review,anonymous]{acmart}
+
+\makeatletter
+\@ACM@balancefalse
+\makeatother
+\settopmatter{printacmref=true}
+\renewcommand\footnotetextcopyrightpermission[1]{}
+\pagestyle{plain}
+\raggedbottom
+
+\acmConference[EuroSys '27]{The 22nd European Conference on Computer Systems}{April 19--23, 2027}{Rabat, Morocco}
+\acmYear{2027}
+\copyrightyear{2027}
+
+\usepackage[T1]{fontenc}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{siunitx}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{xspace}
+\usepackage{enumitem}
+\usepackage{microtype}
+\usepackage{pifont}
+
+\newcommand{\sys}{\textsc{Quiet}\xspace}
+\newcommand{\cmark}{\ding{51}}
+\newcommand{\xmark}{\ding{55}}
+\title{\sys: Dependency-Aware Inference across Isolated Edge-GPU Partitions}
+
+\author{Anonymous Authors}
+\affiliation{\institution{Anonymous Institution}\country{Anonymous Country}}
+\email{anonymous@example.com}
+\keywords{edge AI, dependent inference, MIG, MPS, TensorRT, GPU scheduling}
+
+\begin{CCSXML}
+<ccs2012>
+  <concept><concept_id>10010520.10010521.10010537</concept_id><concept_desc>Computer systems organization~Distributed architectures</concept_desc></concept>
+  <concept><concept_id>10010520.10010520.10010521</concept_id><concept_desc>Computer systems organization~Real-time systems</concept_desc></concept>
+  <concept><concept_id>10010147.10010257.10010293</concept_id><concept_desc>Computing methodologies~Machine learning</concept_desc></concept>
+</ccs2012>
+\end{CCSXML}
+\ccsdesc[500]{Computer systems organization~Distributed architectures}
+\ccsdesc[500]{Computer systems organization~Real-time systems}
+\ccsdesc[500]{Computing methodologies~Machine learning}
+
+\begin{document}
+\begin{abstract}
+Edge applications increasingly compose opaque neural-network stages, yet GPU
+partitioning and serving systems still allocate resources to independent
+clients.  This mismatch matters on an integrated edge GPU: an upstream stage
+both produces the next stage's input and consumes its end-to-end slack, while
+unrelated inference contends for the same physical SoC resources.  Isolated
+partitions alone neither carry this dependency nor identify when protected
+capacity can be returned.
+
+We present \sys, a dependency-aware runtime for unmodified TensorRT engines on
+Jetson AGX Thor.  \sys connects separate MIG CUDA contexts with a
+full-coherent registered system-memory activation edge, selects stage
+placement and protection under a frozen arrival-to-completion deadline, and
+quiesces best-effort work only until the producer publishes its activation.
+It then resumes best-effort execution while the consumer runs.  The runtime
+modifies neither TensorRT plans, CUDA kernels, nor the GPU driver; every plan,
+input, release, activation, output, and measurement trace is hash bound.
+
+Our thermal-normalized ImageNette campaign contains six counterbalanced
+sessions and 6,600 requests per system at a frozen $2{,}255.483~\mu$s
+deadline.  \sys incurs no misses and a $1{,}902.987~\mu$s p99; its exact
+one-sided 95\% deadline-miss bound is 0.0454\%, below the 0.05\% target.
+NVIDIA MPS incurs two misses and XSched misses all requests under the same
+contract.  Paired across sessions, \sys reduces p99 by $138.508~\mu$s
+(95\% CI: $43.798$--$233.217~\mu$s) without a resolved background-goodput
+difference.  ImageNette vision and LibriSpeech speech recognition preserve
+their reference metrics, and native XSched and Pantheon gates establish two
+published-system fidelity paths.  We report a three-load frontier separately
+as descriptive evidence because its point-level confidence bounds do not
+qualify for the target.
+\end{abstract}
+
+\maketitle
+\input{generated/p9-current-results}
+\input{p9-sections/01-introduction}
+\input{p9-sections/02-background}
+\input{p9-sections/02-design}
+\input{p9-sections/03-implementation}
+\input{p9-sections/04-evaluation}
+\input{p9-sections/05-related-work}
+\input{p9-sections/06-conclusion}
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{refs,p9-refs}
+\end{document}
