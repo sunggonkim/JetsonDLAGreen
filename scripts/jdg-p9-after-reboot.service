@@ -1,0 +1,13 @@
+[Unit]
+Description=Run JetsonDLAGreen MIG slack-governor smoke test once after reboot
+After=local-fs.target
+Wants=local-fs.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/JetsonDLAGreen
+ExecStart=/opt/JetsonDLAGreen/scripts/run_p9_after_reboot_once.sh
+TimeoutStartSec=30min
+
+[Install]
+WantedBy=multi-user.target

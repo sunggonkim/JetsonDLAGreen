@@ -1,0 +1,148 @@
+{
+  "schema_version": 1,
+  "system": "BOER",
+  "upstream_commit": "df54815de3b1c9059f873a17c13f7d5203eedd3e",
+  "contract": {
+    "scenario": "dependent-large-payload",
+    "pressure_layout": "1g+2g",
+    "producer_placement": "1g",
+    "consumer_placement": "2g",
+    "producer_model": "whisper-tiny-encoder",
+    "payload_bytes": 2304000,
+    "deadline_us": 1703.186903,
+    "deadline_mode": "validation-excluded",
+    "deadline_lock_path": "results/p9-whisper-pipeline-deadline-calibration-windowed-20260809T114022Z/deadline-lock.json",
+    "deadline_lock_sha256": "4b383e300d756f7da0987d0077bec2416c01588ca1a019b04c0e3e05b2b5ab48"
+  },
+  "seed": 4,
+  "allow_no_feasible": true,
+  "tenant_demands_rps": [
+    600,
+    250
+  ],
+  "static_capacity_profile": [
+    {
+      "sm_percent": 10,
+      "max_rps": 192.9737246,
+      "evidence_path": "results/p9-boer-whisper-capacity-20260809/q10.json",
+      "evidence_sha256": "526f49b7ed9aeaf01cd04dd2f973e7a23d913687b8358eb8fc56fadd3536a9b4"
+    },
+    {
+      "sm_percent": 25,
+      "max_rps": 193.7373497,
+      "evidence_path": "results/p9-boer-whisper-capacity-20260809/q25.json",
+      "evidence_sha256": "2db33b994f051f984eabc1803dac8e1c38f360891d88d557540fafb1580cdf87"
+    },
+    {
+      "sm_percent": 50,
+      "max_rps": 367.0298316,
+      "evidence_path": "results/p9-boer-whisper-capacity-20260809/q50.json",
+      "evidence_sha256": "119fca4aaeaaa03182405fd7c70d464c83cecbf81b7033e35ac96ad116aff08c"
+    },
+    {
+      "sm_percent": 75,
+      "max_rps": 561.2417369,
+      "evidence_path": "results/p9-boer-whisper-capacity-20260809/q75.json",
+      "evidence_sha256": "9d3f6db1a724cced9c6b162882b10e0015d71198202a75ee7658a007086b788c"
+    },
+    {
+      "sm_percent": 90,
+      "max_rps": 561.3409093,
+      "evidence_path": "results/p9-boer-whisper-capacity-20260809/q90.json",
+      "evidence_sha256": "daf46341f21aa00fde3310a67e7dd5b87e2cf0fab0a26f60bb4c04f97f6d430a"
+    }
+  ],
+  "candidates": [
+    {
+      "id": "q10-r100",
+      "sm_percent": 10,
+      "offered_rps": 100
+    },
+    {
+      "id": "q10-r200",
+      "sm_percent": 10,
+      "offered_rps": 200
+    },
+    {
+      "id": "q10-r250",
+      "sm_percent": 10,
+      "offered_rps": 250
+    },
+    {
+      "id": "q25-r100",
+      "sm_percent": 25,
+      "offered_rps": 100
+    },
+    {
+      "id": "q25-r200",
+      "sm_percent": 25,
+      "offered_rps": 200
+    },
+    {
+      "id": "q25-r250",
+      "sm_percent": 25,
+      "offered_rps": 250
+    },
+    {
+      "id": "q50-r100",
+      "sm_percent": 50,
+      "offered_rps": 100
+    },
+    {
+      "id": "q50-r200",
+      "sm_percent": 50,
+      "offered_rps": 200
+    },
+    {
+      "id": "q50-r250",
+      "sm_percent": 50,
+      "offered_rps": 250
+    },
+    {
+      "id": "q75-r100",
+      "sm_percent": 75,
+      "offered_rps": 100
+    },
+    {
+      "id": "q75-r200",
+      "sm_percent": 75,
+      "offered_rps": 200
+    },
+    {
+      "id": "q75-r250",
+      "sm_percent": 75,
+      "offered_rps": 250
+    },
+    {
+      "id": "q90-r100",
+      "sm_percent": 90,
+      "offered_rps": 100
+    },
+    {
+      "id": "q90-r200",
+      "sm_percent": 90,
+      "offered_rps": 200
+    },
+    {
+      "id": "q90-r250",
+      "sm_percent": 90,
+      "offered_rps": 250
+    }
+  ],
+  "evaluator_command": [
+    "python3",
+    "baselines/boer/evaluate_dependent_pipeline.py",
+    "--repo",
+    ".",
+    "--result-root",
+    "results/p9-boer-dependent-whisper-windowed-search-20260809",
+    "--deadline-us",
+    "1703.186903",
+    "--iterations",
+    "1000",
+    "--warmup",
+    "10",
+    "--workload",
+    "whisper-projection"
+  ]
+}

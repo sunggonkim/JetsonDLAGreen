@@ -1,0 +1,57 @@
+# Build and test outputs
+/build/
+/build-*/
+/.pytest_cache/
+/.venv/
+/.local/
+__pycache__/
+*.py[cod]
+*.so
+
+# Raw experiment evidence is retained locally.  Publication summaries,
+# figures, and their SHA-256 manifest live under paper/eurosys27/.
+/results/
+
+# Downloaded model sources and target-specific TensorRT products
+/models/cache/
+/models/engines/
+*.plan
+*.engine
+
+# Machine-local GPU/MIG state
+/mig.env
+/gpu-inventory.txt
+/provenance.json
+
+# LaTeX intermediates; the reviewed p9-main.pdf remains versioned.
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
+/texput.log
+
+# Superseded manuscript workspace and private writing references
+/paper/previousPaper/
+/paper/eurosys27/main.*
+/paper/eurosys27/sections/
+/paper/eurosys27/figures/*
+!/paper/eurosys27/figures/p9-*.pdf
+!/paper/eurosys27/figures/p9-*.png
+/paper/eurosys27/generated/*
+!/paper/eurosys27/generated/p9-current-results.tex
+!/paper/eurosys27/generated/p9-figure-provenance.json
+
+# Local planning/source material that is not part of the public artifact
+/BigdataLab_progress_ppt(26.08.05)_KCJ (1).pptx
+/airanMIG.md
+/docs/final-improvement-prompt.md
+
+# Editor and operating-system metadata
+.DS_Store
+.idea/
+.vscode/
+*~

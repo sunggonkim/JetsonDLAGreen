@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "system": "ParvaGPU",
+  "upstream_commit": "5f3de1e18582b4c81896a1c3eb0e2915238dfee6",
+  "contract": {
+    "scenario": "dependent-small-payload",
+    "pressure_layout": "1g+2g",
+    "consumer_placement": "2g-reserved",
+    "payload_bytes": 14720,
+    "pipeline_deadline_us": 770.605407,
+    "deadline_lock_path": "results/p9-resnet-control-deadline-calibration-2x100-20260809T142808Z/deadline-lock.json",
+    "deadline_lock_sha256": "54ed4fc9b4114bb88a06d5c27acdc69fa3a307731a06dbd0a64f1f614914e11d"
+  },
+  "available_segments_gpc": [1],
+  "services": [
+    {"model": "resnet-producer", "request_rate": 1200, "slo_ms": 2.0},
+    {"model": "distilbert-background", "request_rate": 800, "slo_ms": 20.0}
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "system": "BOER",
+  "upstream_commit": "df54815de3b1c9059f873a17c13f7d5203eedd3e",
+  "contract": {
+    "scenario": "dependent-small-payload",
+    "pressure_layout": "1g+2g",
+    "producer_placement": "1g",
+    "consumer_placement": "2g",
+    "payload_bytes": 14720,
+    "deadline_us": 770.605407,
+    "deadline_lock_path": "results/p9-resnet-control-deadline-calibration-2x100-20260809T142808Z/deadline-lock.json",
+    "deadline_lock_sha256": "54ed4fc9b4114bb88a06d5c27acdc69fa3a307731a06dbd0a64f1f614914e11d"
+  },
+  "seed": 4,
+  "allow_no_feasible": true,
+  "tenant_demands_rps": [1200, 800],
+  "static_capacity_profile": [
+    {"sm_percent": 10, "max_rps": 610.6772297, "evidence_path": "results/p9-boer-producer-capacity-20260809/q10.json", "evidence_sha256": "f2d0ef2e5535943f862cc4bc39b7e13d0259a94618a53ac6fe3903e5e57dec95"},
+    {"sm_percent": 25, "max_rps": 616.4020634, "evidence_path": "results/p9-boer-producer-capacity-20260809/q25.json", "evidence_sha256": "67b4bc3f0f12dd6914cd53804e90cb18b54b7c9699b6fec7b33efd5ba0689fe0"},
+    {"sm_percent": 50, "max_rps": 1147.367946, "evidence_path": "results/p9-boer-producer-capacity-20260809/q50.json", "evidence_sha256": "76bcbb3d1121923be5c86f6d6c203b36b3c91e1842fa2966ac8e9d21cf33c30f"},
+    {"sm_percent": 75, "max_rps": 1451.041475, "evidence_path": "results/p9-boer-producer-capacity-20260809/q75.json", "evidence_sha256": "8379fd13ed6fb5948659a2d93a898dc686e6c850f4d02a5a3be2b735a85d1405"},
+    {"sm_percent": 90, "max_rps": 1457.458474, "evidence_path": "results/p9-boer-producer-capacity-20260809/q90.json", "evidence_sha256": "03cecb153bc1c7ab97877bbe5314cc71f513870d825e3305d7894c67bd719ad3"}
+  ],
+  "candidates": [
+    {"id": "q10-r200", "sm_percent": 10, "offered_rps": 200},
+    {"id": "q10-r400", "sm_percent": 10, "offered_rps": 400},
+    {"id": "q10-r800", "sm_percent": 10, "offered_rps": 800},
+    {"id": "q25-r200", "sm_percent": 25, "offered_rps": 200},
+    {"id": "q25-r400", "sm_percent": 25, "offered_rps": 400},
+    {"id": "q25-r800", "sm_percent": 25, "offered_rps": 800},
+    {"id": "q50-r200", "sm_percent": 50, "offered_rps": 200},
+    {"id": "q50-r400", "sm_percent": 50, "offered_rps": 400},
+    {"id": "q50-r800", "sm_percent": 50, "offered_rps": 800},
+    {"id": "q75-r200", "sm_percent": 75, "offered_rps": 200},
+    {"id": "q75-r400", "sm_percent": 75, "offered_rps": 400},
+    {"id": "q75-r800", "sm_percent": 75, "offered_rps": 800},
+    {"id": "q90-r200", "sm_percent": 90, "offered_rps": 200},
+    {"id": "q90-r400", "sm_percent": 90, "offered_rps": 400},
+    {"id": "q90-r800", "sm_percent": 90, "offered_rps": 800}
+  ],
+  "evaluator_command": [
+    "python3",
+    "baselines/boer/evaluate_dependent_pipeline.py",
+    "--repo",
+    ".",
+    "--result-root",
+    "results/p9-boer-dependent-payload-search-v3-common-deadline-20260809",
+    "--deadline-us",
+    "770.605407",
+    "--iterations",
+    "300",
+    "--warmup",
+    "10"
+  ]
+}

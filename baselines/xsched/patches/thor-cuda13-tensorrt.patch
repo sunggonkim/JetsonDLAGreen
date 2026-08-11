@@ -1,0 +1,238 @@
+diff --git a/platforms/cuda/hal/include/xsched/cuda/hal/common/cuda_command.h b/platforms/cuda/hal/include/xsched/cuda/hal/common/cuda_command.h
+index 43c9e5a..a4999ca 100644
+--- a/platforms/cuda/hal/include/xsched/cuda/hal/common/cuda_command.h
++++ b/platforms/cuda/hal/include/xsched/cuda/hal/common/cuda_command.h
+@@ -218,7 +218,26 @@ CUDA_COMMAND(CudaMemsetD32Command, CudaMemoryCommand, Driver::MemsetD32Async, CU
+ CUDA_COMMAND(CudaMemsetD2D8Command, CudaMemoryCommand, Driver::MemsetD2D8Async, CUdeviceptr, dstDevice, size_t, dstPitch, unsigned char, uc, size_t, Width, size_t, Height);
+ CUDA_COMMAND(CudaMemsetD2D16Command, CudaMemoryCommand, Driver::MemsetD2D16Async, CUdeviceptr, dstDevice, size_t, dstPitch, unsigned short, us, size_t, Width, size_t, Height);
+ CUDA_COMMAND(CudaMemsetD2D32Command, CudaMemoryCommand, Driver::MemsetD2D32Async, CUdeviceptr, dstDevice, size_t, dstPitch, unsigned int, ui, size_t, Width, size_t, Height);
+-CUDA_COMMAND(CudaMemoryAllocCommand, CudaMemoryCommand, Driver::MemAllocAsync, CUdeviceptr *, dptr, size_t, bytesize);
++class CudaMemoryAllocCommand : public CudaMemoryCommand
++{
++public:
++    CudaMemoryAllocCommand(CUdeviceptr *dptr, size_t bytesize)
++        : CudaMemoryCommand(), dptr_(dptr), bytesize_(bytesize)
++    {
++        // cuMemAllocAsync returns the allocated address synchronously even
++        // though the allocation is stream ordered.  The caller-owned dptr
++        // must therefore remain live until the driver launch has populated
++        // it.  This is especially visible in TensorRT engine deserialization.
++        this->SetProps(preempt::kCommandPropertyBlockingSubmit);
++    }
++    virtual ~CudaMemoryAllocCommand() = default;
++
++private:
++    CUdeviceptr *dptr_;
++    size_t bytesize_;
++    virtual CUresult Launch(CUstream stream) override
++    { return Driver::MemAllocAsync(dptr_, bytesize_, stream); }
++};
+ CUDA_COMMAND(CudaMemoryFreeCommand, CudaMemoryCommand, Driver::MemFreeAsync, CUdeviceptr, dptr);
+
+ class CudaMemcpy2DV2Command : public CudaMemoryCommand
+diff --git a/platforms/cuda/shim/src/shim.cpp b/platforms/cuda/shim/src/shim.cpp
+index 1464faf..5fb1f66 100644
+--- a/platforms/cuda/shim/src/shim.cpp
++++ b/platforms/cuda/shim/src/shim.cpp
+@@ -1,6 +1,8 @@
+ #include <list>
+ #include <mutex>
+ #include <atomic>
++#include <cstdlib>
++#include <cstring>
+ #include <functional>
+
+ #include "xsched/utils/log.h"
+@@ -20,6 +22,12 @@ using namespace xsched::preempt;
+ namespace xsched::cuda
+ {
+
++static bool TensorRtUserStreamOnly()
++{
++    const char *value = std::getenv("XSCHED_TRT_USER_STREAM_ONLY");
++    return value != nullptr && std::strcmp(value, "ON") == 0;
++}
++
+ static utils::ObjectMap<CUevent, std::shared_ptr<CudaEventRecordCommand>> g_events;
+
+ CUstream GetPTDS()
+@@ -35,7 +43,11 @@ CUstream GetPTDS()
+
+     /// FIXME: If XSCHED_AUTO_XQUEUE is not turned on,
+     /// there is no meaning creating new per-thread default streams.
+-    XQueueManager::AutoCreate([&](HwQueueHandle *hwq) {return CudaQueueCreate(hwq, stream);});
++    if (!TensorRtUserStreamOnly()) {
++        XQueueManager::AutoCreate([&](HwQueueHandle *hwq) {
++            return CudaQueueCreate(hwq, stream);
++        });
++    }
+     per_thread_default_stream = stream;
+     return stream;
+ }
+@@ -478,7 +490,11 @@ CUresult XStreamCreate(CUstream *stream, unsigned int flags)
+     if (!GetCudaSingleStreamPerProcessEnabled()) {
+         CUresult res = Driver::StreamCreate(stream, flags);
+         if (res != CUDA_SUCCESS) return res;
+-        XQueueManager::AutoCreate([&](HwQueueHandle *hwq) {return CudaQueueCreate(hwq, *stream);});
++        if (!TensorRtUserStreamOnly()) {
++            XQueueManager::AutoCreate([&](HwQueueHandle *hwq) {
++                return CudaQueueCreate(hwq, *stream);
++            });
++        }
+         XDEBG("XStreamCreate(stream: %p, flags: 0x%x) = %d", *stream, flags, res);
+         return res;
+     }
+@@ -487,7 +503,11 @@ CUresult XStreamCreate(CUstream *stream, unsigned int flags)
+     if (g_single_stream_ref_cnt == 0) {
+         CUresult res = Driver::StreamCreate(stream, flags);
+         if (res != CUDA_SUCCESS) return res;
+-        XQueueManager::AutoCreate([&](HwQueueHandle *hwq) {return CudaQueueCreate(hwq, *stream);});
++        if (!TensorRtUserStreamOnly()) {
++            XQueueManager::AutoCreate([&](HwQueueHandle *hwq) {
++                return CudaQueueCreate(hwq, *stream);
++            });
++        }
+         g_single_stream = *stream;
+     }
+
+diff --git a/preempt/include/xsched/preempt/sched/agent.h b/preempt/include/xsched/preempt/sched/agent.h
+index 3656893..d060acb 100644
+--- a/preempt/include/xsched/preempt/sched/agent.h
++++ b/preempt/include/xsched/preempt/sched/agent.h
+@@ -1,6 +1,7 @@
+ #pragma once
+
+ #include <memory>
++#include <mutex>
+
+ #include "xsched/types.h"
+ #include "xsched/sched/protocol/hint.h"
+@@ -32,6 +33,7 @@ public:
+     }
+
+ private:
++    void EnsureScheduler();
+     void RelayHint(std::shared_ptr<const sched::Hint> hint);
+     void RelayEvent(std::shared_ptr<const sched::Event> event);
+     XResult ReplaceScheduler(XSchedulerType scheduler, XPolicyType policy);
+@@ -39,6 +41,7 @@ private:
+     void FiniScheduler();
+
+     std::shared_ptr<sched::Scheduler> scheduler_ = nullptr;
++    std::mutex init_mtx_;
+     static SchedAgent g_sched_agent;
+ };
+
+diff --git a/preempt/src/sched/agent.cpp b/preempt/src/sched/agent.cpp
+index 641f2ce..bb42e58 100644
+--- a/preempt/src/sched/agent.cpp
++++ b/preempt/src/sched/agent.cpp
+@@ -1,4 +1,6 @@
+ #include <fstream>
++#include <cstdlib>
++#include <cstring>
+
+ #include "xsched/types.h"
+ #include "xsched/utils/log.h"
+@@ -20,6 +22,14 @@ SchedAgent SchedAgent::g_sched_agent;
+
+ SchedAgent::SchedAgent()
+ {
++    const char *defer = std::getenv("XSCHED_DEFER_INIT_UNTIL_FIRST_EVENT");
++    if (defer != nullptr && std::strcmp(defer, "ON") == 0) return;
++    EnsureScheduler();
++}
++
++void SchedAgent::EnsureScheduler()
++{
++    std::lock_guard<std::mutex> lock(init_mtx_);
+     if (scheduler_ != nullptr) return;
+
+     XSchedulerType scheduler_type = kSchedulerUnknown;
+@@ -42,6 +52,7 @@ SchedAgent::~SchedAgent()
+
+ void SchedAgent::RelayHint(std::shared_ptr<const sched::Hint> hint)
+ {
++    EnsureScheduler();
+     if (scheduler_ == nullptr) {
+         XWARN("scheduler not initialized, hint type(%d) dropped", hint->Type());
+         return;
+@@ -51,6 +62,7 @@ void SchedAgent::RelayHint(std::shared_ptr<const sched::Hint> hint)
+
+ void SchedAgent::RelayEvent(std::shared_ptr<const Event> event)
+ {
++    EnsureScheduler();
+     if (scheduler_ == nullptr) {
+         XWARN("scheduler not initialized, event type(%d) dropped", event->Type());
+         return;
+@@ -110,6 +122,7 @@ void SchedAgent::FiniScheduler()
+
+ XResult SchedAgent::ReplaceScheduler(XSchedulerType scheduler_type, XPolicyType policy_type)
+ {
++    EnsureScheduler();
+     if (scheduler_type <= kSchedulerUnknown || scheduler_type >= kSchedulerMax) {
+         XWARN("invalid scheduler type: %d", scheduler_type);
+         return kXSchedErrorInvalidValue;
+diff --git a/service/server/src/server.cpp b/service/server/src/server.cpp
+index cc182f5..cdbbff5 100644
+--- a/service/server/src/server.cpp
++++ b/service/server/src/server.cpp
+@@ -1,4 +1,5 @@
+ #include <mutex>
++#include <unordered_map>
+
+ #include "server.h"
+ #include "convert.h"
+@@ -183,11 +184,31 @@ void Server::Execute(std::shared_ptr<const Operation> operation)
+ {
+     PID client_pid = operation->Pid();
+
+-    chan_mtx_.lock();
++    if (operation->Type() == kOperationSched) {
++        auto sched = std::dynamic_pointer_cast<const SchedOperation>(operation);
++        XASSERT(sched != nullptr, "schedule operation type mismatch");
++        static std::mutex trace_mtx;
++        static std::unordered_map<PID, std::pair<size_t, size_t>> last_state;
++        static std::unordered_map<PID, size_t> logged_transitions;
++        const auto state = std::make_pair(sched->RunningCnt(), sched->SuspendedCnt());
++        std::lock_guard<std::mutex> trace_lock(trace_mtx);
++        auto it = last_state.find(client_pid);
++        if (it == last_state.end() || it->second != state) {
++            auto &logged = logged_transitions[client_pid];
++            if (logged < 8) {
++                XINFO("schedule transition pid " FMT_PID " operation " FMT_64U
++                      " running %zu suspended %zu",
++                      client_pid, operation->Id(), state.first, state.second);
++                ++logged;
++            }
++            last_state[client_pid] = state;
++        }
++    }
++
++    std::lock_guard<std::mutex> channel_lock(chan_mtx_);
+     auto it = client_chans_.find(client_pid);
+
+     if (it == client_chans_.end()) {
+-        chan_mtx_.unlock();
+         // It is possible that the server has received ProcessDestroyEvent in RecvWorker(),
+         // and the channel has been closed before the scheduler processes the event.
+         XDEBG("cannot find client channel for client process " FMT_PID, client_pid);
+@@ -195,10 +216,14 @@ void Server::Execute(std::shared_ptr<const Operation> operation)
+     }
+
+     std::shared_ptr<ipc::Node> client_chan = it->second;
+-    chan_mtx_.unlock();
+-
+-    XASSERT(client_chan->Send(operation->Data(), operation->Size()),
+-            "cannot send operation to client process " FMT_PID, client_pid);
++    if (!client_chan->Send(operation->Data(), operation->Size())) {
++        // A client removes its receive channel after publishing
++        // ProcessDestroyEvent, while the local scheduler can still have an
++        // already-derived operation queued.  That operation has no live
++        // target and must not terminate the server or unrelated clients.
++        XWARN("dropping operation for closed client process " FMT_PID,
++              client_pid);
++    }
+ }
+
+ XQueueHandle Server::GetXQueueHandle(const Json::Value &request)

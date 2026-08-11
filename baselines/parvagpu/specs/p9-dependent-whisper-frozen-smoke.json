@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "system": "ParvaGPU",
+  "upstream_commit": "5f3de1e18582b4c81896a1c3eb0e2915238dfee6",
+  "contract": {
+    "scenario": "dependent-large-payload",
+    "pressure_layout": "1g+2g",
+    "consumer_placement": "2g-reserved",
+    "producer_model": "whisper-tiny-encoder",
+    "payload_bytes": 2304000,
+    "pipeline_deadline_us": 1703.186903,
+    "deadline_mode": "validation-excluded",
+    "deadline_lock_path": "results/p9-whisper-pipeline-deadline-calibration-windowed-20260809T114022Z/deadline-lock.json",
+    "deadline_lock_sha256": "4b383e300d756f7da0987d0077bec2416c01588ca1a019b04c0e3e05b2b5ab48"
+  },
+  "available_segments_gpc": [
+    1
+  ],
+  "services": [
+    {
+      "model": "whisper-producer",
+      "request_rate": 600,
+      "slo_ms": 1.703186903
+    },
+    {
+      "model": "distilbert-background",
+      "request_rate": 250,
+      "slo_ms": 20.0
+    }
+  ]
+}
