@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "system": "ParvaGPU",
+  "upstream_commit": "5f3de1e18582b4c81896a1c3eb0e2915238dfee6",
+  "contract": {
+    "scenario": "independent-payload-services",
+    "pressure_layout": "1g+2g",
+    "models": ["resnet-producer", "distilbert-background"],
+    "per_service_slo_ms": 3.0
+  },
+  "available_segments_gpc": [1, 2],
+  "services": [
+    {"model": "resnet-producer", "request_rate": 500, "slo_ms": 3.0},
+    {"model": "distilbert-background", "request_rate": 500, "slo_ms": 3.0}
+  ]
+}

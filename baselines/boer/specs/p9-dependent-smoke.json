@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "system": "BOER",
+  "upstream_commit": "df54815de3b1c9059f873a17c13f7d5203eedd3e",
+  "contract": {
+    "scenario": "dependent",
+    "pressure_layout": "1g+2g",
+    "critical_placement": "2g",
+    "deadline_ms": 5.607159734,
+    "dmr_target": 0.0005
+  },
+  "seed": 4,
+  "tenant_demands_rps": [400, 400],
+  "static_capacity_profile": [
+    {"sm_percent": 25, "max_rps": 625.3839911618147},
+    {"sm_percent": 50, "max_rps": 623.1689090395864}
+  ],
+  "candidates": [
+    {"id": "q25-r50", "sm_percent": 25, "offered_rps": 50},
+    {"id": "q25-r100", "sm_percent": 25, "offered_rps": 100},
+    {"id": "q25-r200", "sm_percent": 25, "offered_rps": 200},
+    {"id": "q25-r400", "sm_percent": 25, "offered_rps": 400},
+    {"id": "q50-r50", "sm_percent": 50, "offered_rps": 50},
+    {"id": "q50-r100", "sm_percent": 50, "offered_rps": 100},
+    {"id": "q50-r200", "sm_percent": 50, "offered_rps": 200},
+    {"id": "q50-r400", "sm_percent": 50, "offered_rps": 400}
+  ],
+  "evaluator_command": [
+    "python3",
+    "baselines/boer/evaluate_candidate.py",
+    "--repo",
+    ".",
+    "--result-root",
+    "results/p9-boer-dependent-search-smoke-20260809",
+    "--scenario",
+    "dependent",
+    "--deadline-ms",
+    "5.607159734",
+    "--dmr-target",
+    "0.0005",
+    "--epochs",
+    "1",
+    "--samples",
+    "16",
+    "--calibration-repeats",
+    "1"
+  ]
+}

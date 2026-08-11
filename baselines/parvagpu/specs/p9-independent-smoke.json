@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "system": "ParvaGPU",
+  "upstream_commit": "5f3de1e18582b4c81896a1c3eb0e2915238dfee6",
+  "contract": {
+    "scenario": "independent",
+    "pressure_layout": "1g+2g",
+    "critical_placement": "2g",
+    "deadline_ms": 5.607159734,
+    "pressure_rps_per_tenant": 200
+  },
+  "available_segments_gpc": [1],
+  "services": [
+    {"model": "audio", "request_rate": 200, "slo_ms": 20},
+    {"model": "language", "request_rate": 200, "slo_ms": 20}
+  ]
+}

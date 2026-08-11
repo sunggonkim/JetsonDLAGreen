@@ -1,0 +1,32 @@
+{
+  "n03062245": {
+    "index": 503,
+    "label": "cocktail shaker",
+    "source": "https://www.image-net.org/challenges/LSVRC/2011/browse-synsets.php"
+  },
+  "n03481172": {
+    "index": 587,
+    "label": "hammer",
+    "source": "https://www.image-net.org/challenges/LSVRC/2011/browse-synsets.php"
+  },
+  "n03792782": {
+    "index": 671,
+    "label": "mountain bike",
+    "source": "https://www.image-net.org/challenges/LSVRC/2011/browse-synsets.php"
+  },
+  "n04044716": {
+    "index": 755,
+    "label": "radio telescope",
+    "source": "https://www.image-net.org/challenges/LSVRC/2011/browse-synsets.php"
+  },
+  "n04366367": {
+    "index": 839,
+    "label": "suspension bridge",
+    "source": "https://www.image-net.org/challenges/LSVRC/2011/browse-synsets.php"
+  },
+  "n07579787": {
+    "index": 923,
+    "label": "plate",
+    "source": "https://www.image-net.org/challenges/LSVRC/2011/browse-synsets.php"
+  }
+}

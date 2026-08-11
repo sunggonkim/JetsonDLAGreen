@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "models": [
+    {
+      "name": "resnet50-v2",
+      "modality": "vision",
+      "task": "image classification",
+      "source": "https://download.onnxruntime.ai/onnx/models/resnet50.tar.gz",
+      "license_source": "ONNX Model Zoo BSD-3-Clause",
+      "archive_sha256": "d9170b1239e33fbba9c2e3ae1022c8916c1f9df14fe3ce4d833b3d7f247e9449",
+      "sha256": "78eecdb9354e71364b9df6f3b5824ecc48710938d5b4ea23724b9a2e9edbc4a6",
+      "shapes": "1x3x224x224"
+    },
+    {
+      "name": "resnet10-detection",
+      "modality": "vision",
+      "task": "object detection",
+      "source": "/usr/src/jetson_multimedia_api/data/Model/resnet10/resnet10_dynamic_batch.onnx",
+      "license_source": "NVIDIA Jetson Multimedia API package",
+      "sha256": "48c26511600dd95a0b9c15282360ea7678452f8016d287b0680d8ee00d2086dc",
+      "shapes": "data:1x3x368x640",
+      "output_labels": ["Car", "RoadSign", "TwoWheeler", "Person"],
+      "decoded_labels": ["Car", "RoadSign", "TwoWheeler"],
+      "decoded_label_count": 3,
+      "parser_excluded_label": "Person",
+      "label_contract_source": "/usr/src/jetson_multimedia_api/samples/common/algorithm/trt/trt_inference.cpp:620"
+    },
+    {
+      "name": "distilbert-sst2",
+      "modality": "language",
+      "task": "sentiment classification",
+      "source": "https://huggingface.co/distilbert/distilbert-base-uncased-finetuned-sst-2-english/resolve/main/onnx/model.onnx?download=true",
+      "license_source": "Apache-2.0 model card",
+      "sha256": "252cf7048af94a1599019fef35961b2bd3d6db13df0b0a4b032b92baeae31939",
+      "shapes": "input_ids:1x128,attention_mask:1x128"
+    },
+    {
+      "name": "whisper-tiny-encoder",
+      "modality": "audio",
+      "task": "speech recognition encoder",
+      "source": "https://huggingface.co/KitsuMate/whisper-tiny-onnx/resolve/main/onnx/encoder_model.onnx?download=true",
+      "license_source": "MIT model card",
+      "sha256": "6642befb640f950d4a8cbbd17834d59e7e75f575b81ccf213e06b050623ab1dd",
+      "shapes": "input_features:1x80x3000"
+    },
+    {
+      "name": "whisper-tiny-mel",
+      "modality": "audio",
+      "task": "speech recognition feature extraction",
+      "source": "https://huggingface.co/KitsuMate/whisper-tiny-onnx/resolve/main/onnx/mel.onnx?download=true",
+      "license_source": "MIT model card",
+      "sha256": "0fb448b82bde665099d8532502dd1d7f95751f3afcd3760e7b30a94ca0bddebf",
+      "shapes": "audio:1x480000 -> log_mel:1x80x3000"
+    },
+    {
+      "name": "whisper-tiny-decoder",
+      "modality": "audio",
+      "task": "speech recognition decoder initial step",
+      "source": "https://huggingface.co/KitsuMate/whisper-tiny-onnx/resolve/main/onnx/decoder_model.onnx?download=true",
+      "license_source": "MIT model card",
+      "sha256": "ab79e3f2a9a3d98f159f853a3172120a38af7eb5f7863d706aa7d39c228f009e",
+      "shapes": "input_ids:1x4,encoder_hidden_states:1x1500x384 -> logits:1x4x51865"
+    },
+    {
+      "name": "whisper-tiny-decoder-with-past",
+      "modality": "audio",
+      "task": "speech recognition decoder autoregressive step",
+      "source": "https://huggingface.co/KitsuMate/whisper-tiny-onnx/resolve/main/onnx/decoder_with_past_model.onnx?download=true",
+      "license_source": "MIT model card",
+      "sha256": "0485135066eb1d36dcb04dbabd0cc1141c7cd8c442217abd0798d55fe2bc6bed",
+      "shapes": "input_ids:1x1,past:1x6x[1..224]x64 -> logits:1x1x51865"
+    },
+    {
+      "name": "whisper-tiny-tokenizer",
+      "modality": "audio",
+      "task": "speech recognition token decoding",
+      "source": "https://huggingface.co/KitsuMate/whisper-tiny-onnx/resolve/main/tokenizer.json?download=true",
+      "license_source": "MIT model card",
+      "sha256": "27fc476bfe7f17299480be2273fc0608e4d5a99aba2ab5dec5374b4482d1a566",
+      "format": "Hugging Face ByteLevel BPE"
+    }
+  ]
+}

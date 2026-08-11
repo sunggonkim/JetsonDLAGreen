@@ -1,0 +1,12 @@
+[Unit]
+Description=Run JetsonDLAGreen P6 full-GPU experiment once after reboot
+After=multi-user.target
+Wants=multi-user.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/JetsonDLAGreen
+ExecStart=/opt/JetsonDLAGreen/scripts/run_p6_after_reboot_once.sh
+
+[Install]
+WantedBy=default.target
