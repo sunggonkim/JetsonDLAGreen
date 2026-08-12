@@ -48,6 +48,15 @@ class ComparatorManifestTest(unittest.TestCase):
         policy = value["paper_table_policy"]
         self.assertIn("post_completion_application_output_trace", policy["formal_required_gates"])
         self.assertEqual(policy["proposed_system"], "QUIET")
+        self.assertEqual(
+            policy["executed_result_order"],
+            [
+                "QUIET", "NVIDIA MPS", "XSched", "Pantheon", "Orion",
+                "BLESS", "NVIDIA MIG", "GSLICE", "gpulet", "BOER",
+                "ParvaGPU", "DeepPlan",
+            ],
+        )
+        self.assertEqual(policy["direct_ranking_order"], ["QUIET", "NVIDIA MPS", "XSched"])
         self.assertEqual(policy["numeric_frontier_order"], ["NVIDIA MPS", "QUIET"])
         self.assertNotIn("Orion", policy["numeric_frontier_order"])
         self.assertNotIn("Pantheon", policy["numeric_frontier_order"])

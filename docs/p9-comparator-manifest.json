@@ -224,10 +224,26 @@
   },
   "paper_table_policy": {
     "proposed_system": "QUIET",
+    "executed_result_order": [
+      "QUIET",
+      "NVIDIA MPS",
+      "XSched",
+      "Pantheon",
+      "Orion",
+      "BLESS",
+      "NVIDIA MIG",
+      "GSLICE",
+      "gpulet",
+      "BOER",
+      "ParvaGPU",
+      "DeepPlan"
+    ],
+    "direct_ranking_order": ["QUIET", "NVIDIA MPS", "XSched"],
+    "visibility_rule": "Every comparison implementation executed on Thor appears in the primary result ledger; evidence class controls rankability, not visibility.",
     "numeric_frontier_order": ["NVIDIA MPS", "QUIET"],
     "functional_only": ["NVIDIA MIG", "Orion", "XSched", "Pantheon"],
     "structural_only": ["gpulet", "BOER", "ParvaGPU", "BLESS", "EdgeIso", "EdgeServing", "GCAPS"],
-    "rule": "Only numeric_frontier_order may receive same-SLO goodput ranking; all other rows are feasibility or mechanism evidence.",
+    "rule": "Only direct_ranking_order shares the current formal campaign; numeric_frontier_order remains the historical exact-lock analysis order.",
     "formal_required_gates": [
       "production_wall_arrival_to_completion",
       "production_wall_contract_v2_completion_before_validation",

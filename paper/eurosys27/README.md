@@ -35,5 +35,6 @@ From this directory:
 
 The public system name is QUIET.  The current formal headline is limited to
 the thermal-normalized ImageNette campaign.  Causal and load-sweep figures
-retain their exploratory/descriptive labels, and Pantheon remains a separate
-native fidelity gate.
+retain their exploratory/descriptive labels.  The executed-comparator table
+shows every locally run system; only its formal common-contract rows are
+ranked directly.

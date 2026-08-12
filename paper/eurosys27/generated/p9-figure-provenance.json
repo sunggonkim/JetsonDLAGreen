@@ -1,13 +1,33 @@
 {
   "claim_scope": "current thermal-normalized ImageNette headline; load and causal figures explicitly descriptive/exploratory",
   "inputs": {
+    "bless": {
+      "path": "results/p9-bless-resnet-compatibility-v3-20260810/summary.json",
+      "sha256": "a5b53c4c68413c620c09fb30a3cadf663fbe1440bed9f88e58b2b3abd5aea58a"
+    },
+    "boer_dependent": {
+      "path": "results/p9-boer-dependent-whisper-current-lock-search-20260810/search.json",
+      "sha256": "1d7f57005292642eea7a6eb279a840001847093cb92a3351ab8f9c5fcdbd689d"
+    },
+    "comparators": {
+      "path": "docs/p9-comparator-manifest.json",
+      "sha256": "f52b63e64851f30893990de6d63618989229419f980974ae9a57f2326aaeb949"
+    },
     "deadline": {
       "path": "results/p9-resnet50-imagenette-calibration-current-r06-20260811/deadline-lock.json",
       "sha256": "1687c57a3d0eeb8f470e719424c7a89d87a5a121ca073390861e03cd88f51470"
     },
+    "deepplan": {
+      "path": "results/p9-deepplan-transport-plan-20260810/plan.json",
+      "sha256": "5a4a4da319a38c478d588bcc76b3d061f9d4b0189c1957cd5e838ba7866cc93a"
+    },
     "frontier": {
       "path": "results/p9-resnet50-imagenette-load-frontier-current-r01-20260811/frontier.json",
       "sha256": "3dc2bab0a8266ef0b646c8f9d14347c9efb0cfb0adfee79d792cbeec8573d35c"
+    },
+    "historical": {
+      "path": "results/p9-six-system-williams-6x1500-500rps-performance-20260809-v1/aggregate.json",
+      "sha256": "c91e9e3f7364375c35dcd6f713ca759c7c6da9a0dc971d92d037a977ef5d01c8"
     },
     "mps_causal": {
       "path": "results/p9-real-resnet-head-causal-current-wall-replay-20260811/mps-causal-repeat-summary.json",
@@ -17,6 +37,10 @@
       "path": "results/p9-pantheon-resnet50-imagenette-gate100-r01-20260811/verification.json",
       "sha256": "da6462a7955a8f8f407908d6aa1d703796f405284642a97f43127af1d2eaf3bd"
     },
+    "parva_dependent": {
+      "path": "results/p9-parvagpu-dependent-whisper-current-lock-20260810/allocation.json",
+      "sha256": "0e614b16062e1d980f90fb24e9cdb5541970a772f07bca684c86140316f73f2d"
+    },
     "plan": {
       "path": "results/p9-resnet50-imagenette-quiet-plan-current-r02-20260811/quiet-plan.json",
       "sha256": "2694a17d2c249c4f2a8cb15f0ad4d6b5153d3745e2119ab8218f0255a8d2cee2"
@@ -24,6 +48,10 @@
     "quiet_causal": {
       "path": "results/p9-real-resnet-head-causal-current-wall-replay-20260811/quiet-causal-repeat-summary.json",
       "sha256": "f743fda05930e38037d8d2ab94821195687dbecb7173172f4d03d520b490719f"
+    },
+    "structural": {
+      "path": "results/p9-structural-limit-evidence-20260809/summary.json",
+      "sha256": "1d6afee67784fab41433ad31f76d8dc02d061a2be89f154938d538b4ff28d3b8"
     },
     "thermal": {
       "path": "results/p9-resnet50-imagenette-thermal-current-r02-20260811/summary.json",
@@ -40,19 +68,19 @@
   },
   "kind": "p9-current-paper-figure-provenance",
   "outputs": {
-    "paper/eurosys27/figures/p9-causal-pairs.pdf": "b6e03b49bccf92653cb24f959fd1b9e4ca69cf493eee43ae9d04fc41a824bb8e",
+    "paper/eurosys27/figures/p9-causal-pairs.pdf": "483126489c4159de4dda3e15e717af8c931c73eed7e7e335f2be73b442fcf490",
     "paper/eurosys27/figures/p9-causal-pairs.png": "39f946a57e101fbe2ba669150b2de43d4eed8a752d0c4c5bbce7edb35ed356fb",
-    "paper/eurosys27/figures/p9-latency-cdf.pdf": "43aaafac42645100eab7a0c5ea7acd8b8ca1661afa5f6d4a72e39a7586a9c364",
+    "paper/eurosys27/figures/p9-latency-cdf.pdf": "b871d3998392925976d5b5a132616b1d6b3467ca21cffc4e2d736d99e5260ea2",
     "paper/eurosys27/figures/p9-latency-cdf.png": "9e32d92a4d3677b8a41726ff9a4ef125548687650fd1720c467efb4175e9d6c0",
-    "paper/eurosys27/figures/p9-load-frontier.pdf": "47c5bd92627c95185e7adb1893fd3335bbf1d8e1f14cf3a390982df8a7a80ebb",
+    "paper/eurosys27/figures/p9-load-frontier.pdf": "24a069b8ed5186dc2b0406fe47f979ada054ef8a9fa583c87c73d18b97b33640",
     "paper/eurosys27/figures/p9-load-frontier.png": "ee2c312ff844ce5bd46de0c74f576c283d15d34736de705728858eebc3b42f29",
-    "paper/eurosys27/figures/p9-quiet-overview.pdf": "20fda31726dc65be0f114073ee40aeef3f0ef2e7eab8c3688169df280d9fc010",
+    "paper/eurosys27/figures/p9-quiet-overview.pdf": "6d57cceb503660ef58c8cffd4bb0412640e4c5ccd49f7ed48ff71425b08912a0",
     "paper/eurosys27/figures/p9-quiet-overview.png": "c6e7f0b9b54217d8c1de68c91a53914f6cc18e05e46aafd913a18792c8a39967",
-    "paper/eurosys27/figures/p9-session-stability.pdf": "58845b78f979dc94af6974fec89bf26737919d7b8162239a254ca978d6e442dd",
+    "paper/eurosys27/figures/p9-session-stability.pdf": "cfe8727f4f8fed5d4c4091e306e1e79d4236cd56b389000c7fc901a1325feb0a",
     "paper/eurosys27/figures/p9-session-stability.png": "15f35f748473fdf0120784ccc3f3c22d8c2cce0dd1299d93ad1dc322b731d784",
-    "paper/eurosys27/figures/p9-stage-timeline.pdf": "3963f00f63ccb3794b2cc03f2cd8c54a7f5631b1bb26387e0ee34e0cfac8b076",
+    "paper/eurosys27/figures/p9-stage-timeline.pdf": "13cf5d4bee7bdf55bd075dd2d25a4274436cc0ac27e64ec42c32f39943790a8a",
     "paper/eurosys27/figures/p9-stage-timeline.png": "e8583ff9cd9631f90ffe7e30afd764d90013bc9467980366e4b3c64c783ade89",
-    "paper/eurosys27/generated/p9-current-results.tex": "9fbc0e1cf7f22300248c64847a677d9e2c27fc8231b6b8d40224b0fc82dfe789"
+    "paper/eurosys27/generated/p9-current-results.tex": "17a6b598a8ce0767f79be5b76801f94739e75310a6de9b9494a795bca836c47f"
   },
   "schema_version": 1
 }
