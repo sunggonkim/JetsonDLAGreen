@@ -71,84 +71,91 @@ statistically unresolved goodput difference, not a throughput win.
 | LibriSpeech / Whisper-Tiny | 10 | 0.1127 WER | 0.1127 WER | 0.0000 | Below frozen 0.20 maximum |
 | Formal ImageNette campaign | 6,600/system | 0.8345 accuracy | 0.8345 for every system | 0.0000 | Bound to every formal session |
 
-## Complete SOTA comparison coverage
+## Complete comparison ledger
 
-The table below accounts for every published system with code, a Thor port,
-or measured compatibility evidence in this repository. Missing formal metrics
-mean that reporting a number under the published name would violate the
-common-workload or fidelity contract.
+The master table below contains **every system considered by this project in
+one place**. Rows were not omitted by preference: each system is marked as a
+current formal run, a locally executed partial test, or a literature-only
+interface assessment. A formal numeric row is admitted only when all of the
+following gates pass:
 
-| System | Venue / role | What was actually executed | Measured outcome | Public status |
+1. The exact ImageNette model split, inputs, output oracle, and accuracy gate.
+2. The same operational arrival trace and frozen 2,255.483-us deadline.
+3. Current source, binary, TensorRT engine, and configuration hashes.
+4. The original or pinned runtime algorithm controls each measured request.
+5. Six balanced, independent sessions with request-trace replay.
+6. Thermal qualification under the same best-effort load and placement.
+
+A failed gate is reported as evidence rather than silently dropped. “No local
+run” means that the paper and available artifact were assessed, but the
+required control interface is unavailable or would change the workload; it
+does not mean that an unreported experiment was run.
+
+### Master table: all systems and exact dispositions
+
+| System | What was done locally | Available data | Formal row? | Exact disposition or failed gate |
 |---|---|---|---|---|
-| [XSched](baselines/xsched/) | OSDI 2025 | Pinned native XQueue CUDA path, suspend/resume transitions, full formal ImageNette workload | 6,600/6,600 misses; p99 4,351.332 us; accuracy 0.8345 | **Formal comparator; SLO-infeasible** |
-| [Pantheon](baselines/pantheon/) | MobiSys 2024 | Pinned online runtime, priority tiers, model repository, and chunked modules on the labelled ImageNette gate | 90 requests; accuracy 0.8333; 2 misses; p99 4,133 us; BE 249.785 requests/s | **Faithful native gate**, separate because its adapter uses an integer-us 2,224-us contract |
-| [Orion](baselines/orion/) | EuroSys 2024 | Managed-client Thor path and the same 90-input ImageNette semantic gate | Accuracy 0.8333; 0/90 misses at its distinct 5,722.576-us diagnostic deadline; p99 5,537.090 us | Executed diagnostic only; upstream differential-decision trace remains open |
-| [BLESS](baselines/bless/) | EuroSys 2025 | Paper scheduler and estimators, 2/4/6/8-SM contexts, 9,400 traced TensorRT launches, activation handoff, held-out switch boundaries | q25 gate passes; exact common q100 plan fails inside Myelin in the required 2-SM replica | Measured compatibility boundary; no fabricated numeric row |
-| [GSLICE](baselines/gslice/) | SoCC 2020 | Algorithm port for quota selection on the earlier dependent Whisper contract | Historical 9,000-request run: 9,000 misses; p99 2,094.460 us | Superseded nonthermal mechanism evidence |
-| [gpulet](baselines/gpulet/) | USENIX ATC 2022 | Pinned placement decision over all five representable complementary partitions | No SLO-feasible dependent plan; diagnostic run has 9,000/9,000 misses and p99 2,099.367 us | Structural planner limit, not a feasible numeric competitor |
-| [BOER](baselines/boer/) | SC 2025 | Pinned Bayesian MIG+MPS optimizer on independent and dependent contracts | Independent positive control: worst p99 1.481 ms; dependent best p99 2.080 ms, no feasible point | Structural abstraction result |
-| [ParvaGPU](baselines/parvagpu/) | SC 2024 | Pinned segment allocator plus independent-service execution | Independent p99 0.434/0.969 ms at about 500 requests/s; dependent producer rejected by admission rule | Structural abstraction result |
-| [DeepPlan](baselines/deepplan/) | EuroSys 2023 | Published plan-selection rule applied to Thor coherent host access | Direct-host data-plane choice is applicable; no stage-precedence or end-to-end slack scheduler | Data-plane comparison only |
+| **QUIET** | Current six-session ImageNette campaign | 6,600 requests; 0 misses; CP95 DMR 0.0454%; p99 1,902.987 us; BE 249.909 requests/s | **Yes** | All six admission gates pass; meets the frozen 0.05% DMR target |
+| NVIDIA MPS | Current six-session ImageNette campaign | 6,600 requests; 2 misses; CP95 DMR 0.0954%; p99 2,045.606 us; BE 249.941 requests/s | **Yes** | Same-condition vendor comparator; admitted but does not meet the DMR target |
+| [XSched](baselines/xsched/) (OSDI 2025) | Pinned native XQueue path in the full current campaign | 6,600/6,600 misses; p99 4,351.332 us; accuracy 0.8345; BE 97.845 requests/s | **Yes** | Native mechanism and all measurement gates pass; the resulting schedule is SLO-infeasible |
+| [Pantheon](baselines/pantheon/) (MobiSys 2024) | Pinned native runtime on the 90-input application gate | Accuracy 0.8333; 2/90 misses; p99 4,133 us; BE 249.785 requests/s | No | Native adapter used an integer 2,224-us deadline, not 2,255.483 us; no six-session thermal campaign under the common lock |
+| [Orion](baselines/orion/) (EuroSys 2024) | Managed-client Thor execution and 90-input application gate | Accuracy 0.8333; 0/90 misses at D=5,722.576 us; p99 5,537.090 us | No | Diagnostic deadline differs and an upstream-versus-port differential scheduler-decision trace is not yet locked |
+| [BLESS](baselines/bless/) (EuroSys 2025) | Scheduler, estimators, 2/4/6/8-SM contexts, 9,400 traced launches, activation handoff, and held-out switch test | q25 held-out switching passes; exact q100 common plan fails inside Myelin in the required 2-SM replica | No | The exact workload cannot execute in the required partition; substituting q25 would change the workload |
+| NVIDIA MIG | Historical isolation campaign and capacity control | 9,000 requests; 8,424 misses; CP95 DMR 94.0194%; p99 2,215.748 us; BE 499.963 requests/s | No | Historical Whisper/nonthermal contract; physical isolation also has no matched BE slice for a same-capacity current row |
+| [GSLICE](baselines/gslice/) (SoCC 2020) | Quota-selection port on the earlier dependent workload | 9,000/9,000 misses; p99 2,094.460 us; BE 499.955 requests/s | No | Uses the superseded Whisper workload, dependency lock, and nonthermal campaign rather than the current ImageNette contract |
+| [gpulet](baselines/gpulet/) (USENIX ATC 2022) | Pinned planner searched all five representable complementary partitions; one historical diagnostic was replayed | No feasible dependent plan; diagnostic 9,000/9,000 misses; p99 2,099.367 us; BE 499.959 requests/s | No | The native planner declares the common dependency infeasible; a diagnostic execution is not a feasible gpulet schedule |
+| [BOER](baselines/boer/) (SC 2025) | Pinned optimizer searched independent and dependent MIG+MPS contracts | Independent worst p99 1.481 ms at about 500 requests/s; dependent best p99 2.080 ms with no feasible point | No | Its configuration objective models independent clients, not request precedence or reclaimable producer-stage slack |
+| [ParvaGPU](baselines/parvagpu/) (SC 2024) | Pinned segment allocator and independent-service execution | Independent p99 0.434/0.969 ms at about 500 requests/s; dependent producer rejected | No | Segment admission treats stages as independent services and rejects the producer before DAG placement |
+| [DeepPlan](baselines/deepplan/) (EuroSys 2023) | Published plan-selection rule and direct-host data-plane checks | Direct-host access is selected and its transport checks pass; no end-to-end request result | No | The mechanism selects a data path but has no online precedence, slack, or admission scheduler for the full contract |
+| [Mudi](https://chenwenyan.github.io/assets/pdf/mudi.pdf) (EuroSys 2025) | Artifact/interface assessment only; no local run | No common-workload numeric data | No | Cluster inference/training scaling has a different objective, and no public artifact exposes the required Thor dependency interface |
+| [MIGER](https://doi.org/10.1145/3673038.3673089) (ICPP 2024) | Artifact/interface assessment only; no local run | No common-workload numeric data | No | Joint cluster-level MIG+MPS allocation does not preserve a request-specific activation edge and has no Thor adapter |
+| [FluidFaaS](https://research.csc.ncsu.edu/picture/publications/papers/hpdc2025.pdf) (HPDC 2025) | Mechanism assessment and host-memory materialize/copy transport control; no FluidFaaS runtime run | Transport-control data only, reported below | No | A100 serverless function and materialization semantics differ from the opaque TensorRT DAG; calling the control “FluidFaaS” would overstate fidelity |
+| [REEF](https://www.usenix.org/conference/osdi22/presentation/han) (OSDI 2022) | Artifact/interface assessment only; no local run | No common-workload numeric data | No | Its released reset/preemption path targets a different runtime/backend and cannot control the current closed TensorRT path |
+| [Miriam](https://doi.org/10.1145/3625687.3625789) (SenSys 2023) | Interface assessment only; no local run | No common-workload numeric data | No | Requires elastic generated CUDA kernels and cannot accept the locked opaque TensorRT plans |
+| [HaX-CoNN](https://doi.org/10.1145/3627535.3638502) (PPoPP 2024) | Platform/interface assessment only; no local run | No common-workload numeric data | No | Per-layer heterogeneous mapping requires a usable equivalent DLA path that this Thor workload does not have |
+| [EdgeIso](https://doi.org/10.1109/IPDPS47924.2020.00039) (IPDPS 2020) | Mechanism assessment only; no local run | No common-workload numeric data | No | CPU/GPU shared-resource and DVFS isolation acts at a different control boundary than cross-MIG dependency scheduling |
+| [DARIS](https://arxiv.org/abs/2504.08795) (2025 preprint) | Interface assessment only; no local run | No common-workload numeric data | No | Requires a modified LibTorch segmented execution path, which changes the locked runtime semantics |
+| [EdgeServing](https://arxiv.org/abs/2605.05527) (2026 preprint) | Interface assessment only; no local run | No common-workload numeric data | No | Batching and early exits change model execution and require a separate accuracy-equivalent adapter |
+| [Ev-Edge](https://arxiv.org/abs/2403.15717) (2024 preprint) | Platform/workload assessment only; no local run | No common-workload numeric data | No | Event-camera workloads on Xavier do not expose an equivalent Thor opaque-TensorRT dependency contract |
+| [GCAPS](https://arxiv.org/abs/2406.05221) (2024 preprint) | Interface assessment only; no local run | No common-workload numeric data | No | Requires driver and task-segment instrumentation unavailable in the current closed stack |
+| [GPreempt](https://www.usenix.org/conference/atc25/presentation/fan) (USENIX ATC 2025) | Interface assessment only; no local run | No common-workload numeric data | No | Runtime/kernel timeslice yield lies outside the unmodified TensorRT boundary |
+| [Edge-GPU process isolation study](https://arxiv.org/abs/2601.07600) (2026 preprint) | Literature characterization assessment only; no local run | No scheduler result to execute | No | It characterizes MPS/MIG/Green Contexts but supplies no same-workload dependency scheduler or application contract |
 
-NVIDIA MIG is also measured as a physical-isolation/capacity oracle, but it
-has no matched best-effort slice and is not a same-capacity formal row. NVIDIA
-MPS is the matched vendor baseline in the formal table.
+### Partial comparison: what ran for non-formal systems
 
-### Historical six-system campaign
+This second table contains only systems for which local code or a concrete
+control was actually exercised but the full admission contract failed. It
+separates what the result establishes from what is still missing; these rows
+must not be interpreted as a same-condition ranking.
 
-This earlier campaign explains why the repository contains substantially more
-comparison code than the three formal rows. It uses a different Whisper-based
-2.304-MB dependency, a 1,701.316-us deadline, six Williams sequences, 9,000
-requests per treatment, and no thermal normalization. It is raw-replayed
-evidence, but it is **superseded for headline ranking** because the current
-ImageNette application, binary lock, deadline, fidelity rules, and thermal
-contract are different.
+| System | Partial experiment actually run | Observed result | What the result establishes | Missing before a formal row |
+|---|---|---|---|---|
+| Pantheon | Native 90-input ImageNette application gate | Accuracy 0.8333; 2 misses; p99 4,133 us; BE 249.785 requests/s | The pinned runtime and application semantics execute on Thor | Exact frozen deadline, common artifact lock, six independent sessions, and thermal gate |
+| Orion | 90-input managed-client gate plus earlier 9,000-request full-DAG campaign | Current gate: accuracy 0.8333, 0 misses at D=5,722.576 us, p99 5,537.090 us. Historical: 0 misses, CP95 DMR 0.0333%, p99 1,569.738 us, BE 153.571 requests/s | The application path and full-DAG protection mechanism execute | Differential decision equivalence to upstream, then common deadline/hash/repetition/thermal gates |
+| BLESS | q25 multi-context switching, 9,400 TensorRT launches, activation handoff, and an exact-q100 compatibility test | q25 held-out switch boundaries pass; q100 fails inside Myelin in the 2-SM replica | The scheduler/context-switch port works where the engine is executable | An executable exact-q100 plan; changing to q25 is not an admissible substitute |
+| NVIDIA MIG | Earlier 9,000-request isolation campaign | 8,424 misses; CP95 DMR 94.0194%; p99 2,215.748 us; BE 499.963 requests/s | Physical isolation and available capacity were measured | Current ImageNette/thermal lock and a matched BE slice/capacity contract |
+| GSLICE | Earlier 9,000-request dependent-workload campaign | 9,000 misses; CP95 DMR 100%; p99 2,094.460 us; BE 499.955 requests/s | The quota policy executes on the older dependency | Current workload, native-fidelity lock, six sessions, and thermal qualification |
+| gpulet | All five representable partition plans plus historical diagnostic execution | Planner finds no feasible plan; diagnostic has 9,000 misses, p99 2,099.367 us, and BE 499.959 requests/s | The failure is a measured planner-domain limit, not an omitted configuration | A native feasible dependent plan; one cannot be invented without changing gpulet |
+| BOER | Independent positive control and dependent-contract optimizer search | Independent worst p99 1.481 ms and about 499.78/499.63 requests/s; dependent best p99 2.080 ms and no feasible point | The pinned optimizer works in its intended independent-client domain | A precedence-aware objective that accounts for reclaimable stage slack |
+| ParvaGPU | Independent-service execution and dependent allocation attempt | Independent p99 0.434/0.969 ms at 499.89/499.76 requests/s; dependent producer rejected | The allocator executes, and its admission boundary is reproduced | DAG-aware segment admission before a common-workload campaign is possible |
+| DeepPlan | Published direct-host plan rule, unit checks, and transport replay | Direct-host data plane is selected and validated; no scheduler-level latency row | Its plan-selection insight applies to the activation transport | Online stage-precedence/admission control and a complete application campaign |
+| FluidFaaS concept control | Same-payload host-memory materialize/copy transport arm; the FluidFaaS runtime itself was not run | Pinned bounce: edge p99 1,863.770 us and wall p99 2,538.617 us; pageable bounce: 2,283.200/2,975.838 us | The host-materialization transport idea is measured without borrowing the published system name | A faithful serverless runtime adapter, equivalent function semantics, and the full common campaign |
 
-| Historical treatment | Requests | Misses | CP95 DMR | p99 (us) | BE requests/s | Interpretation |
-|---|---:|---:|---:|---:|---:|---|
-| NVIDIA MIG isolation | 9,000 | 8,424 | 94.0194% | 2,215.748 | 499.963 | Capacity/isolation oracle |
-| NVIDIA MPS | 9,000 | 8,950 | 99.5668% | 2,180.974 | 499.969 | Vendor spatial control |
-| GSLICE port | 9,000 | 9,000 | 100.0000% | 2,094.460 | 499.955 | Quota-only policy misses dependency slack |
-| gpulet port | 9,000 | 9,000 | 100.0000% | 2,099.367 | 499.959 | No feasible dependent placement |
-| Orion managed-client port | 9,000 | 0 | 0.0333% | **1,569.738** | 153.571 | Full-DAG protection; fidelity gate incomplete |
-| **QUIET** | 9,000 | **0** | **0.0333%** | 1,578.293 | **499.943** | Producer-only protection and consumer-stage handback |
+The four 9,000-request rows above belong to a superseded Whisper-based,
+2.304-MB, 1,701.316-us, nonthermal campaign. Its reference controls were
+QUIET (0 misses, CP95 DMR 0.0333%, p99 1,578.293 us, BE 499.943 requests/s)
+and MPS (8,950 misses, CP95 DMR 99.5668%, p99 2,180.974 us, BE 499.969
+requests/s). QUIET/Orion background goodput was 3.255x with a 95% paired
+interval of [3.241x, 3.270x]. These values explain mechanism behavior but are
+not current SOTA rankings.
 
-In this historical contract, QUIET/Orion background goodput is 3.255x with a
-95% paired-session interval of [3.241x, 3.270x]. This remains historical
-mechanism evidence rather than a current formal SOTA claim. The tracked
-explanation is in [`docs/p9-sota-reselection.md`](docs/p9-sota-reselection.md).
-
-### Broader literature matrix
-
-The project scope and related-work audit also compare the scheduling boundary
-with systems that do not have an accuracy-equivalent opaque TensorRT execution
-path on Thor. They remain literature comparisons; their names are never
-attached to local heuristics.
-
-<details>
-<summary>Show literature-only and mechanism-level comparisons</summary>
-
-| Work | Venue | Compared mechanism | Why it has no current numeric row |
-|---|---|---|---|
-| [Mudi](https://chenwenyan.github.io/assets/pdf/mudi.pdf) | EuroSys 2025 | SLO-aware inference/training spatial multiplexing | Cluster scaling and training objective differ; no public common-workload runtime artifact |
-| [MIGER](https://doi.org/10.1145/3673038.3673089) | ICPP 2024 | Joint MIG and MPS allocation for deep-learning clusters | Independent cluster allocation does not preserve the request-specific activation edge or current Thor contract |
-| [FluidFaaS](https://research.csc.ncsu.edu/picture/publications/papers/hpdc2025.pdf) | HPDC 2025 | Dynamic pipelines for strongly isolated serverless GPU functions | A100/serverless materialization semantics differ; retained as a host-memory materialize/copy concept, not a runtime row |
-| [REEF](https://www.usenix.org/conference/osdi22/presentation/han) | OSDI 2022 | Kernel preemption and padding | Released reset path targets a different runtime/backend |
-| [Miriam](https://doi.org/10.1145/3625687.3625789) | SenSys 2023 | Elastic CUDA kernels for edge inference | Requires generated kernels instead of opaque TensorRT plans |
-| [HaX-CoNN](https://doi.org/10.1145/3627535.3638502) | PPoPP 2024 | Per-layer heterogeneous accelerator mapping | The evaluated Thor path has no equivalent usable DLA target |
-| [EdgeIso](https://doi.org/10.1109/IPDPS47924.2020.00039) | IPDPS 2020 | CPU/GPU shared-resource isolation on Jetson | Relevant SoC contention control, not a cross-MIG command scheduler |
-| [DARIS](https://arxiv.org/abs/2504.08795) | 2025 preprint | MPS, streams, and synchronized model stages | Requires a modified LibTorch segmented path |
-| [EdgeServing](https://arxiv.org/abs/2605.05527) | 2026 preprint | Time division, batching, and early exits | Changes model/execution semantics and therefore needs a separate accuracy-equivalent adapter |
-| [Ev-Edge](https://arxiv.org/abs/2403.15717) | 2024 preprint | Multi-task event-vision scheduling | Different event-camera workload and Xavier runtime |
-| [GCAPS](https://arxiv.org/abs/2406.05221) | 2024 preprint | Context-aware preemptive priority | Requires driver/task-segment instrumentation not present in the opaque TensorRT contract |
-| [GPreempt](https://www.usenix.org/conference/atc25/presentation/fan) | USENIX ATC 2025 | Timeslice-based GPU yield | Runtime/kernel-level preemption is outside the unmodified TensorRT boundary |
-| [Edge-GPU process isolation study](https://arxiv.org/abs/2601.07600) | 2026 preprint | MPS/MIG/Green-Context characterization | No common Thor dependency, application gate, or QUIET SLO contract |
-
-</details>
-
-The historical design-space discussion is in
-[`docs/sota-matrix.md`](docs/sota-matrix.md), and the current public claim
-boundary is in [`docs/p9-current-status.md`](docs/p9-current-status.md).
+Literature-only systems do not appear in the partial table because no local
+execution evidence exists; their exact incompatibility is recorded in the
+master table instead. The historical design-space discussion is in
+[`docs/sota-matrix.md`](docs/sota-matrix.md), the superseded-campaign audit is
+in [`docs/p9-sota-reselection.md`](docs/p9-sota-reselection.md), and the
+current public claim boundary is in
+[`docs/p9-current-status.md`](docs/p9-current-status.md).
 
 ## Additional measured results
 
