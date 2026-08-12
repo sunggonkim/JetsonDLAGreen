@@ -17,7 +17,10 @@ to NVIDIA MPS, its paired session-p99 reduction is $138.508~\mu$s and its
 background-goodput difference is unresolved.  Native XSched executes the same
 application contract but is infeasible at this deadline; Pantheon supplies a
 second faithful, separately scoped native gate.  ImageNette and LibriSpeech
-ASR both preserve their reference metrics.
+ASR both preserve their reference metrics.  The evaluation also retains every
+locally executed comparator result---including Orion's scoped numeric rows and
+the measured BLESS, BOER, ParvaGPU, gpulet, GSLICE, and DeepPlan
+boundaries---without treating unlike contracts as a common rank.
 
 Our claims are bounded to one Thor, a fixed 1g+2g placement, and a low-inflight
 two-stage path; causal, transport, and load controls remain exploratory or

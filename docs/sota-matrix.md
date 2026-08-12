@@ -7,64 +7,62 @@ The proposed system has one public name: **QUIET**. `joint-governor`,
 names. Descriptive controls such as fixed gating and resident-only execution are
 baselines or QUIET ablations. They must not be presented as separate systems.
 
-Published competitors keep their real names. The three executable runtime
-competitors for the fixed-MIG P9 extension are **Orion (Thor port,
-EuroSys'24)**, **XSched (Thor port, OSDI'25)**, and **Pantheon (Thor port,
-MobiSys'24)**. They cover interference-aware operation scheduling, preemptible
-command queues, and edge block/exit scheduling. **gpulet (ATC'22)** remains a
-structural control until its upstream 3-D planner is executed and produces a
-feasible common workload. **BLESS (EuroSys'25)** remains a
-mechanism-complete structural comparison rather than a numeric row. Its paper
-scheduler, estimators, 2/4/6/8-SM contexts, and TensorRT activation handoff are
-implemented. On the exact common ResNet workload, however, the q100 TensorRT
-plan fails inside Myelin in the required 2-SM replica; the executable q25 plan
-has 18 launches and passes only at switch operations 0, 6, 9, 15, and 18.
-Substituting q25 for the q100 plan used by every numeric row would change the
-workload, so no BLESS performance number is fabricated.
-**BOER (Thor port)** is
-the supplemental MIG+MPS configuration-search comparator, and ParvaGPU is the
-placement-planner control. Pantheon is the edge-specific secondary comparator
-for processed/early-exit DNN scheduling. A functional gate alone is not a
-numeric performance row.
-Numeric labels require the identical model semantics, arrival trace,
-correctness oracle, and SLO contract. A different upstream environment is
-porting work, not an exclusion criterion and not a reason to substitute a local
-policy under the paper's name. ParvaGPU remains a structural provisioning
-control. Mudi, MIGER, REEF, and GPreempt remain literature comparisons until
-their original algorithms run on this platform.
+## Current reporting rule
 
-This ordering is deliberate. Orion is the closest executable EuroSys
-operation scheduler, XSched is the strongest available systems-level
-preemption runtime with a native NVIDIA backend, and Pantheon is the edge
-comparator with an explicit block/exit runtime. gpulet remains structural until
-its fidelity gate passes. BLESS remains the closest kernel-squad design and its exact
-TensorRT compatibility boundary is reported separately. DeepPlan
-(EuroSys'23) is a separate data-plane comparison: its direct-host-access plan is
-applicable on Thor and explains why a dependency need not pay a device-to-host-
-to-device bounce, but it does not schedule a stage DAG. Miriam (SenSys'23) is
-the edge-specific compiler/runtime comparison. It requires elastic CUDA kernel
-generation, so it is evaluated as a structural applicability boundary for
-opaque TensorRT rather than relabeled as a local heuristic. If a primary port
-cannot execute because Thor lacks a required mechanism, it is replaced by
-another published top-tier algorithm; a renamed MPS or gating heuristic is not
-a valid replacement.
+The public result ledger and the paper's executed-comparator table include
+**every comparison system whose vendor control, published runtime, port,
+reimplementation, or planner actually ran on Thor**. The ledger contains
+QUIET, NVIDIA MPS, XSched, Pantheon, Orion, BLESS, NVIDIA MIG, GSLICE, gpulet,
+BOER, ParvaGPU, and DeepPlan. An executed system is not hidden merely because
+its workload, deadline, fidelity gate, or mechanism boundary prevents a direct
+rank.
+
+Execution visibility and statistical comparability are separate decisions:
+
+1. **A -- formal common contract:** QUIET, NVIDIA MPS, and XSched share the
+   six-session ImageNette contract and may be ranked directly.
+2. **B -- separate numeric contract:** Pantheon and Orion retain their measured
+   application results under their own deadline or fidelity scope.
+3. **C -- historical numeric contract:** the earlier Whisper measurements for
+   QUIET, NVIDIA MPS, Orion, NVIDIA MIG, GSLICE, and gpulet remain visible with
+   their historical workload label.
+4. **D -- executed mechanism boundary:** BLESS, gpulet, BOER, ParvaGPU, and
+   DeepPlan report the successful positive control, selected plan, measured
+   failure, or data-plane result that their original mechanism produced.
+
+The distinction is machine-readable in `docs/p9-comparator-manifest.json`:
+`executed_result_order` controls visibility, `direct_ranking_order` identifies
+the current formal comparison, and the older `numeric_frontier_order` remains
+for historical exact-lock analysis scripts. The current public ledger is the
+first table in `README.md`; the generated paper counterpart is Table 4 in
+`paper/eurosys27/generated/p9-current-results.tex`.
+
+Systems for which the published implementation never ran, or whose design
+requires changing the opaque TensorRT workload/control boundary, remain in the
+non-numeric literature table. No local MPS, priority, or gating heuristic is
+reported under another paper's name.
+
+BLESS illustrates the distinction. Its scheduler, estimators, 2/4/6/8-SM
+contexts, 9,400 traced launches, and q25 switching path execute, so BLESS is in
+the ledger. The exact q100 TensorRT plan fails inside Myelin in the required
+2-SM replica, so the row reports that measured compatibility boundary instead
+of fabricating a common-workload latency. BOER and ParvaGPU likewise retain
+their independent-service positive controls and their measured dependent-DAG
+failures. DeepPlan retains its direct-host plan-selection result even though it
+does not schedule the dependency.
+
+## Historical design-space context
 
 The validated P8 results below evaluate QUIET without MIG. P9 retains the QUIET
-name while extending its isolation boundary to a fixed `2g+1g` layout; P9 smoke
-results are not yet a formal SOTA comparison.
+name while extending its isolation boundary to a fixed `2g+1g` layout. Earlier
+smoke and nonthermal campaigns remain provenance; they are not pooled with the
+current thermal ImageNette campaign.
 
 The earlier common-workload hardware campaign used the real 14,720-byte
 ResNet10 Layer7 covariance tensor, a shape-compatible TensorRT control stage,
 and a 770.605-us wall deadline. Its six Williams sequences and 6,600-request
-rows are retained as historical nonthermal evidence only. They must not be
-mixed with the newer production-wall contract, which uses a 773.730452-us
-common lock, inline correctness, and a separate repeated frontier artifact.
-The active paper table is generated only from the latter artifact and marks
-Orion, Pantheon, and gpulet nonnumeric until their fidelity gates pass.
-
-The earlier 600-request campaign remains a smoke only. The paper-facing
-nonthermal evidence is
-`results/p9-common-sota-williams-nonthermal-formal-raw-aggregate-6x1100-20260809T153122Z/summary.json`.
+rows are historical nonthermal evidence. The still-earlier 600-request
+campaign remains smoke evidence only.
 
 The P9 workload contract now has two modes: `independent` multimodal tenants
 run concurrently, while `dependent` tenants form an audio-completion to
@@ -82,7 +80,7 @@ Consequently the paper attributes BOER/ParvaGPU failures to missing DAG/slack
 modeling and fixed segment capacity, while explicitly avoiding the stronger
 claim that cross-MIG dependence is always cheap or always copy-bound.
 
-## Bottom line
+## Historical P8 bottom line
 
 The validated P8 contribution is **not** another MPS/MIG/Green Context
 characterization. QUIET targets opaque TensorRT clients and closes a specific
@@ -119,7 +117,7 @@ systems evaluated on other hardware and runtimes.
 | [REEF](https://www.usenix.org/conference/osdi22/presentation/han) | OSDI 2022 | Kernel preemption/padding | GPU runtime support; mostly idempotent kernels | Much finer preemption. Not directly portable to the closed Jetson stack. |
 | [Miriam](https://doi.org/10.1145/3625687.3625789) | SenSys 2023 | Elastic CUDA kernels | Source transformation and custom runtime | Strong edge baseline, but cannot accept an opaque TensorRT plan. |
 | [HaX-CoNN](https://doi.org/10.1145/3627535.3638502) | PPoPP 2024 | Per-layer accelerator mapping | Heterogeneous GPU/DLA/NPU-style SoC | Explicitly models shared memory; Thor and Orin Nano paths here have no usable DLA. |
-| [Pantheon](https://doi.org/10.1145/3643832.3661878) | MobiSys 2024 | Processed DNN scheduling and preemption | Offline DNN processing and online runtime | Native positive control passes, but the common-workload accuracy-equivalent adapter is still pending; no numeric row is allowed yet. |
+| [Pantheon](https://doi.org/10.1145/3643832.3661878) | MobiSys 2024 | Processed DNN scheduling and preemption | Offline DNN processing and online runtime | The native 90-input ImageNette gate passes accuracy and reports its measured latency/DMR under a separate integer-deadline class-B contract. |
 | [EdgeIso](https://doi.org/10.1109/IPDPS47924.2020.00039) | IPDPS 2020 | Dynamic CPU/GPU contention isolation on Jetson | User-level monitoring, DVFS, and incremental core allocation | Direct edge-SoC comparison for shared-memory contention. It is not relabeled as a GPU command scheduler and is evaluated on a separate CPU/EMC stress axis. |
 | [DARIS](https://arxiv.org/abs/2504.08795) | 2025 preprint | MPS, streams, synchronized stages | Modified LibTorch path and segmented DNN stages | Closest concept. QUIET uses whole synchronous TensorRT processes; no direct cross-platform win is claimed. |
 | [EdgeServing](https://arxiv.org/abs/2605.05527) | 2026 preprint | Deadline-aware time division and early exit | Model changes, batching, and edge scheduler | Direct edge scheduling context; not a drop-in comparator because QUIET preserves opaque TensorRT engines and does not alter model exits. |
@@ -144,7 +142,7 @@ The arXiv rows are preprints and must be identified as such in the paper.
 | Cross-MIG | Critical on 2g and pressure on 1g | Hardware isolation oracle, not the proposed system |
 | Green Context | Explicit CUDA SM partition in the CUDA microbenchmark | Mechanism-only microbenchmark; never merged with DNN headlines |
 
-## Required and completed evaluation
+## Historical P8 required and completed evaluation
 
 - [x] Six counterbalanced full-GPU repetitions with 95% confidence intervals.
 - [x] Real TensorRT ResNet50, DistilBERT, and Whisper execution with transfers.
