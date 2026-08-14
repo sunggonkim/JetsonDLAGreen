@@ -55,17 +55,20 @@ class SixSystemImageNetteGateTest(unittest.TestCase):
             pantheon_path=MODULE.DEFAULT_PANTHEON,
         )
         self.assertEqual(value["system_order"], list(MODULE.SYSTEM_ORDER))
-        self.assertEqual(value["systems"]["NVIDIA MIG"]["background_goodput_rps"], 0.0)
-        self.assertFalse(
-            value["systems"]["NVIDIA MIG"]["background_goodput_applicable"]
+        mig = value["systems"]["NVIDIA MIG"]
+        self.assertTrue(mig["background_goodput_applicable"])
+        self.assertGreater(mig["background_goodput_rps"], 249.0)
+        self.assertEqual(
+            mig["topology"],
+            "colocated-2g-critical-dag-with-isolated-1g-best-effort",
         )
-        colocated = value["partial_topology_comparisons"][
-            "NVIDIA MIG (2g DAG + 1g BE)"
-        ]
-        self.assertEqual(colocated["misses"], 0)
-        self.assertGreater(colocated["background_goodput_rps"], 249.0)
-        self.assertEqual(colocated["evidence_scope"],
-                         "partial-topology-variant-same-input-arrival-deadline")
+        variants = value["mig_topology_comparisons"]
+        self.assertFalse(
+            variants["split-critical-stages"]["background_goodput_applicable"]
+        )
+        self.assertEqual(
+            mig["source"], variants["colocated-critical-dag"]["source"]
+        )
         self.assertFalse(value["mig_topology_constraints"]["three_way_1g_supported"])
         self.assertEqual(value["systems"]["Orion"]["misses"], 90)
         self.assertEqual(value["systems"]["Pantheon"]["misses"], 2)
@@ -79,10 +82,9 @@ class SixSystemImageNetteGateTest(unittest.TestCase):
         value = json.loads(path.read_bytes())
         self.assertEqual(value["system_order"], list(MODULE.SYSTEM_ORDER))
         self.assertEqual(tuple(value["systems"]), MODULE.SYSTEM_ORDER)
-        self.assertIn(
-            "NVIDIA MIG (2g DAG + 1g BE)",
-            value["partial_topology_comparisons"],
-        )
+        self.assertIn("NVIDIA MIG", value["systems"])
+        self.assertIn("split-critical-stages", value["mig_topology_comparisons"])
+        self.assertIn("colocated-critical-dag", value["mig_topology_comparisons"])
 
 
 if __name__ == "__main__":

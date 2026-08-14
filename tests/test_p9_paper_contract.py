@@ -70,8 +70,11 @@ class P9PaperContractTest(unittest.TestCase):
         self.assertEqual(tuple(policy["executed_result_order"]), systems)
         self.assertEqual(tuple(compact["system_order"]), systems)
         self.assertEqual(tuple(compact["systems"]), systems)
-        self.assertFalse(
+        self.assertTrue(
             compact["systems"]["NVIDIA MIG"]["background_goodput_applicable"]
+        )
+        self.assertGreater(
+            compact["systems"]["NVIDIA MIG"]["background_goodput_rps"], 249.0
         )
         self.assertEqual(
             compact["mig_topology_constraints"]["maximum_simultaneous_instances"],
@@ -80,19 +83,23 @@ class P9PaperContractTest(unittest.TestCase):
         self.assertFalse(
             compact["mig_topology_constraints"]["three_way_1g_supported"]
         )
-        mig_partial = compact["partial_topology_comparisons"][
-            "NVIDIA MIG (2g DAG + 1g BE)"
+        mig_split = compact["mig_topology_comparisons"]["split-critical-stages"]
+        mig_colocated = compact["mig_topology_comparisons"][
+            "colocated-critical-dag"
         ]
-        self.assertEqual(mig_partial["requests"], 90)
-        self.assertEqual(mig_partial["misses"], 0)
-        self.assertTrue(mig_partial["background_goodput_applicable"])
+        self.assertFalse(mig_split["background_goodput_applicable"])
+        self.assertEqual(
+            compact["systems"]["NVIDIA MIG"]["source"], mig_colocated["source"]
+        )
         self.assertFalse(
-            manifest["rows"]["NVIDIA MIG"]["partial_topology_variant"][
+            manifest["rows"]["NVIDIA MIG"][
+                "latest_real_imagenette_application_gate"
+            ][
                 "ranking_allowed"
             ]
         )
         self.assertIn(r"\newcommand{\PnineMigTopologyTable}", table)
-        self.assertIn("MIG's BE entry is N/A", table)
+        self.assertIn("MIG uses its valid BE-capable layout", table)
         self.assertEqual(tuple(policy["partial_evidence_order"]), partial)
         self.assertEqual(
             policy["direct_ranking_order"],

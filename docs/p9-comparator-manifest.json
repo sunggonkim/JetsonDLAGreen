@@ -275,10 +275,10 @@
   "rows": {
     "NVIDIA MIG": {
       "class": "vendor-baseline",
-      "topology": "fixed-2g+1g-physical-isolation",
-      "numeric_comparison_allowed": false,
+      "topology": "colocated-2g-critical-dag-with-isolated-1g-best-effort",
+      "numeric_comparison_allowed": true,
       "numeric_measurement_available": true,
-      "status": "common-gate-capacity-endpoint-no-best-effort-slice",
+      "status": "directional-common-gate-valid-be-capable-topology",
       "thor_topology_constraint": {
         "maximum_simultaneous_instances": 2,
         "three_way_1g_supported": false,
@@ -288,7 +288,7 @@
         "active_instances": "results/p9-mig-colocated-imagenette-gate90-20260814-r06/active-mig-instances.txt",
         "active_instances_sha256": "463833352e8d049ef1d25830a5d686fec0dcf74a90ec872e0ffa9e7bc057ea18"
       },
-      "latest_real_imagenette_application_gate": {
+      "split_stage_capacity_control": {
         "verification": "results/p9-resnet50-imagenette-six-system-gate90-20260814/nvidia-mig/summary.json",
         "verification_sha256": "c2558ab5165b493a68eef2e548f4e1b9fa22a612790cc6dff679175ffed66203",
         "accuracy_gate": "results/p9-resnet50-imagenette-six-system-gate90-20260814/nvidia-mig/application-accuracy/accuracy-gate.json",
@@ -308,8 +308,8 @@
         "formal_claim_allowed": false,
         "claim_status": "same-labelled-common-gate-capacity-endpoint-no-best-effort-slice"
       },
-      "partial_topology_variant": {
-        "status": "passed-directional-partial-gate",
+      "latest_real_imagenette_application_gate": {
+        "status": "passed-directional-common-gate",
         "verification": "results/p9-mig-colocated-imagenette-gate90-20260814-r06/summary.json",
         "verification_sha256": "f3360064081e7c1549730621abd17e239a4d5a4a16ac41525fb289be33646eb6",
         "accuracy_gate": "results/p9-mig-colocated-imagenette-gate90-20260814-r06/application-accuracy/accuracy-gate.json",
@@ -333,7 +333,7 @@
         "changed_dimensions": ["stage_placement", "profile_specific_producer_plan"],
         "formal_claim_allowed": false,
         "ranking_allowed": false,
-        "claim_status": "partial-topology-variant-same-input-arrival-deadline"
+        "claim_status": "primary-mig-row-same-input-arrival-deadline-valid-topology"
       }
     },
     "NVIDIA MPS": {

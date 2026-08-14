@@ -171,8 +171,8 @@ def draw(summary: dict[str, object], stem: Path) -> list[Path]:
     axes[2].set_ylim(0, max(goodput) * 1.20)
     axes[2].set_ylabel("completed BE (requests/s)")
     axes[2].set_title("(c) Background goodput — fixed six-system roster")
-    for bar, name, value in zip(bars, SYSTEM_ORDER, goodput, strict=True):
-        text = "N/A" if name == "NVIDIA MIG" else f"{value:.1f}"
+    for bar, value in zip(bars, goodput, strict=True):
+        text = f"{value:.1f}"
         y = max(value, max(goodput) * 0.035) + max(goodput) * 0.025
         axes[2].text(bar.get_x() + bar.get_width() / 2, y, text, ha="center", va="bottom", fontsize=7.0)
 
@@ -180,7 +180,8 @@ def draw(summary: dict[str, object], stem: Path) -> list[Path]:
         0.5,
         0.005,
         "90 labelled ImageNette requests/system; one input + arrival + deadline lock. "
-        "* fixed-stage MIG uses both slices, so BE is N/A. Directional, not a formal ranking.",
+        "* MIG uses P+C:2g and BE:1g; the split-stage capacity control is shown separately. "
+        "Directional, not a formal ranking.",
         ha="center",
         va="bottom",
         fontsize=7.5,
@@ -195,22 +196,22 @@ def draw(summary: dict[str, object], stem: Path) -> list[Path]:
 
 
 def draw_mig_partial(summary: dict[str, object], stem: Path) -> list[Path]:
-    systems = summary.get("systems")
-    partial = summary.get("partial_topology_comparisons")
+    variants = summary.get("mig_topology_comparisons")
     constraints = summary.get("mig_topology_constraints")
     if (
-        not isinstance(systems, dict)
-        or not isinstance(partial, dict)
+        not isinstance(variants, dict)
         or not isinstance(constraints, dict)
         or constraints.get("three_way_1g_supported") is not False
     ):
         raise ValueError("MIG partial-comparison evidence is missing")
-    fixed = systems.get("NVIDIA MIG")
-    colocated = partial.get("NVIDIA MIG (2g DAG + 1g BE)")
+    fixed = variants.get("split-critical-stages")
+    colocated = variants.get("colocated-critical-dag")
     if not isinstance(fixed, dict) or not isinstance(colocated, dict):
         raise ValueError("MIG partial-comparison rows differ")
     if fixed.get("background_goodput_applicable") is not False:
         raise ValueError("fixed-stage MIG BE must be marked not applicable")
+    if colocated.get("background_goodput_applicable") is not True:
+        raise ValueError("colocated MIG BE must be measured")
 
     labels = ["Split\nP:1g  C:2g\nBE:N/A", "Colocated\nP+C:2g\nBE:1g"]
     rows = [fixed, colocated]
@@ -313,7 +314,7 @@ def draw_mig_partial(summary: dict[str, object], stem: Path) -> list[Path]:
         0.5,
         0.015,
         "Thor cannot form 1g+1g+1g. Both rows replay the same 90 inputs, arrivals, and "
-        "2,224.448-us SLO; stage placement differs, so this is a partial comparison.",
+        "2,224.448-us SLO. Colocated is the primary MIG row; Split is a capacity control.",
         ha="center",
         va="bottom",
         fontsize=7.2,

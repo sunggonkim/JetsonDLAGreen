@@ -39,11 +39,11 @@
   },
   "kind": "p9-six-system-imagenette-gate-figure-provenance",
   "outputs": {
-    "paper/eurosys27/figures/p9-mig-topology-partial.pdf": "8faa821ada3eff29e051c63dfc6bef383614518c002831f5c541d07104fd4e07",
-    "paper/eurosys27/figures/p9-mig-topology-partial.png": "dd99bc3802552a79fd5e24aab7f9bae8d0294ad6f78a6a1ac467bda26a8b7e78",
-    "paper/eurosys27/figures/p9-six-system-imagenette-gate.pdf": "b829e994c754e25ab58cb59cf2a17e21a503810bed139dbb39e3809ffba3122e",
-    "paper/eurosys27/figures/p9-six-system-imagenette-gate.png": "065b62f5045e6a882b92deeb4c6a5a0f3c7676cd6892b692a735b25bfed3d82c",
-    "paper/eurosys27/generated/p9-six-system-imagenette-gate.json": "fdd908e951d82c5de712fa1c1f5e233ebfb9219b9ea9ad299fd650f021f16383"
+    "paper/eurosys27/figures/p9-mig-topology-partial.pdf": "08c7ccc1a398f84e0b5d6bc994f58d7151b5f06745c1216100fb6839822165e3",
+    "paper/eurosys27/figures/p9-mig-topology-partial.png": "008c71974135bed1d43f13b21dc6ba99c1ddecaaec5a8de3205a3a210fe4191c",
+    "paper/eurosys27/figures/p9-six-system-imagenette-gate.pdf": "dcba6a4ca4f6b999473e6186437991397710a8223209be578a1bab7670b7794f",
+    "paper/eurosys27/figures/p9-six-system-imagenette-gate.png": "9f60fe6914cb6f28c5721af1f7b2f11dfb61dc52417cab832bbb83b2a8dd99ed",
+    "paper/eurosys27/generated/p9-six-system-imagenette-gate.json": "cb54daba60d74bdf19410f0b468914d024778c922362c72d0e5051f1f75dfe0b"
   },
   "schema_version": 1
 }
