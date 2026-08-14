@@ -1,0 +1,43 @@
+{
+  "inputs": {
+    "common": {
+      "path": "results/p9-resnet50-imagenette-gate100-20260811/common-workload.json",
+      "sha256": "20962e2f3b0585161e47868ce13c330a97f5ce5d423db166c372eb96acdffe8f"
+    },
+    "deadline_lock": {
+      "path": "results/p9-resnet50-imagenette-calibration-current-r03-20260811/deadline-lock.json",
+      "sha256": "6bb288350b1ffd07dce3cb4dd3b84737ad1263cb60f824d865a41380f6691589"
+    },
+    "mig": {
+      "path": "results/p9-resnet50-imagenette-six-system-gate90-20260814/nvidia-mig/summary.json",
+      "sha256": "c2558ab5165b493a68eef2e548f4e1b9fa22a612790cc6dff679175ffed66203"
+    },
+    "mps": {
+      "path": "results/p9-active-resnet50-imagenette-frontier-r07-20260811/sequence-0/01-nvidia-mps/summary.json",
+      "sha256": "702d8e46cead1afb2a77cdacc3411751a8e3f8904747e5bf1c618d014f1d9f5c"
+    },
+    "orion": {
+      "path": "results/p9-resnet50-imagenette-six-system-gate90-20260814/orion-r02/verification.json",
+      "sha256": "adb536b816c8ba4c65f538280e2d4c70787c7a7025c2fc27e0c19472b3213b5d"
+    },
+    "pantheon": {
+      "path": "results/p9-pantheon-resnet50-imagenette-gate100-r01-20260811/verification.json",
+      "sha256": "42f2714968f4df887b3ffb4dc2103750346574aceaeb93efafc0e9bc91ac4e05"
+    },
+    "quiet": {
+      "path": "results/p9-active-resnet50-imagenette-frontier-r07-20260811/sequence-0/03-quiet/summary.json",
+      "sha256": "ec8e9ea89c096b040af77d5668b64c536b5fbc6f8f78844ab577de52b8e5e3ac"
+    },
+    "xsched": {
+      "path": "results/p9-active-resnet50-imagenette-frontier-r07-20260811/sequence-0/02-xsched/verification.json",
+      "sha256": "a3acda8e1557a7b2f366c85a6f11a6fb9edaf27e7eb64ff4f43370f557a9bbda"
+    }
+  },
+  "kind": "p9-six-system-imagenette-gate-figure-provenance",
+  "outputs": {
+    "paper/eurosys27/figures/p9-six-system-imagenette-gate.pdf": "026e6b448bd98458fb12e5a7b315fa80f01ac764c8dc7118e6dbfd5e4ce871b5",
+    "paper/eurosys27/figures/p9-six-system-imagenette-gate.png": "a999cc6ad7e687c150b4e52b7774cda0f31ed67530fb1fe33510afab2a982065",
+    "paper/eurosys27/generated/p9-six-system-imagenette-gate.json": "3796512df3ecbfadad5c560ed3d42ef1bea6ae52919741ef9548eeaea4569c23"
+  },
+  "schema_version": 1
+}

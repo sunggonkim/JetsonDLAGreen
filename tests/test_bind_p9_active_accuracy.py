@@ -44,6 +44,26 @@ class BindP9ActiveAccuracyTest(unittest.TestCase):
             self.assertEqual(result["candidate_pipeline_csv"], str(pipeline.resolve()))
             self.assertEqual(result["candidate_output_trace"], str(output.resolve()))
 
+    def test_extracts_mig_capacity_control(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            pipeline = root / "pipeline.csv"
+            output = root / "output.bin"
+            evidence = root / "summary.json"
+            pipeline.write_text("request,wall_end_to_end_us,deadline_miss\n0,1,0\n")
+            output.write_bytes(b"output")
+            evidence.write_text(json.dumps({
+                "results": [{
+                    "system": "NVIDIA MIG",
+                    "request_trace": {"path": str(pipeline)},
+                    "application_output_trace": {"path": str(output)},
+                    "best_effort_admitted": False,
+                }],
+            }) + "\n")
+            result = MODULE.candidate_paths(evidence)
+            self.assertEqual(result["system"], "NVIDIA MIG")
+            self.assertEqual(result["candidate_pipeline_csv"], str(pipeline.resolve()))
+
     def test_extracts_xsched_pipeline_next_to_verification(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

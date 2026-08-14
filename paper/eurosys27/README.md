@@ -11,14 +11,17 @@ manuscript and must not be used as the current result.
 - refs.bib and p9-refs.bib: checked bibliographies.
 - figures/p9-*.pdf and figures/p9-*.png: generated design and evaluation
   figures.
-- generated/p9-current-results.tex: evidence-backed application, formal
-  campaign, and native-comparator tables.
+- generated/p9-six-system-imagenette-gate.json: fixed-roster common-gate
+  metrics.
+- generated/p9-current-results.tex: evidence-backed application, formal,
+  common-comparator, and partial-evidence tables.
 - generated/p9-figure-provenance.json: input and output SHA-256 bindings.
 
 ## Generate figures
 
 From the repository root, generate every current figure and table with:
 
+    python3 analysis/generate_p9_six_system_figure.py
     python3 analysis/generate_p9_current_figures.py
 
 The generator fails if a recorded input hash, request count, miss count,
@@ -35,6 +38,7 @@ From this directory:
 
 The public system name is QUIET.  The current formal headline is limited to
 the thermal-normalized ImageNette campaign.  Causal and load-sweep figures
-retain their exploratory/descriptive labels.  The executed-comparator table
-shows every locally run system; only its formal common-contract rows are
-ranked directly.
+retain their exploratory/descriptive labels.  Every end-to-end table and graph
+repeats QUIET, NVIDIA MIG, NVIDIA MPS, XSched, Orion, and Pantheon in that
+order.  Executed mechanism-only or incompatible artifacts remain visible in a
+separate partial-evidence table.

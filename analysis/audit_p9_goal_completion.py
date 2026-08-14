@@ -377,7 +377,11 @@ def audit_published_application_gates() -> dict[str, Any]:
             "latest_real_imagenette_application_gate"
         ),
     }
-    expected_misses = {"Orion": 0, "XSched": 90}
+    expected_misses = {"Orion": 90, "XSched": 90}
+    expected_deadline_us = 2224.4481160000005
+    expected_deadline_lock_sha256 = (
+        "6bb288350b1ffd07dce3cb4dd3b84737ad1263cb60f824d865a41380f6691589"
+    )
     result: dict[str, Any] = {}
     for system, entry in entries.items():
         if not isinstance(entry, dict):
@@ -410,11 +414,16 @@ def audit_published_application_gates() -> dict[str, Any]:
             or verification.get("formal_claim_allowed") is not False
             or verification.get("requests") != 90
             or verification.get("misses") != expected_misses[system]
+            or verification.get("deadline_us") != expected_deadline_us
+            or entry.get("deadline_us") != expected_deadline_us
+            or verification.get("inputs", {}).get("deadline_lock_sha256")
+            != expected_deadline_lock_sha256
             or accuracy.get("kind") != "p9-application-accuracy-gate"
             or accuracy.get("status") != "passed"
             or accuracy.get("workload") != "resnet50-classification"
             or accuracy.get("task") != "classification"
             or accuracy.get("requests") != 90
+            or accuracy.get("deadline_us") != expected_deadline_us
             or accuracy.get("minimum_accuracy") != 0.8
             or accuracy.get("reference_accuracy") != 0.8333333333333334
             or accuracy.get("candidate_accuracy") != 0.8333333333333334
@@ -442,6 +451,7 @@ def audit_published_application_gates() -> dict[str, Any]:
             "requests": verification["requests"],
             "misses": verification["misses"],
             "p99_us": verification.get("p99_us"),
+            "deadline_us": verification["deadline_us"],
             "reference_accuracy": accuracy["reference_accuracy"],
             "candidate_accuracy": accuracy["candidate_accuracy"],
             "accuracy_delta": accuracy["accuracy_delta"],

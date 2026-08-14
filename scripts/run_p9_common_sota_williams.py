@@ -246,7 +246,7 @@ def orion_row(
         if workload == "resnet-control"
         else "run_p9_orion_dependent_smoke.sh"
     )
-    run([str(repo / f"scripts/{script}")], cwd=repo, env=env)
+    run(["bash", str(repo / f"scripts/{script}")], cwd=repo, env=env)
     path = output / "verification.json"
     value = json.loads(path.read_text(encoding="utf-8"))
     return decorate_row({

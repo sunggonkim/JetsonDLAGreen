@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Bind a current active-frontier row to the application accuracy gate.
+"""Bind a current comparator row to the application accuracy gate.
 
-The active Williams launcher records the raw evidence for MPS, XSched, and
-QUIET in two slightly different schemas.  This adapter normalizes only those
+The comparator launchers record raw evidence for MIG, MPS, XSched, and QUIET
+in two slightly different schemas.  This adapter normalizes only those
 schemas and delegates prediction decoding and all correctness checks to the
 existing application-accuracy tools.  It never invents labels, timing, or
 output bytes.
@@ -65,7 +65,7 @@ def candidate_paths(evidence: Path) -> dict[str, Any]:
 
     if system == "XSched (Thor port)":
         system = "XSched"
-    if system not in {"NVIDIA MPS", "XSched", "QUIET"}:
+    if system not in {"NVIDIA MIG", "NVIDIA MPS", "XSched", "QUIET"}:
         raise ValueError(f"unsupported active system: {system!r}")
     output_path, output_sha = _path_record(output, f"{system} application output trace")
 
