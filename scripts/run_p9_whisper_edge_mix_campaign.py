@@ -22,52 +22,77 @@ class Scenario:
     background_engine: str
     deployment_scope: str
     additional_backgrounds: tuple[str, ...]
+    failure_target: str
+    directional_rates_rps: tuple[float, ...]
     balanced_rate_rps: float
+
+
+def repeated_backgrounds(
+    prefix: str, engine: str, total_workers: int
+) -> tuple[str, ...]:
+    if total_workers < 1:
+        raise ValueError("a scenario requires at least one background worker")
+    return tuple(
+        f"{prefix}-{index:02d}={engine}" for index in range(2, total_workers + 1)
+    )
 
 
 SCENARIOS = (
     Scenario(
-        "speech-plus-nlp",
-        "Speech + NLP",
+        "mig-placement-nlp",
+        "MIG placement: NLP",
         "interactive ASR with queued intent and text classification",
         "distilbert-sst2",
         "models/engines/mig-1g-q100/distilbert-sst2.engine",
         "multi-channel-robot-or-edge-gateway-stress",
         (),
+        "nvidia-mig",
+        (15.0, 17.0, 19.0, 20.0, 21.0),
         19.0,
     ),
     Scenario(
-        "speech-plus-vision",
-        "Speech + Vision",
+        "mig-placement-vision",
+        "MIG placement: vision",
         "interactive ASR with queued camera perception",
         "resnet10-detection",
         "models/engines/mig-1g-q100/resnet10-detection.engine",
         "multi-sensor-robot-or-video-gateway-stress",
         (),
+        "nvidia-mig",
+        (15.0, 17.0, 19.0, 20.0, 21.0),
         21.0,
     ),
     Scenario(
-        "speech-plus-speech",
-        "Speech + Speech",
-        "interactive ASR with a queued secondary speech encoder",
-        "whisper-tiny-encoder",
+        "mps-interference-speech-20",
+        "MPS interference: 20 speech",
+        "interactive ASR sharing 1g with twenty queued speech channels",
+        "speech-channel-01",
         "models/engines/mig-1g-q100/whisper-tiny-encoder.engine",
-        "multi-model-multi-channel-speech-gateway-stress",
-        (),
-        21.0,
+        "twenty-channel-speech-gateway-stress",
+        repeated_backgrounds(
+            "speech-channel",
+            "models/engines/mig-1g-q100/whisper-tiny-encoder.engine",
+            20,
+        ),
+        "nvidia-mps-static-split",
+        (15.0, 17.0, 18.0, 19.0),
+        17.0,
     ),
     Scenario(
-        "speech-plus-multimodal",
-        "Speech + Multimodal",
-        "interactive ASR with queued NLP, camera perception, and secondary speech encoding",
-        "distilbert-sst2",
-        "models/engines/mig-1g-q100/distilbert-sst2.engine",
-        "multimodal-robot-or-edge-gateway-stress",
-        (
-            "resnet10-detection=models/engines/mig-1g-q100/resnet10-detection.engine",
-            "whisper-tiny-encoder=models/engines/mig-1g-q100/whisper-tiny-encoder.engine",
+        "mps-interference-vision-24",
+        "MPS interference: 24 vision",
+        "interactive ASR sharing 1g with twenty-four queued camera streams",
+        "vision-stream-01",
+        "models/engines/mig-1g-q100/resnet10-detection.engine",
+        "twenty-four-stream-video-gateway-stress",
+        repeated_backgrounds(
+            "vision-stream",
+            "models/engines/mig-1g-q100/resnet10-detection.engine",
+            24,
         ),
-        20.0,
+        "nvidia-mps-static-split",
+        (15.0, 17.0, 18.0, 19.0, 20.0),
+        18.0,
     ),
 )
 
@@ -87,7 +112,7 @@ def command_for(
     output: pathlib.Path,
 ) -> list[str]:
     if phase == "directional":
-        rates = args.directional_rates
+        rates = scenario.directional_rates_rps
         sessions = 1
     elif phase == "balanced":
         rates = [scenario.balanced_rate_rps]
@@ -149,7 +174,7 @@ def validate_summary(
     if not isinstance(rows, list) or not rows:
         raise ValueError(f"empty {phase} summary for {scenario.scenario_id}")
     expected_rates = (
-        set(args.directional_rates)
+        set(scenario.directional_rates_rps)
         if phase == "directional" else {scenario.balanced_rate_rps}
     )
     expected_sessions = 1 if phase == "directional" else args.balanced_sessions
@@ -168,8 +193,12 @@ def validate_summary(
     return value
 
 
-def first_mig_only_failure(summary: dict[str, Any]) -> float:
-    """Find the first rate where MIG misses and both split modes remain clean."""
+def first_target_only_failure(
+    summary: dict[str, Any], target_mode: str
+) -> float:
+    """Find the first rate where only the selected baseline misses."""
+    if target_mode not in {"nvidia-mig", "nvidia-mps-static-split"}:
+        raise ValueError("failure target must be NVIDIA MIG or NVIDIA MPS")
     rows = summary.get("aggregate")
     if not isinstance(rows, list):
         raise ValueError("directional aggregate is missing")
@@ -180,13 +209,18 @@ def first_mig_only_failure(summary: dict[str, Any]) -> float:
             for row in rows
             if float(row["rate_rps"]) == rate
         }
+        other_mode = (
+            "nvidia-mps-static-split"
+            if target_mode == "nvidia-mig"
+            else "nvidia-mig"
+        )
         if (
-            misses.get("nvidia-mig", 0) > 0
-            and misses.get("nvidia-mps-static-split") == 0
+            misses.get(target_mode, 0) > 0
+            and misses.get(other_mode) == 0
             and misses.get("quiet") == 0
         ):
             return rate
-    raise ValueError("directional sweep has no MIG-only failure crossover")
+    raise ValueError("directional sweep has no target-only failure crossover")
 
 
 def main() -> int:
@@ -205,12 +239,6 @@ def main() -> int:
         choices=("directional", "balanced", "all"),
         default="all",
     )
-    parser.add_argument(
-        "--directional-rates",
-        type=float,
-        nargs="+",
-        default=(15.0, 17.0, 19.0, 20.0, 21.0),
-    )
     parser.add_argument("--balanced-sessions", type=int, default=3)
     parser.add_argument("--requests", type=int, default=100)
     parser.add_argument("--warmup", type=int, default=2)
@@ -226,7 +254,6 @@ def main() -> int:
         args.requests < 100
         or args.warmup < 0
         or args.balanced_sessions != 3
-        or set(args.directional_rates) != {15.0, 17.0, 19.0, 20.0, 21.0}
     ):
         raise ValueError("campaign request/session/rate contract differs")
     for scenario in SCENARIOS:
@@ -272,12 +299,14 @@ def main() -> int:
 
     if set(phases) == {"directional", "balanced"}:
         for scenario in SCENARIOS:
-            calibrated = first_mig_only_failure(
-                loaded[("directional", scenario.scenario_id)]
+            calibrated = first_target_only_failure(
+                loaded[("directional", scenario.scenario_id)],
+                scenario.failure_target,
             )
             if calibrated != scenario.balanced_rate_rps:
                 raise ValueError(
-                    f"balanced rate is not the first MIG-only crossover for {scenario.scenario_id}"
+                    "balanced rate is not the first target-only crossover for "
+                    f"{scenario.scenario_id}"
                 )
 
     campaign = {
@@ -285,13 +314,16 @@ def main() -> int:
         "kind": "p9-whisper-edge-mix-campaign",
         "evidence_class": "exploratory-nonthermal-motivation",
         "thermal_campaign": False,
-        "selection_policy": "four-predeclared-real-model-edge-tenant-categories",
+        "selection_policy": "two-placement-and-two-interference-regimes",
         "balanced_rate_policy": (
-            "first-directional-rate-with-MIG-misses-and-both-split-modes-zero"
+            "first-directional-rate-with-target-baseline-misses-and-other-baselines-zero"
         ),
         "input_policy": "real-labelled-windows-cyclic-performance-replay",
         "scenario_order": [asdict(scenario) for scenario in SCENARIOS],
-        "directional_rates_rps": list(args.directional_rates),
+        "directional_rates_rps": {
+            scenario.scenario_id: list(scenario.directional_rates_rps)
+            for scenario in SCENARIOS
+        },
         "balanced_rate_rps": {
             scenario.scenario_id: scenario.balanced_rate_rps
             for scenario in SCENARIOS
@@ -309,9 +341,10 @@ def main() -> int:
             "sha256": sha256(args.input_trace),
         },
         "claim_guard": (
-            "The model combinations match plausible Jetson services, but fixed-rate "
-            "arrival and saturated background queues are stress regimes rather than "
-            "field traces. No thermal claim is made."
+            "The two low-fanout cases isolate placement failure and the two high-fanout "
+            "cases isolate producer-interference failure. Fixed-rate arrivals and "
+            "saturated queues are stress regimes rather than field traces. No thermal "
+            "claim is made."
         ),
     }
     campaign_path = args.result_dir / "campaign.json"

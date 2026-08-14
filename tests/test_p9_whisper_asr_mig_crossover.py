@@ -15,6 +15,14 @@ SPEC.loader.exec_module(MODULE)
 
 
 class WhisperAsrMigCrossoverTest(unittest.TestCase):
+    def test_background_workers_wrap_without_using_foreground_cpu(self) -> None:
+        self.assertEqual(MODULE.background_cpu(0), 0)
+        self.assertEqual(MODULE.background_cpu(12), 12)
+        self.assertEqual(MODULE.background_cpu(13), 0)
+        self.assertEqual(MODULE.background_cpu(20), 7)
+        with self.assertRaisesRegex(ValueError, "non-negative"):
+            MODULE.background_cpu(-1)
+
     def test_modes_change_only_placement_and_protection(self) -> None:
         by_name = {mode.name: mode for mode in MODULE.MODES}
         self.assertEqual(

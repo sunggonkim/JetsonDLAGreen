@@ -42,26 +42,33 @@ def row(
     }
 
 
-def summary(phase: str) -> dict[str, object]:
+def summary(specification: object, phase: str) -> dict[str, object]:
     if phase == "directional":
         rows = [
             row(
                 rate,
                 mode,
                 1,
-                misses=(25 if mode == "nvidia-mig" and rate >= 19.0 else 0),
+                misses=(
+                    25
+                    if mode == specification.failure_mode
+                    and rate >= specification.balanced_rate_rps
+                    else 0
+                ),
+                workers=specification.background_workers,
             )
-            for rate in MODULE.RATES
+            for rate in specification.directional_rates_rps
             for _, mode in MODULE.SYSTEMS
         ]
         design = "directional-sweep"
     else:
         rows = [
             row(
-                19.0,
+                specification.balanced_rate_rps,
                 mode,
                 session_id,
-                misses=(25 if mode == "nvidia-mig" else 0),
+                misses=(25 if mode == specification.failure_mode else 0),
+                workers=specification.background_workers,
             )
             for session_id in (1, 2, 3)
             for _, mode in MODULE.SYSTEMS
@@ -76,36 +83,60 @@ def summary(phase: str) -> dict[str, object]:
         "comparator_output_contract": "byte-identical",
         "pipeline_slots": 3,
         "deadline_us": 250000.0,
-        "background_workers": 1,
-        "scenario": {"id": "speech-plus-nlp", "background_workers": 1},
+        "background_workers": specification.background_workers,
+        "scenario": {
+            "id": specification.scenario_id,
+            "background_workers": specification.background_workers,
+        },
         "rows": rows,
     }
 
 
 class WhisperEdgeMixFigureTest(unittest.TestCase):
-    def test_fixed_public_order_and_first_mig_only_crossover(self) -> None:
-        directional = MODULE.validate_raw_summary(
-            summary("directional"),
-            scenario_id="speech-plus-nlp",
-            phase="directional",
-            balanced_rate=19.0,
-            workers=1,
-        )
-        balanced = MODULE.validate_raw_summary(
-            summary("balanced"),
-            scenario_id="speech-plus-nlp",
-            phase="balanced",
-            balanced_rate=19.0,
-            workers=1,
-        )
-        compact = MODULE.compact_raw(directional, balanced)
-        self.assertEqual(list(compact), ["QUIET", "NVIDIA MIG", "NVIDIA MPS"])
-        self.assertEqual(MODULE.first_mig_only_failure(compact), 19.0)
-        self.assertEqual(compact["QUIET"]["balanced"]["misses"], 0)
-        self.assertEqual(compact["NVIDIA MIG"]["balanced"]["misses"], 75)
+    def test_fixed_public_order_and_both_target_crossovers(self) -> None:
+        for specification in (MODULE.SCENARIOS[0], MODULE.SCENARIOS[2]):
+            with self.subTest(scenario=specification.scenario_id):
+                directional = MODULE.validate_raw_summary(
+                    summary(specification, "directional"),
+                    scenario_id=specification.scenario_id,
+                    phase="directional",
+                    balanced_rate=specification.balanced_rate_rps,
+                    workers=specification.background_workers,
+                    directional_rates=specification.directional_rates_rps,
+                )
+                balanced = MODULE.validate_raw_summary(
+                    summary(specification, "balanced"),
+                    scenario_id=specification.scenario_id,
+                    phase="balanced",
+                    balanced_rate=specification.balanced_rate_rps,
+                    workers=specification.background_workers,
+                    directional_rates=specification.directional_rates_rps,
+                )
+                compact = MODULE.compact_raw(
+                    directional,
+                    balanced,
+                    specification.directional_rates_rps,
+                )
+                self.assertEqual(
+                    list(compact), ["QUIET", "NVIDIA MIG", "NVIDIA MPS"]
+                )
+                self.assertEqual(
+                    MODULE.first_target_only_failure(
+                        compact,
+                        specification.failure_system,
+                        specification.directional_rates_rps,
+                    ),
+                    specification.balanced_rate_rps,
+                )
+                self.assertEqual(compact["QUIET"]["balanced"]["misses"], 0)
+                self.assertEqual(
+                    compact[specification.failure_system]["balanced"]["misses"],
+                    75,
+                )
 
     def test_gate_coverage_must_match_background_worker_count(self) -> None:
-        value = summary("directional")
+        specification = MODULE.SCENARIOS[0]
+        value = summary(specification, "directional")
         broken = copy.deepcopy(value)
         for item in broken["rows"]:
             if item["mode"] == "quiet":
@@ -114,45 +145,62 @@ class WhisperEdgeMixFigureTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "gate coverage differs"):
             MODULE.validate_raw_summary(
                 broken,
-                scenario_id="speech-plus-nlp",
+                scenario_id=specification.scenario_id,
                 phase="directional",
-                balanced_rate=19.0,
-                workers=1,
+                balanced_rate=specification.balanced_rate_rps,
+                workers=specification.background_workers,
+                directional_rates=specification.directional_rates_rps,
             )
 
     def test_output_trace_must_be_identical(self) -> None:
-        value = summary("balanced")
+        specification = MODULE.SCENARIOS[0]
+        value = summary(specification, "balanced")
         value["rows"][0]["output_sha256"] = "b" * 64
         with self.assertRaisesRegex(ValueError, "matrix differs"):
             MODULE.validate_raw_summary(
                 value,
-                scenario_id="speech-plus-nlp",
+                scenario_id=specification.scenario_id,
                 phase="balanced",
-                balanced_rate=19.0,
-                workers=1,
+                balanced_rate=specification.balanced_rate_rps,
+                workers=specification.background_workers,
+                directional_rates=specification.directional_rates_rps,
             )
 
     def test_balanced_table_repeats_fixed_system_order(self) -> None:
         scenarios = {}
-        for scenario_id, label, rate, workers in MODULE.SCENARIOS:
+        for specification in MODULE.SCENARIOS:
             systems = {}
             for system_index, (system, mode) in enumerate(MODULE.SYSTEMS):
                 systems[system] = {
                     "mode": mode,
                     "balanced": {
                         "requests": 300,
-                        "misses": 75 if system == "NVIDIA MIG" else 0,
-                        "observed_dmr": 0.25 if system == "NVIDIA MIG" else 0.0,
-                        "mean_session_p99_us": 300000.0 if system_index == 1 else 150000.0,
-                        "mean_queue_p99_us": 100000.0 if system_index == 1 else 1000.0,
-                        "mean_critical_goodput_rps": rate - 0.2,
+                        "misses": (
+                            75 if system == specification.failure_system else 0
+                        ),
+                        "observed_dmr": (
+                            0.25 if system == specification.failure_system else 0.0
+                        ),
+                        "mean_session_p99_us": (
+                            300000.0
+                            if system == specification.failure_system
+                            else 150000.0
+                        ),
+                        "mean_queue_p99_us": (
+                            100000.0
+                            if system == specification.failure_system
+                            else 1000.0
+                        ),
+                        "mean_critical_goodput_rps": (
+                            specification.balanced_rate_rps - 0.2
+                        ),
                         "mean_background_goodput_rps": 800.0 + system_index,
                     },
                 }
-            scenarios[scenario_id] = {
-                "label": label,
-                "background_workers": workers,
-                "balanced_rate_rps": rate,
+            scenarios[specification.scenario_id] = {
+                "label": specification.label,
+                "background_workers": specification.background_workers,
+                "balanced_rate_rps": specification.balanced_rate_rps,
                 "systems": systems,
             }
         with tempfile.TemporaryDirectory() as directory:

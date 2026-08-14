@@ -8,6 +8,7 @@ import hashlib
 import json
 import math
 import statistics
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -17,7 +18,7 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CAMPAIGN = (
-    ROOT / "results/p9-whisper-edge-mix-campaign-r03-20260814/campaign.json"
+    ROOT / "results/p9-whisper-mixed-regime-campaign-r01-20260814/campaign.json"
 )
 DEFAULT_INPUT_PROVENANCE = (
     ROOT / "results/p9-whisper-asr-crossover-inputs-102-20260814/provenance.json"
@@ -32,13 +33,65 @@ SYSTEMS = (
     ("NVIDIA MIG", "nvidia-mig"),
     ("NVIDIA MPS", "nvidia-mps-static-split"),
 )
+
+
+@dataclass(frozen=True)
+class Scenario:
+    scenario_id: str
+    label: str
+    short_label: str
+    balanced_rate_rps: float
+    background_workers: int
+    failure_system: str
+    failure_mode: str
+    directional_rates_rps: tuple[float, ...]
+
+
 SCENARIOS = (
-    ("speech-plus-nlp", "Speech + NLP", 19.0, 1),
-    ("speech-plus-vision", "Speech + Vision", 21.0, 1),
-    ("speech-plus-speech", "Speech + Speech", 21.0, 1),
-    ("speech-plus-multimodal", "Speech + Multimodal", 20.0, 3),
+    Scenario(
+        "mig-placement-nlp",
+        "MIG placement: NLP",
+        "NLP\nMIG@19",
+        19.0,
+        1,
+        "NVIDIA MIG",
+        "nvidia-mig",
+        (15.0, 17.0, 19.0, 20.0, 21.0),
+    ),
+    Scenario(
+        "mig-placement-vision",
+        "MIG placement: vision",
+        "Vision\nMIG@21",
+        21.0,
+        1,
+        "NVIDIA MIG",
+        "nvidia-mig",
+        (15.0, 17.0, 19.0, 20.0, 21.0),
+    ),
+    Scenario(
+        "mps-interference-speech-20",
+        "MPS interference: 20 speech",
+        "Speech20\nMPS@17",
+        17.0,
+        20,
+        "NVIDIA MPS",
+        "nvidia-mps-static-split",
+        (15.0, 17.0, 18.0, 19.0),
+    ),
+    Scenario(
+        "mps-interference-vision-24",
+        "MPS interference: 24 vision",
+        "Vision24\nMPS@18",
+        18.0,
+        24,
+        "NVIDIA MPS",
+        "nvidia-mps-static-split",
+        (15.0, 17.0, 18.0, 19.0, 20.0),
+    ),
 )
-RATES = (15.0, 17.0, 19.0, 20.0, 21.0)
+RATES = tuple(
+    sorted({rate for scenario in SCENARIOS for rate in scenario.directional_rates_rps})
+)
 COLORS = {
     "QUIET": "#167D91",
     "NVIDIA MIG": "#6B7C85",
@@ -71,11 +124,14 @@ def validate_raw_summary(
     phase: str,
     balanced_rate: float,
     workers: int,
+    directional_rates: tuple[float, ...],
 ) -> dict[str, Any]:
     expected_design = (
         "directional-sweep" if phase == "directional" else "balanced-repeated"
     )
-    expected_rates = set(RATES) if phase == "directional" else {balanced_rate}
+    expected_rates = (
+        set(directional_rates) if phase == "directional" else {balanced_rate}
+    )
     expected_sessions = {1} if phase == "directional" else {1, 2, 3}
     expected_rows = len(expected_rates) * len(SYSTEMS) * len(expected_sessions)
     if (
@@ -150,12 +206,14 @@ def aggregate_group(rows: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 def compact_raw(
-    directional: dict[str, Any], balanced: dict[str, Any]
+    directional: dict[str, Any],
+    balanced: dict[str, Any],
+    rates: tuple[float, ...],
 ) -> dict[str, dict[str, Any]]:
     result: dict[str, dict[str, Any]] = {system: {} for system, _ in SYSTEMS}
     for system, mode in SYSTEMS:
         points: list[dict[str, Any]] = []
-        for rate in RATES:
+        for rate in rates:
             group = [
                 row
                 for row in directional["rows"]
@@ -177,38 +235,80 @@ def compact_raw(
     return result
 
 
-def first_mig_only_failure(systems: dict[str, dict[str, Any]]) -> float:
-    for index, rate in enumerate(RATES):
-        if (
-            systems["NVIDIA MIG"]["directional"][index]["misses"] > 0
-            and systems["NVIDIA MPS"]["directional"][index]["misses"] == 0
-            and systems["QUIET"]["directional"][index]["misses"] == 0
+def first_target_only_failure(
+    systems: dict[str, dict[str, Any]],
+    target_system: str,
+    rates: tuple[float, ...],
+) -> float:
+    """Return the first rate where only the selected vendor baseline misses."""
+    if target_system not in {"NVIDIA MIG", "NVIDIA MPS"}:
+        raise ValueError("failure target must be NVIDIA MIG or NVIDIA MPS")
+    by_system = {
+        system: {
+            float(point["rate_rps"]): int(point["misses"])
+            for point in values["directional"]
+        }
+        for system, values in systems.items()
+    }
+    for rate in rates:
+        if by_system[target_system][rate] > 0 and all(
+            by_system[system][rate] == 0
+            for system in by_system
+            if system != target_system
         ):
             return rate
-    raise ValueError("scenario lacks a MIG-only crossover")
+    raise ValueError("scenario lacks a target-only crossover")
 
 
 def load_campaign(campaign_path: Path, input_provenance_path: Path) -> dict[str, Any]:
     campaign_path = campaign_path.resolve()
     campaign = json.loads(campaign_path.read_text(encoding="utf-8"))
+    raw_rate_map = campaign.get("directional_rates_rps", {})
+    if not isinstance(raw_rate_map, dict):
+        raise ValueError("edge-mix directional-rate map differs")
+    rate_map = {
+        str(scenario_id): tuple(float(rate) for rate in rates)
+        for scenario_id, rates in raw_rate_map.items()
+    }
+    expected_rate_map = {
+        scenario.scenario_id: scenario.directional_rates_rps
+        for scenario in SCENARIOS
+    }
     if (
         campaign.get("kind") != "p9-whisper-edge-mix-campaign"
         or campaign.get("evidence_class")
         != "exploratory-nonthermal-motivation"
         or campaign.get("thermal_campaign") is not False
         or campaign.get("selection_policy")
-        != "four-predeclared-real-model-edge-tenant-categories"
+        != "two-placement-and-two-interference-regimes"
         or campaign.get("balanced_rate_policy")
-        != "first-directional-rate-with-MIG-misses-and-both-split-modes-zero"
-        or tuple(float(rate) for rate in campaign.get("directional_rates_rps", []))
-        != RATES
+        != "first-directional-rate-with-target-baseline-misses-and-other-baselines-zero"
+        or rate_map != expected_rate_map
         or int(campaign.get("balanced_sessions", 0)) != 3
         or int(campaign.get("requests_per_run", 0)) != 100
     ):
         raise ValueError("edge-mix campaign contract differs")
-    expected_order = [scenario_id for scenario_id, _, _, _ in SCENARIOS]
-    if [item.get("scenario_id") for item in campaign.get("scenario_order", [])] != expected_order:
+
+    scenario_order = campaign.get("scenario_order", [])
+    expected_order = [scenario.scenario_id for scenario in SCENARIOS]
+    if (
+        not isinstance(scenario_order, list)
+        or [item.get("scenario_id") for item in scenario_order] != expected_order
+    ):
         raise ValueError("edge-mix scenario order differs")
+    for specification, item in zip(SCENARIOS, scenario_order, strict=True):
+        if (
+            item.get("failure_target") != specification.failure_mode
+            or tuple(float(rate) for rate in item.get("directional_rates_rps", []))
+            != specification.directional_rates_rps
+            or float(item.get("balanced_rate_rps", -1.0))
+            != specification.balanced_rate_rps
+            or len(item.get("additional_backgrounds", [])) + 1
+            != specification.background_workers
+        ):
+            raise ValueError(
+                f"edge-mix scenario contract differs for {specification.scenario_id}"
+            )
     for binding_name in ("runner", "campaign_driver"):
         binding = campaign.get(binding_name, {})
         path = Path(str(binding.get("path", ""))).resolve()
@@ -242,7 +342,8 @@ def load_campaign(campaign_path: Path, input_provenance_path: Path) -> dict[str,
     scenario_results: dict[str, Any] = {}
     artifact_sha256: dict[str, str] = {}
     output_hashes: set[str] = set()
-    for scenario_id, label, balanced_rate, workers in SCENARIOS:
+    for specification in SCENARIOS:
+        scenario_id = specification.scenario_id
         raw_by_phase: dict[str, dict[str, Any]] = {}
         sources: dict[str, Any] = {}
         for phase in ("directional", "balanced"):
@@ -256,8 +357,9 @@ def load_campaign(campaign_path: Path, input_provenance_path: Path) -> dict[str,
                 json.loads(source.read_text(encoding="utf-8")),
                 scenario_id=scenario_id,
                 phase=phase,
-                balanced_rate=balanced_rate,
-                workers=workers,
+                balanced_rate=specification.balanced_rate_rps,
+                workers=specification.background_workers,
+                directional_rates=specification.directional_rates_rps,
             )
             provenance_path = source.with_name("provenance.json")
             provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
@@ -267,7 +369,9 @@ def load_campaign(campaign_path: Path, input_provenance_path: Path) -> dict[str,
                 previous = artifact_sha256.get(key)
                 if previous is not None and previous != digest:
                     raise ValueError(f"artifact hash changed across summaries: {path}")
-                if previous is None and (not path.is_file() or sha256(path) != digest):
+                if previous is None and (
+                    not path.is_file() or sha256(path) != digest
+                ):
                     raise ValueError(f"artifact hash differs: {path}")
                 artifact_sha256[key] = str(digest)
             raw_by_phase[phase] = raw
@@ -279,45 +383,78 @@ def load_campaign(campaign_path: Path, input_provenance_path: Path) -> dict[str,
                     "sha256": sha256(provenance_path),
                 },
             }
-        systems = compact_raw(raw_by_phase["directional"], raw_by_phase["balanced"])
-        if first_mig_only_failure(systems) != balanced_rate:
+        systems = compact_raw(
+            raw_by_phase["directional"],
+            raw_by_phase["balanced"],
+            specification.directional_rates_rps,
+        )
+        selected_rate = first_target_only_failure(
+            systems,
+            specification.failure_system,
+            specification.directional_rates_rps,
+        )
+        if selected_rate != specification.balanced_rate_rps:
             raise ValueError(f"balanced crossover selection differs for {scenario_id}")
+        balanced_rows = {
+            system: systems[system]["balanced"] for system, _ in SYSTEMS
+        }
+        if int(balanced_rows[specification.failure_system]["misses"]) <= 0 or any(
+            int(row["misses"]) != 0
+            for system, row in balanced_rows.items()
+            if system != specification.failure_system
+        ):
+            raise ValueError(f"balanced target-only failure differs for {scenario_id}")
         scenario_results[scenario_id] = {
-            "label": label,
-            "background_workers": workers,
+            "label": specification.label,
+            "short_label": specification.short_label,
+            "failure_target": specification.failure_system,
+            "failure_class": (
+                "placement" if specification.failure_system == "NVIDIA MIG"
+                else "shared-instance-interference"
+            ),
+            "background_workers": specification.background_workers,
             "background_models": raw_by_phase["balanced"]["scenario"][
                 "background_models"
             ],
             "deployment_scope": raw_by_phase["balanced"]["scenario"][
                 "deployment_scope"
             ],
-            "balanced_rate_rps": balanced_rate,
+            "directional_rates_rps": list(
+                specification.directional_rates_rps
+            ),
+            "balanced_rate_rps": specification.balanced_rate_rps,
             "systems": systems,
             "sources": sources,
         }
     if len(output_hashes) != 1:
         raise ValueError("foreground outputs differ across the edge-mix campaign")
 
-    balanced_requests = sum(
-        scenario["systems"][system]["balanced"]["requests"]
-        for scenario in scenario_results.values()
+    system_totals = {
+        system: {
+            "requests": sum(
+                scenario["systems"][system]["balanced"]["requests"]
+                for scenario in scenario_results.values()
+            ),
+            "misses": sum(
+                scenario["systems"][system]["balanced"]["misses"]
+                for scenario in scenario_results.values()
+            ),
+        }
         for system, _ in SYSTEMS
-    )
-    split_misses = sum(
-        scenario["systems"][system]["balanced"]["misses"]
-        for scenario in scenario_results.values()
-        for system in ("QUIET", "NVIDIA MPS")
-    )
-    if split_misses != 0:
-        raise ValueError("a selected balanced split-mode row has deadline misses")
+    }
+    if system_totals["QUIET"]["misses"] != 0:
+        raise ValueError("QUIET has misses in a selected balanced regime")
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "kind": "p9-whisper-edge-mix-regimes-compact",
         "evidence_class": "exploratory-nonthermal-motivation",
         "thermal_campaign": False,
         "system_order": [system for system, _ in SYSTEMS],
         "scenario_order": expected_order,
-        "directional_rates_rps": list(RATES),
+        "directional_rates_rps": {
+            scenario.scenario_id: list(scenario.directional_rates_rps)
+            for scenario in SCENARIOS
+        },
         "deadline_us": 250000.0,
         "pipeline_slots": 3,
         "foreground": "Whisper-Tiny encoder-decoder on labelled LibriSpeech windows",
@@ -327,7 +464,8 @@ def load_campaign(campaign_path: Path, input_provenance_path: Path) -> dict[str,
         ),
         "background_policy": (
             "saturated queued TensorRT workers using real DistilBERT-SST2, "
-            "ResNet10-detection, and Whisper-Tiny encoder plans"
+            "ResNet10-detection, and Whisper-Tiny encoder plans; high-fanout "
+            "interference regimes use 20 speech or 24 vision workers"
         ),
         "balanced_rate_policy": campaign["balanced_rate_policy"],
         "scenarios": scenario_results,
@@ -336,8 +474,10 @@ def load_campaign(campaign_path: Path, input_provenance_path: Path) -> dict[str,
             "sha256": next(iter(output_hashes)),
         },
         "balanced_totals": {
-            "all_system_requests": balanced_requests,
-            "quiet_plus_mps_misses": split_misses,
+            "all_system_requests": sum(
+                values["requests"] for values in system_totals.values()
+            ),
+            "by_system": system_totals,
         },
         "campaign": {"path": portable(campaign_path), "sha256": sha256(campaign_path)},
         "input_provenance": {
@@ -346,11 +486,11 @@ def load_campaign(campaign_path: Path, input_provenance_path: Path) -> dict[str,
         },
         "artifact_sha256": artifact_sha256,
         "claim_guard": (
-            "The model combinations and tenant topology are plausible Jetson deployments, "
-            "but fixed-rate arrivals, saturated background queues, and cyclic input replay "
-            "are stress conditions rather than a field trace. Both split modes have zero "
-            "balanced misses, so this campaign motivates stage placement over pure MIG; it "
-            "does not establish a protection-gate advantage over static MPS."
+            "Two low-fanout cases expose MIG placement loss; two high-fanout cases "
+            "expose static-MPS producer interference. Fixed-rate arrivals, saturated "
+            "queues, and cyclic input replay are controlled stress conditions rather "
+            "than a field trace. This is nonthermal exploratory motivation, not a "
+            "formal deployment or thermal claim."
         ),
     }
 
@@ -399,7 +539,8 @@ def render_balanced_table(summary: dict[str, Any], output: Path) -> Path:
         (
             r"\caption{Balanced nonthermal edge-mix crossovers.  Each row aggregates "
             r"three rotated 100-request sessions at the first directional rate where "
-            r"MIG misses and both split-stage modes remain at zero.}"
+            r"the named vendor baseline misses while the other baseline and QUIET "
+            r"remain at zero.}"
         ),
         r"\label{tab:edge-mix-balanced}",
         r"\setlength{\tabcolsep}{3.5pt}",
@@ -407,20 +548,23 @@ def render_balanced_table(summary: dict[str, Any], output: Path) -> Path:
         r"\begin{tabular}{llrrrrrrr}",
         r"\toprule",
         (
-            r"Workload at foreground rate & System & Requests & Misses & DMR & "
+            r"Failure regime at foreground rate & System & Requests & Misses & DMR & "
             r"p99 (ms) & Queue p99 (ms) & Critical rps & BE rps \\"
         ),
         r"\midrule",
     ]
-    for scenario_index, (scenario_id, label, rate, _) in enumerate(SCENARIOS):
-        scenario = summary["scenarios"][scenario_id]
+    for scenario_index, specification in enumerate(SCENARIOS):
+        scenario = summary["scenarios"][specification.scenario_id]
+        rate = specification.balanced_rate_rps
         if float(scenario["balanced_rate_rps"]) != rate:
-            raise ValueError(f"table rate differs for {scenario_id}")
+            raise ValueError(
+                f"table rate differs for {specification.scenario_id}"
+            )
         for system, _ in SYSTEMS:
             row = scenario["systems"][system]["balanced"]
             system_label = r"\textbf{QUIET}" if system == "QUIET" else system
             lines.append(
-                f"{label} @ {rate:g} rps & {system_label} & "
+                f"{specification.label} @ {rate:g} rps & {system_label} & "
                 f"{int(row['requests']):,} & {int(row['misses']):,} & "
                 f"{100.0 * float(row['observed_dmr']):.3f}\\% & "
                 f"{float(row['mean_session_p99_us']) / 1000.0:.3f} & "
@@ -452,19 +596,21 @@ def draw_frontier(summary: dict[str, Any], stem: Path) -> list[Path]:
         gridspec_kw={"hspace": 0.42, "wspace": 0.28},
     )
     handles: list[Any] = []
-    for row_index, (scenario_id, label, balanced_rate, _) in enumerate(SCENARIOS):
-        scenario = summary["scenarios"][scenario_id]
+    for row_index, specification in enumerate(SCENARIOS):
+        scenario = summary["scenarios"][specification.scenario_id]
+        rates = specification.directional_rates_rps
+        balanced_rate = specification.balanced_rate_rps
         maximum_p99 = 250.0
         for system, _ in SYSTEMS:
             points = scenario["systems"][system]["directional"]
             dmr = [100.0 * float(point["observed_dmr"]) for point in points]
             p99 = [float(point["mean_session_p99_us"]) / 1000.0 for point in points]
             line = axes[row_index, 0].plot(
-                RATES, dmr, color=COLORS[system], marker=MARKERS[system],
+                rates, dmr, color=COLORS[system], marker=MARKERS[system],
                 linewidth=1.55, markersize=4.2, label=system,
             )[0]
             axes[row_index, 1].plot(
-                RATES, p99, color=COLORS[system], marker=MARKERS[system],
+                rates, p99, color=COLORS[system], marker=MARKERS[system],
                 linewidth=1.55, markersize=4.2, label=system,
             )
             maximum_p99 = max(maximum_p99, *p99)
@@ -483,13 +629,17 @@ def draw_frontier(summary: dict[str, Any], stem: Path) -> list[Path]:
         axes[row_index, 1].set_ylim(
             0, max(350.0, math.ceil(maximum_p99 * 1.08 / 50.0) * 50.0)
         )
-        axes[row_index, 0].set_title(f"{label}: deadline misses")
-        axes[row_index, 1].set_title(f"{label}: production-wall p99")
+        axes[row_index, 0].set_title(
+            f"{specification.label}: deadline misses"
+        )
+        axes[row_index, 1].set_title(
+            f"{specification.label}: production-wall p99"
+        )
         axes[row_index, 0].set_ylabel("observed DMR (%)")
         axes[row_index, 1].set_ylabel("p99 (ms)")
         axes[row_index, 0].grid(axis="x", visible=False)
         axes[row_index, 1].grid(axis="x", visible=False)
-        annotation_at_right_edge = balanced_rate == max(RATES)
+        annotation_at_right_edge = balanced_rate == max(rates)
         annotation_x = (
             balanced_rate - 0.08
             if annotation_at_right_edge
@@ -497,7 +647,10 @@ def draw_frontier(summary: dict[str, Any], stem: Path) -> list[Path]:
         )
         annotation_alignment = "right" if annotation_at_right_edge else "left"
         axes[row_index, 0].text(
-            annotation_x, 95, f"repeat @ {balanced_rate:g}",
+            annotation_x,
+            95,
+            f"{specification.failure_system.removeprefix('NVIDIA ')} fails "
+            f"@ {balanced_rate:g}",
             color="#A52A3A", fontsize=6.7, ha=annotation_alignment, va="top",
         )
     for axis in axes[-1, :]:
@@ -511,7 +664,8 @@ def draw_frontier(summary: dict[str, Any], stem: Path) -> list[Path]:
     fig.text(
         0.5, 0.014,
         "Each point is 100 requests. Every panel repeats QUIET, NVIDIA MIG, and NVIDIA MPS; "
-        "dotted lines mark the first MIG-only failure rate. Nonthermal exploratory stress.",
+        "dotted lines mark the first target-baseline-only failure rate. "
+        "Nonthermal exploratory stress.",
         ha="center", va="bottom", fontsize=7.0, color="#5F6B70",
     )
     return save(fig, stem)
@@ -520,25 +674,37 @@ def draw_frontier(summary: dict[str, Any], stem: Path) -> list[Path]:
 def draw_balanced(summary: dict[str, Any], stem: Path) -> list[Path]:
     configure_style()
     order = [system for system, _ in SYSTEMS]
-    labels = ["NLP\n@19", "Vision\n@21", "Speech\n@21", "Multimodal\n@20"]
+    labels = [scenario.short_label for scenario in SCENARIOS]
     x = np.arange(len(SCENARIOS))
     width = 0.24
-    fig, axes = plt.subplots(1, 3, figsize=(8.0, 3.25), gridspec_kw={"wspace": 0.34})
+    fig, axes = plt.subplots(
+        1, 3, figsize=(9.0, 3.25), gridspec_kw={"wspace": 0.34}
+    )
     handles: list[Any] = []
+    all_dmr: list[float] = []
+    all_p99: list[float] = []
+    all_retention: list[float] = []
     for system_index, system in enumerate(order):
         offset = (system_index - 1) * width
         rows = [
             summary["scenarios"][scenario_id]["systems"][system]["balanced"]
-            for scenario_id, _, _, _ in SCENARIOS
+            for scenario_id in (scenario.scenario_id for scenario in SCENARIOS)
         ]
         dmr = [100.0 * float(row["observed_dmr"]) for row in rows]
         p99 = [float(row["mean_session_p99_us"]) / 1000.0 for row in rows]
         retention = []
         for scenario, row in zip(SCENARIOS, rows, strict=True):
-            mig = summary["scenarios"][scenario[0]]["systems"]["NVIDIA MIG"][
-                "balanced"
-            ]["mean_background_goodput_rps"]
-            retention.append(100.0 * float(row["mean_background_goodput_rps"]) / float(mig))
+            mig = summary["scenarios"][scenario.scenario_id]["systems"][
+                "NVIDIA MIG"
+            ]["balanced"]["mean_background_goodput_rps"]
+            retention.append(
+                100.0
+                * float(row["mean_background_goodput_rps"])
+                / float(mig)
+            )
+        all_dmr.extend(dmr)
+        all_p99.extend(p99)
+        all_retention.extend(retention)
         bars = axes[0].bar(
             x + offset, dmr, width, color=COLORS[system], edgecolor="#263238",
             linewidth=0.6, hatch=HATCHES[system], label=system,
@@ -563,18 +729,26 @@ def draw_balanced(summary: dict[str, Any], stem: Path) -> list[Path]:
                     position, 0.8, "0", color=COLORS[system], ha="center",
                     va="bottom", fontsize=6.5, fontweight="bold",
                 )
-    axes[0].set_ylim(0, 72)
+    axes[0].set_ylim(
+        0,
+        min(110.0, max(10.0, math.ceil(max(all_dmr) * 1.2 / 10.0) * 10.0)),
+    )
     axes[0].set_ylabel("observed DMR (%)")
     axes[0].set_title("(a) Deadline misses")
     axes[1].axhline(250.0, color="#A52A3A", linestyle="--", linewidth=0.95)
-    axes[1].set_ylim(0, 525)
+    axes[1].set_ylim(
+        0, max(300.0, math.ceil(max(all_p99) * 1.12 / 50.0) * 50.0)
+    )
     axes[1].set_ylabel("mean session p99 (ms)")
     axes[1].set_title("(b) Production-wall tail")
-    axes[2].set_ylim(0, 112)
+    axes[2].set_ylim(
+        0, max(110.0, math.ceil(max(all_retention) * 1.08 / 10.0) * 10.0)
+    )
     axes[2].set_ylabel("BE goodput vs. MIG (%)")
     axes[2].set_title("(c) Background retention")
     for axis in axes:
         axis.set_xticks(x, labels)
+        axis.tick_params(axis="x", labelsize=6.8, pad=4)
         axis.grid(axis="x", visible=False)
     fig.legend(
         handles, order, loc="upper center", bbox_to_anchor=(0.5, 1.01),
@@ -583,7 +757,7 @@ def draw_balanced(summary: dict[str, Any], stem: Path) -> list[Path]:
     fig.subplots_adjust(top=0.83, bottom=0.28)
     fig.text(
         0.5, 0.035,
-        "Three rotated 100-request sessions per system at 19/21/21/20 requests/s. "
+        "Three rotated 100-request sessions per system at 19/21/17/18 requests/s. "
         "All foreground output traces are byte-identical; nonthermal exploratory motivation.",
         ha="center", va="bottom", fontsize=7.0, color="#5F6B70",
     )

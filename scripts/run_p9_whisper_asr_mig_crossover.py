@@ -37,6 +37,13 @@ MODES = (
     Mode("nvidia-mps-static-split", "1g", "small", False),
     Mode("quiet", "1g", "small", True),
 )
+BACKGROUND_CPUS = tuple(range(13))
+
+
+def background_cpu(index: int) -> int:
+    if index < 0:
+        raise ValueError("background worker index must be non-negative")
+    return BACKGROUND_CPUS[index % len(BACKGROUND_CPUS)]
 
 
 def parse_additional_background(value: str) -> tuple[str, pathlib.Path]:
@@ -199,7 +206,7 @@ def run_one(
         for index, specification in enumerate(args.backgrounds):
             background = subprocess.Popen(
                 [
-                    "taskset", "--cpu-list", str(index),
+                    "taskset", "--cpu-list", str(background_cpu(index)),
                     str(args.background_binary),
                     "--engine", str(specification.engine),
                     "--model-name", specification.model_name,

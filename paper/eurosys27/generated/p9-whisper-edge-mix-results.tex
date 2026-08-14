@@ -3,29 +3,29 @@
 \begin{table*}[t]
 \centering
 \footnotesize
-\caption{Balanced nonthermal edge-mix crossovers.  Each row aggregates three rotated 100-request sessions at the first directional rate where MIG misses and both split-stage modes remain at zero.}
+\caption{Balanced nonthermal edge-mix crossovers.  Each row aggregates three rotated 100-request sessions at the first directional rate where the named vendor baseline misses while the other baseline and QUIET remain at zero.}
 \label{tab:edge-mix-balanced}
 \setlength{\tabcolsep}{3.5pt}
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{llrrrrrrr}
 \toprule
-Workload at foreground rate & System & Requests & Misses & DMR & p99 (ms) & Queue p99 (ms) & Critical rps & BE rps \\
+Failure regime at foreground rate & System & Requests & Misses & DMR & p99 (ms) & Queue p99 (ms) & Critical rps & BE rps \\
 \midrule
-Speech + NLP @ 19 rps & \textbf{QUIET} & 300 & 0 & 0.000\% & 153.563 & 0.890 & 18.732 & 839.354 \\
-Speech + NLP @ 19 rps & NVIDIA MIG & 300 & 137 & 45.667\% & 379.680 & 208.883 & 17.902 & 922.004 \\
-Speech + NLP @ 19 rps & NVIDIA MPS & 300 & 0 & 0.000\% & 153.555 & 0.660 & 18.728 & 846.001 \\
+MIG placement: NLP @ 19 rps & \textbf{QUIET} & 300 & 0 & 0.000\% & 156.651 & 0.993 & 18.720 & 825.311 \\
+MIG placement: NLP @ 19 rps & NVIDIA MIG & 300 & 196 & 65.333\% & 485.142 & 306.738 & 17.558 & 907.372 \\
+MIG placement: NLP @ 19 rps & NVIDIA MPS & 300 & 0 & 0.000\% & 156.730 & 0.702 & 18.716 & 828.719 \\
 \midrule
-Speech + Vision @ 21 rps & \textbf{QUIET} & 300 & 0 & 0.000\% & 141.922 & 0.920 & 20.701 & 1369.038 \\
-Speech + Vision @ 21 rps & NVIDIA MIG & 300 & 89 & 29.667\% & 330.456 & 175.680 & 19.845 & 1552.390 \\
-Speech + Vision @ 21 rps & NVIDIA MPS & 300 & 0 & 0.000\% & 140.670 & 0.739 & 20.696 & 1360.312 \\
+MIG placement: vision @ 21 rps & \textbf{QUIET} & 300 & 0 & 0.000\% & 142.639 & 1.089 & 20.692 & 1344.868 \\
+MIG placement: vision @ 21 rps & NVIDIA MIG & 300 & 119 & 39.667\% & 354.088 & 199.492 & 19.740 & 1531.099 \\
+MIG placement: vision @ 21 rps & NVIDIA MPS & 300 & 0 & 0.000\% & 143.170 & 0.917 & 20.692 & 1341.035 \\
 \midrule
-Speech + Speech @ 21 rps & \textbf{QUIET} & 300 & 0 & 0.000\% & 157.377 & 15.041 & 20.662 & 542.250 \\
-Speech + Speech @ 21 rps & NVIDIA MIG & 300 & 186 & 62.000\% & 474.308 & 307.325 & 19.274 & 623.085 \\
-Speech + Speech @ 21 rps & NVIDIA MPS & 300 & 0 & 0.000\% & 150.689 & 8.355 & 20.672 & 538.934 \\
+MPS interference: 20 speech @ 17 rps & \textbf{QUIET} & 300 & 0 & 0.000\% & 175.607 & 5.297 & 16.753 & 526.009 \\
+MPS interference: 20 speech @ 17 rps & NVIDIA MIG & 300 & 0 & 0.000\% & 170.421 & 2.995 & 16.781 & 558.248 \\
+MPS interference: 20 speech @ 17 rps & NVIDIA MPS & 300 & 103 & 34.333\% & 358.851 & 183.814 & 16.188 & 523.333 \\
 \midrule
-Speech + Multimodal @ 20 rps & \textbf{QUIET} & 300 & 0 & 0.000\% & 149.197 & 0.834 & 19.700 & 836.692 \\
-Speech + Multimodal @ 20 rps & NVIDIA MIG & 300 & 168 & 56.000\% & 422.364 & 256.082 & 18.615 & 950.023 \\
-Speech + Multimodal @ 20 rps & NVIDIA MPS & 300 & 0 & 0.000\% & 153.711 & 4.255 & 19.689 & 825.890 \\
+MPS interference: 24 vision @ 18 rps & \textbf{QUIET} & 300 & 0 & 0.000\% & 156.945 & 1.419 & 17.774 & 1349.538 \\
+MPS interference: 24 vision @ 18 rps & NVIDIA MIG & 300 & 0 & 0.000\% & 168.003 & 5.278 & 17.785 & 1435.987 \\
+MPS interference: 24 vision @ 18 rps & NVIDIA MPS & 300 & 192 & 64.000\% & 493.180 & 323.284 & 16.687 & 1346.574 \\
 \bottomrule
 \end{tabular}%
 }

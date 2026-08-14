@@ -21,7 +21,6 @@ def arguments() -> argparse.Namespace:
         repo=ROOT,
         runner=ROOT / "scripts/run_p9_whisper_asr_mig_crossover.py",
         input_trace=ROOT / "inputs.bin",
-        directional_rates=[15.0, 17.0, 19.0, 20.0, 21.0],
         balanced_sessions=3,
         requests=100,
         warmup=2,
@@ -33,21 +32,40 @@ class WhisperEdgeMixCampaignTest(unittest.TestCase):
         self.assertEqual(
             [scenario.scenario_id for scenario in MODULE.SCENARIOS],
             [
-                "speech-plus-nlp",
-                "speech-plus-vision",
-                "speech-plus-speech",
-                "speech-plus-multimodal",
+                "mig-placement-nlp",
+                "mig-placement-vision",
+                "mps-interference-speech-20",
+                "mps-interference-vision-24",
             ],
         )
         self.assertEqual(
-            {scenario.background_model_name for scenario in MODULE.SCENARIOS},
-            {"distilbert-sst2", "resnet10-detection", "whisper-tiny-encoder"},
+            {
+                pathlib.Path(scenario.background_engine).name
+                for scenario in MODULE.SCENARIOS
+            },
+            {
+                "distilbert-sst2.engine",
+                "resnet10-detection.engine",
+                "whisper-tiny-encoder.engine",
+            },
         )
         self.assertEqual(
             [scenario.balanced_rate_rps for scenario in MODULE.SCENARIOS],
-            [19.0, 21.0, 21.0, 20.0],
+            [19.0, 21.0, 17.0, 18.0],
         )
-        self.assertEqual(len(MODULE.SCENARIOS[-1].additional_backgrounds), 2)
+        self.assertEqual(
+            [scenario.failure_target for scenario in MODULE.SCENARIOS],
+            [
+                "nvidia-mig",
+                "nvidia-mig",
+                "nvidia-mps-static-split",
+                "nvidia-mps-static-split",
+            ],
+        )
+        self.assertEqual(
+            [len(scenario.additional_backgrounds) + 1 for scenario in MODULE.SCENARIOS],
+            [1, 1, 20, 24],
+        )
 
     def test_command_freezes_scenario_metadata_and_directional_rates(self) -> None:
         args = arguments()
@@ -57,16 +75,16 @@ class WhisperEdgeMixCampaignTest(unittest.TestCase):
         self.assertEqual(
             command[-5:], ["15.0", "17.0", "19.0", "20.0", "21.0"]
         )
-        self.assertIn("speech-plus-vision", command)
+        self.assertIn("mig-placement-vision", command)
         self.assertIn("resnet10-detection", command)
         self.assertIn("--deployment-scope", command)
 
-    def test_multimodal_command_launches_three_background_workers(self) -> None:
+    def test_high_fanout_command_launches_twenty_four_background_workers(self) -> None:
         command = MODULE.command_for(
             arguments(), MODULE.SCENARIOS[-1], "balanced", ROOT / "result"
         )
-        self.assertEqual(command.count("--additional-background"), 2)
-        self.assertIn("20.0", command)
+        self.assertEqual(command.count("--additional-background"), 23)
+        self.assertIn("18.0", command)
 
     def test_balanced_summary_requires_all_modes_and_sessions(self) -> None:
         args = arguments()
@@ -100,7 +118,7 @@ class WhisperEdgeMixCampaignTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "incomplete balanced matrix"):
                 MODULE.validate_summary(path, scenario, "balanced", args)
 
-    def test_balanced_rate_is_first_mig_only_failure(self) -> None:
+    def test_balanced_rate_is_first_target_only_failure(self) -> None:
         aggregate = []
         for rate, mig_misses in ((17.0, 0), (19.0, 42), (20.0, 77)):
             for mode in (
@@ -116,7 +134,21 @@ class WhisperEdgeMixCampaignTest(unittest.TestCase):
                     }
                 )
         self.assertEqual(
-            MODULE.first_mig_only_failure({"aggregate": aggregate}), 19.0
+            MODULE.first_target_only_failure(
+                {"aggregate": aggregate}, "nvidia-mig"
+            ),
+            19.0,
+        )
+        for item in aggregate:
+            if item["mode"] == "nvidia-mig":
+                item["deadline_misses"] = 0
+            elif item["mode"] == "nvidia-mps-static-split":
+                item["deadline_misses"] = 42 if item["rate_rps"] >= 19.0 else 0
+        self.assertEqual(
+            MODULE.first_target_only_failure(
+                {"aggregate": aggregate}, "nvidia-mps-static-split"
+            ),
+            19.0,
         )
 
 
