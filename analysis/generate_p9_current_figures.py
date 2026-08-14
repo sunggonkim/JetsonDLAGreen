@@ -557,6 +557,27 @@ def generate_tables(
         and six_system.get("requests_per_system") == 90,
         "six-system common gate is missing, rankable, or reordered",
     )
+    mig_constraints = six_system.get("mig_topology_constraints", {})
+    require(
+        mig_constraints.get("maximum_simultaneous_instances") == 2
+        and mig_constraints.get("three_way_1g_supported") is False,
+        "Thor MIG topology constraint is missing or permits an invalid three-way split",
+    )
+    mig_partial = six_system.get("partial_topology_comparisons", {}).get(
+        "NVIDIA MIG (2g DAG + 1g BE)"
+    )
+    require(
+        isinstance(mig_partial, dict)
+        and mig_partial.get("requests") == 90
+        and mig_partial.get("misses") == 0
+        and mig_partial.get("background_goodput_applicable") is True
+        and mig_partial.get("evidence_scope")
+        == "partial-topology-variant-same-input-arrival-deadline"
+        and float(mig_partial.get("candidate_accuracy", 0.0))
+        >= float(mig_partial.get("reference_accuracy", 1.0))
+        and abs(float(mig_partial.get("accuracy_delta", math.inf))) <= 0.02,
+        "validated 2g-DAG + 1g-BE MIG partial comparison is missing",
+    )
     require(historical["kind"] == "p9-numeric-sota-williams-aggregate", "unexpected historical aggregate")
     require(structural["kind"] == "p9-structural-limit-evidence", "unexpected structural evidence")
     require(bless["status"] == "structural-incompatibility-characterized", "BLESS compatibility boundary is missing")
@@ -646,7 +667,7 @@ def generate_tables(
             r"\begin{table*}[t]",
             r"\centering",
             r"\footnotesize",
-            r"\caption{Fixed six-system directional ImageNette gate. Every row uses the same 90 labelled inputs, arrival trace, and $2{,}224.448~\mu$s deadline. CP95 is not formal at this sample count. MIG's zero BE rate records that both physical slices serve the critical DAG.}",
+            r"\caption{Fixed six-system directional ImageNette gate. Every row uses the same 90 labelled inputs, arrival trace, and $2{,}224.448~\mu$s deadline. CP95 is not formal at this sample count. MIG's BE entry is N/A because both physical instances serve the critical DAG and no BE tenant is admitted.}",
             r"\label{tab:native-comparators}",
             r"\setlength{\tabcolsep}{3.5pt}",
             r"\resizebox{\textwidth}{!}{%",
@@ -668,13 +689,38 @@ def generate_tables(
         row = common_systems[name]
         display = r"\textbf{QUIET}" if name == "QUIET" else name
         cp95 = 100.0 * float(row["dmr_cp95_upper"])
+        be_goodput = (
+            f"{row['background_goodput_rps']:.2f}"
+            if row.get("background_goodput_applicable", True)
+            else "N/A"
+        )
         lines.append(
             f"{display} & {row['requests']} & {row['misses']} & {cp95:.4f}\\% & "
-            f"{row['p99_us']:,.2f} & {row['background_goodput_rps']:.2f} & "
+            f"{row['p99_us']:,.2f} & {be_goodput} & "
             f"{row['candidate_accuracy']:.4f} & {scope[name]} \\\\"
         )
     lines.extend(
         [
+            r"\bottomrule",
+            r"\end{tabular}%",
+            r"}",
+            r"\end{table*}",
+            r"}",
+            "",
+            r"\newcommand{\PnineMigTopologyTable}{%",
+            r"\begin{table*}[t]",
+            r"\centering",
+            r"\footnotesize",
+            r"\caption{Directional MIG topology comparison. Both rows replay the same 90 labelled inputs, operational arrival trace, and $2{,}224.448~\mu$s deadline. Thor cannot form three simultaneous 1g instances. The colocated row changes stage placement and rebuilds the producer plan for 2g, so it is partial evidence rather than a fixed-roster ranking point.}",
+            r"\label{tab:mig-topology-partial}",
+            r"\setlength{\tabcolsep}{3.5pt}",
+            r"\resizebox{\textwidth}{!}{%",
+            r"\begin{tabular}{llllrrrrr}",
+            r"\toprule",
+            r"Layout & Producer & Consumer & BE tenant & Requests & Misses & p99 ($\mu$s) & BE rps & Accuracy \\",
+            r"\midrule",
+            f"Split critical stages & 1g & 2g & not admitted & {common_systems['NVIDIA MIG']['requests']} & {common_systems['NVIDIA MIG']['misses']} & {common_systems['NVIDIA MIG']['p99_us']:,.2f} & N/A & {common_systems['NVIDIA MIG']['candidate_accuracy']:.4f} " + r"\\",
+            f"Colocated critical DAG & 2g & same 2g & isolated 1g & {mig_partial['requests']} & {mig_partial['misses']} & {mig_partial['p99_us']:,.2f} & {mig_partial['background_goodput_rps']:.2f} & {mig_partial['candidate_accuracy']:.4f} " + r"\\",
             r"\bottomrule",
             r"\end{tabular}%",
             r"}",

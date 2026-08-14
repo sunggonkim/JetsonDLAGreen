@@ -235,6 +235,39 @@ class DependentStressSmokeTest(unittest.TestCase):
         self.assertEqual(mig.name, "nvidia-mig-isolation")
         self.assertFalse(mig.best_effort_admitted)
 
+    def test_colocated_mig_partial_control_reserves_the_1g_slice_for_be(self) -> None:
+        self.assertEqual(len(MODULE.PARTIAL_TOPOLOGY_SCENARIOS), 1)
+        scenario = MODULE.PARTIAL_TOPOLOGY_SCENARIOS[0]
+        self.assertEqual(scenario.name, "nvidia-mig-colocated-critical-dag")
+        self.assertEqual(scenario.critical_placement, "big")
+        self.assertTrue(scenario.best_effort_admitted)
+        self.assertNotIn(scenario, MODULE.DEFAULT_SCENARIOS)
+
+    def test_colocated_mig_summary_is_explicitly_partial(self) -> None:
+        scenario = MODULE.PARTIAL_TOPOLOGY_SCENARIOS[0]
+        row = MODULE.summarize(
+            scenario,
+            {
+                "status": "ok", "checksum_failures": 0, "iterations": 2,
+                "deadline_misses": 0, "end_to_end_us": {"p99": 10.0},
+                "deadline_mode": "wall", "stage_latency_us": {},
+                "payload_bytes": 14720, "unique_payload_checksums": 2,
+                "unique_policy_output_checksums": 2,
+                "producer_uuid": "MIG-big", "consumer_uuid": "MIG-big",
+            },
+            {"throughput_per_second": 250.0},
+        )
+        self.assertEqual(row["comparison_scope"], "partial-topology-variant")
+        self.assertEqual(
+            row["placement_variant"],
+            "colocated-2g-critical-dag-1g-best-effort",
+        )
+        self.assertEqual(
+            row["workload_contract_placement"],
+            "fixed-1g-producer-2g-consumer",
+        )
+        self.assertEqual(row["producer_uuid"], row["consumer_uuid"])
+
     def test_static_full_gate_is_a_descriptive_same_slo_baseline(self) -> None:
         baseline = next(item for item in MODULE.DEFAULT_SCENARIOS if item.name == "static-full-gate")
         self.assertEqual(MODULE.PUBLIC_SYSTEM_NAMES[baseline.name], "Static full gating")

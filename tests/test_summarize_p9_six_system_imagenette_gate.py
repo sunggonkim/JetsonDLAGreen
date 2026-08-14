@@ -37,8 +37,9 @@ class SixSystemImageNetteGateTest(unittest.TestCase):
     def test_current_hardware_evidence_replays_when_available(self) -> None:
         required = (
             MODULE.DEFAULT_COMMON, MODULE.DEFAULT_LOCK, MODULE.DEFAULT_QUIET,
-            MODULE.DEFAULT_MIG, MODULE.DEFAULT_MPS, MODULE.DEFAULT_XSCHED,
-            MODULE.DEFAULT_ORION, MODULE.DEFAULT_PANTHEON,
+            MODULE.DEFAULT_MIG, MODULE.DEFAULT_MIG_COLOCATED,
+            MODULE.DEFAULT_MPS, MODULE.DEFAULT_XSCHED, MODULE.DEFAULT_ORION,
+            MODULE.DEFAULT_PANTHEON,
         )
         if not all(path.is_file() for path in required):
             self.skipTest("local ignored hardware corpus is unavailable")
@@ -47,6 +48,7 @@ class SixSystemImageNetteGateTest(unittest.TestCase):
             deadline_path=MODULE.DEFAULT_LOCK,
             quiet_path=MODULE.DEFAULT_QUIET,
             mig_path=MODULE.DEFAULT_MIG,
+            mig_colocated_path=MODULE.DEFAULT_MIG_COLOCATED,
             mps_path=MODULE.DEFAULT_MPS,
             xsched_path=MODULE.DEFAULT_XSCHED,
             orion_path=MODULE.DEFAULT_ORION,
@@ -54,6 +56,17 @@ class SixSystemImageNetteGateTest(unittest.TestCase):
         )
         self.assertEqual(value["system_order"], list(MODULE.SYSTEM_ORDER))
         self.assertEqual(value["systems"]["NVIDIA MIG"]["background_goodput_rps"], 0.0)
+        self.assertFalse(
+            value["systems"]["NVIDIA MIG"]["background_goodput_applicable"]
+        )
+        colocated = value["partial_topology_comparisons"][
+            "NVIDIA MIG (2g DAG + 1g BE)"
+        ]
+        self.assertEqual(colocated["misses"], 0)
+        self.assertGreater(colocated["background_goodput_rps"], 249.0)
+        self.assertEqual(colocated["evidence_scope"],
+                         "partial-topology-variant-same-input-arrival-deadline")
+        self.assertFalse(value["mig_topology_constraints"]["three_way_1g_supported"])
         self.assertEqual(value["systems"]["Orion"]["misses"], 90)
         self.assertEqual(value["systems"]["Pantheon"]["misses"], 2)
         self.assertFalse(value["formal"])
@@ -66,6 +79,10 @@ class SixSystemImageNetteGateTest(unittest.TestCase):
         value = json.loads(path.read_bytes())
         self.assertEqual(value["system_order"], list(MODULE.SYSTEM_ORDER))
         self.assertEqual(tuple(value["systems"]), MODULE.SYSTEM_ORDER)
+        self.assertIn(
+            "NVIDIA MIG (2g DAG + 1g BE)",
+            value["partial_topology_comparisons"],
+        )
 
 
 if __name__ == "__main__":

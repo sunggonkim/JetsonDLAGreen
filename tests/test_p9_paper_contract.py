@@ -70,6 +70,29 @@ class P9PaperContractTest(unittest.TestCase):
         self.assertEqual(tuple(policy["executed_result_order"]), systems)
         self.assertEqual(tuple(compact["system_order"]), systems)
         self.assertEqual(tuple(compact["systems"]), systems)
+        self.assertFalse(
+            compact["systems"]["NVIDIA MIG"]["background_goodput_applicable"]
+        )
+        self.assertEqual(
+            compact["mig_topology_constraints"]["maximum_simultaneous_instances"],
+            2,
+        )
+        self.assertFalse(
+            compact["mig_topology_constraints"]["three_way_1g_supported"]
+        )
+        mig_partial = compact["partial_topology_comparisons"][
+            "NVIDIA MIG (2g DAG + 1g BE)"
+        ]
+        self.assertEqual(mig_partial["requests"], 90)
+        self.assertEqual(mig_partial["misses"], 0)
+        self.assertTrue(mig_partial["background_goodput_applicable"])
+        self.assertFalse(
+            manifest["rows"]["NVIDIA MIG"]["partial_topology_variant"][
+                "ranking_allowed"
+            ]
+        )
+        self.assertIn(r"\newcommand{\PnineMigTopologyTable}", table)
+        self.assertIn("MIG's BE entry is N/A", table)
         self.assertEqual(tuple(policy["partial_evidence_order"]), partial)
         self.assertEqual(
             policy["direct_ranking_order"],

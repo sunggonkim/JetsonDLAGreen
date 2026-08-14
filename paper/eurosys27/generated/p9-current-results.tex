@@ -49,7 +49,7 @@ Pantheon & -- & -- & -- & -- & -- \\
 \begin{table*}[t]
 \centering
 \footnotesize
-\caption{Fixed six-system directional ImageNette gate. Every row uses the same 90 labelled inputs, arrival trace, and $2{,}224.448~\mu$s deadline. CP95 is not formal at this sample count. MIG's zero BE rate records that both physical slices serve the critical DAG.}
+\caption{Fixed six-system directional ImageNette gate. Every row uses the same 90 labelled inputs, arrival trace, and $2{,}224.448~\mu$s deadline. CP95 is not formal at this sample count. MIG's BE entry is N/A because both physical instances serve the critical DAG and no BE tenant is admitted.}
 \label{tab:native-comparators}
 \setlength{\tabcolsep}{3.5pt}
 \resizebox{\textwidth}{!}{%
@@ -58,11 +58,31 @@ Pantheon & -- & -- & -- & -- & -- \\
 System & Requests & Misses & CP95 DMR & p99 ($\mu$s) & BE rps & Accuracy & Evidence scope \\
 \midrule
 \textbf{QUIET} & 90 & 0 & 3.2738\% & 1,933.45 & 249.60 & 0.8333 & proposed common gate \\
-NVIDIA MIG & 90 & 0 & 3.2738\% & 1,652.86 & 0.00 & 0.8333 & capacity endpoint; no BE slice \\
+NVIDIA MIG & 90 & 0 & 3.2738\% & 1,652.86 & N/A & 0.8333 & capacity endpoint; no BE slice \\
 NVIDIA MPS & 90 & 0 & 3.2738\% & 1,749.85 & 249.16 & 0.8333 & vendor common gate \\
 XSched & 90 & 90 & 100.0000\% & 3,893.45 & 211.76 & 0.8333 & native XQueue runtime \\
 Orion & 90 & 90 & 100.0000\% & 5,573.21 & 166.27 & 0.8333 & Thor port; differential gate open \\
 Pantheon & 90 & 2 & 6.8302\% & 4,133.00 & 249.79 & 0.8333 & native runtime; integer deadline \\
+\bottomrule
+\end{tabular}%
+}
+\end{table*}
+}
+
+\newcommand{\PnineMigTopologyTable}{%
+\begin{table*}[t]
+\centering
+\footnotesize
+\caption{Directional MIG topology comparison. Both rows replay the same 90 labelled inputs, operational arrival trace, and $2{,}224.448~\mu$s deadline. Thor cannot form three simultaneous 1g instances. The colocated row changes stage placement and rebuilds the producer plan for 2g, so it is partial evidence rather than a fixed-roster ranking point.}
+\label{tab:mig-topology-partial}
+\setlength{\tabcolsep}{3.5pt}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llllrrrrr}
+\toprule
+Layout & Producer & Consumer & BE tenant & Requests & Misses & p99 ($\mu$s) & BE rps & Accuracy \\
+\midrule
+Split critical stages & 1g & 2g & not admitted & 90 & 0 & 1,652.86 & N/A & 0.8333 \\
+Colocated critical DAG & 2g & same 2g & isolated 1g & 90 & 0 & 1,514.25 & 249.32 & 0.8444 \\
 \bottomrule
 \end{tabular}%
 }

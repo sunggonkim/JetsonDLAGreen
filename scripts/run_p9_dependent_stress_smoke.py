@@ -25,6 +25,7 @@ class Scenario:
     gate_mode: str | None
     gate_scope: str = "producer"
     best_effort_admitted: bool = True
+    critical_placement: str = "split"
 
 
 DEFAULT_SCENARIOS = (
@@ -48,7 +49,22 @@ MECHANISM_SCENARIOS = (
     Scenario("gpulet", False, None),
     Scenario("orion", False, "cooperative", "pipeline"),
 )
-SCENARIOS = DEFAULT_SCENARIOS + MECHANISM_SCENARIOS
+# Thor permits at most two simultaneous MIG instances.  This partial topology
+# control therefore co-locates both dependent critical stages in the 2g
+# instance and reserves the 1g instance for best-effort work.  It is excluded
+# from DEFAULT_SCENARIOS because it changes stage placement relative to the
+# fixed 1g-producer/2g-consumer common gate.
+PARTIAL_TOPOLOGY_SCENARIOS = (
+    Scenario(
+        "nvidia-mig-colocated-critical-dag",
+        False,
+        None,
+        "producer",
+        True,
+        "big",
+    ),
+)
+SCENARIOS = DEFAULT_SCENARIOS + MECHANISM_SCENARIOS + PARTIAL_TOPOLOGY_SCENARIOS
 
 # A placement variant changes the MIG slice that hosts the critical producer
 # and consumer.  The best-effort client remains on the 1g slice, so reverse
@@ -78,6 +94,7 @@ PUBLIC_SYSTEM_NAMES = {
     "gslice": "Quota-only provisioning",
     "gpulet": "Partition-only planning",
     "orion": "Full-DAG quiescence",
+    "nvidia-mig-colocated-critical-dag": "NVIDIA MIG (2g DAG + 1g BE)",
 }
 
 WORKLOAD_PAYLOAD_BYTES = {
@@ -164,6 +181,14 @@ def summarize(
         if deadline_mode == "validation-excluded"
         else wall_p99
     )
+    actual_placement = placement_variant
+    comparison_scope = "common-fixed-stage-placement"
+    if scenario.critical_placement == "big":
+        actual_placement = "colocated-2g-critical-dag-1g-best-effort"
+        comparison_scope = "partial-topology-variant"
+    elif scenario.critical_placement == "small" or scenario.same_instance:
+        actual_placement = "colocated-1g-critical-dag"
+        comparison_scope = "partial-topology-variant"
     result = {
         "system": PUBLIC_SYSTEM_NAMES[scenario.name],
         "pipeline_requests": pipeline["iterations"],
@@ -204,7 +229,9 @@ def summarize(
         "gate_scope": pipeline.get("gate_scope", "producer"),
         "producer_quota_percent": producer_quota,
         "background_quota_percent": background_quota,
-        "placement_variant": placement_variant,
+        "placement_variant": actual_placement,
+        "workload_contract_placement": placement_variant,
+        "comparison_scope": comparison_scope,
         # Bind the observed MIG topology into each row; placement_variant alone
         # is intent, while these fields are what the benchmark actually used.
         "producer_uuid": pipeline.get("producer_uuid"),
@@ -431,6 +458,14 @@ def main() -> int:
     parser.add_argument(
         "--mig-env", type=pathlib.Path, default=pathlib.Path("/tmp/jdg-mps-1g/mig.env")
     )
+    parser.add_argument(
+        "--big-mps-pipe",
+        type=pathlib.Path,
+        help=(
+            "MPS pipe directory for same-instance execution in the 2g MIG "
+            "partition; required by the colocated-MIG partial comparator"
+        ),
+    )
     parser.add_argument("--result-dir", type=pathlib.Path, required=True)
     parser.add_argument("--iterations", type=int, default=1000)
     parser.add_argument("--warmup", type=int, default=10)
@@ -439,6 +474,15 @@ def main() -> int:
         "--deadline-lock",
         type=pathlib.Path,
         help="verified actual-pipeline deadline lock; overrides --deadline-us",
+    )
+    parser.add_argument(
+        "--deadline-reference",
+        type=pathlib.Path,
+        help=(
+            "verified common-gate deadline replayed as an unchanged SLO for "
+            "a topology-changing partial comparator; unlike --deadline-lock, "
+            "it does not claim engine or placement identity"
+        ),
     )
     parser.add_argument(
         "--background-period-ms",
@@ -586,6 +630,8 @@ def main() -> int:
         ),
     )
     args = parser.parse_args()
+    if args.deadline_lock is not None and args.deadline_reference is not None:
+        raise ValueError("--deadline-lock and --deadline-reference are mutually exclusive")
     if args.quiet_gate_scope == "consumer" and args.dependency_mode != "dependent":
         raise ValueError("consumer protection scope requires dependent mode")
     if args.workload == "resnet-detection-head" and args.consumer_input_tensor == "features":
@@ -606,8 +652,10 @@ def main() -> int:
         raise ValueError("validation delay must be nonnegative and finite")
     if args.workload == "resnet50-classification" and args.placement_variant != "fixed-1g-producer-2g-consumer":
         raise ValueError(
-            "resnet50-classification currently requires the profiled "
-            "1g-producer/2g-consumer split"
+            "the ImageNette common-workload contract is bound to the "
+            "1g-producer/2g-consumer gate; topology-changing scenarios must "
+            "retain that workload binding and report their actual placement "
+            "as partial evidence"
         )
     for label, quota in (
         ("producer", args.producer_quota),
@@ -621,8 +669,10 @@ def main() -> int:
     from runtime.quiet_stage_dag import actuate_selected_plan
 
     deadline_lock_provenance: dict[str, str] | None = None
-    if args.deadline_lock is not None:
-        lock_path = args.deadline_lock.resolve()
+    deadline_reference_provenance: dict[str, str] | None = None
+    deadline_path_argument = args.deadline_lock or args.deadline_reference
+    if deadline_path_argument is not None:
+        lock_path = deadline_path_argument.resolve()
         lock_header = json.loads(lock_path.read_text(encoding="utf-8"))
         verifier = (
             repo / "analysis" / "freeze_p9_common_placement_deadline.py"
@@ -650,10 +700,14 @@ def main() -> int:
         ):
             raise ValueError("deadline lock differs from requested workload")
         args.deadline_us = float(lock["deadline_us"])
-        deadline_lock_provenance = {
+        deadline_provenance = {
             "path": str(lock_path),
             "sha256": sha256(lock_path),
         }
+        if args.deadline_lock is not None:
+            deadline_lock_provenance = deadline_provenance
+        else:
+            deadline_reference_provenance = deadline_provenance
     quiet_plan: dict[str, Any] | None = None
     quiet_plan_provenance: dict[str, str] | None = None
     if args.quiet_plan is not None:
@@ -731,6 +785,10 @@ def main() -> int:
             input_tensor=args.consumer_input_tensor,
             payload_bytes=WORKLOAD_PAYLOAD_BYTES[args.workload],
         )
+        if common_workload.get("request_count") != args.iterations:
+            raise ValueError(
+                "common workload request count differs from --iterations"
+            )
     producer_engine = (
         args.producer_engine.resolve()
         if args.producer_engine is not None
@@ -844,6 +902,7 @@ def main() -> int:
             scenario.gate_mode,
             scenario.gate_scope,
             scenario.best_effort_admitted and not args.no_background,
+            scenario.critical_placement,
         )
         scenario_dir = args.result_dir / scenario.name
         scenario_dir.mkdir()
@@ -931,8 +990,30 @@ def main() -> int:
                     os.kill(background.pid, signal.SIGCONT)
             producer_uuid = mig[placement["producer_uuid_key"]]
             consumer_uuid = mig[placement["consumer_uuid_key"]]
+            producer_mps_pipe: pathlib.Path | None = None
+            consumer_mps_pipe: pathlib.Path | None = None
             if scenario.same_instance:
                 producer_uuid = consumer_uuid = mig["JDG_MIG_SMALL_UUID"]
+                producer_mps_pipe = consumer_mps_pipe = pathlib.Path(
+                    mig["JDG_MPS_PIPE_DIRECTORY"]
+                )
+            if scenario.critical_placement == "small":
+                producer_uuid = consumer_uuid = mig["JDG_MIG_SMALL_UUID"]
+                producer_mps_pipe = consumer_mps_pipe = pathlib.Path(
+                    mig["JDG_MPS_PIPE_DIRECTORY"]
+                )
+            elif scenario.critical_placement == "big":
+                if args.big_mps_pipe is None:
+                    raise ValueError(
+                        "the colocated 2g critical DAG requires --big-mps-pipe"
+                    )
+                big_mps_pipe = args.big_mps_pipe.resolve()
+                if not (big_mps_pipe / "control").is_socket():
+                    raise ValueError(
+                        "the colocated 2g critical DAG requires a live MPS control socket"
+                    )
+                producer_uuid = consumer_uuid = mig["JDG_MIG_BIG_UUID"]
+                producer_mps_pipe = consumer_mps_pipe = big_mps_pipe
             if scenario_execution is not None:
                 producer_uuid = str(scenario_execution["producer_uuid"])
                 consumer_uuid = str(scenario_execution["consumer_uuid"])
@@ -994,12 +1075,14 @@ def main() -> int:
                     "--application-output-trace",
                     str(application_output_trace),
                 ))
-            if producer_uuid == mig["JDG_MIG_SMALL_UUID"]:
-                command.extend(("--producer-mps-pipe", mig["JDG_MPS_PIPE_DIRECTORY"]))
-            if consumer_uuid == mig["JDG_MIG_SMALL_UUID"]:
-                command.extend(
-                    ("--consumer-mps-pipe", mig["JDG_MPS_PIPE_DIRECTORY"])
-                )
+            if producer_mps_pipe is None and producer_uuid == mig["JDG_MIG_SMALL_UUID"]:
+                producer_mps_pipe = pathlib.Path(mig["JDG_MPS_PIPE_DIRECTORY"])
+            if consumer_mps_pipe is None and consumer_uuid == mig["JDG_MIG_SMALL_UUID"]:
+                consumer_mps_pipe = pathlib.Path(mig["JDG_MPS_PIPE_DIRECTORY"])
+            if producer_mps_pipe is not None:
+                command.extend(("--producer-mps-pipe", str(producer_mps_pipe)))
+            if consumer_mps_pipe is not None:
+                command.extend(("--consumer-mps-pipe", str(consumer_mps_pipe)))
             if scenario.gate_mode is not None and background is not None:
                 command.extend(
                     (
@@ -1015,14 +1098,26 @@ def main() -> int:
                         effective_scope,
                     )
                 )
-            completed = subprocess.run(
-                command,
-                cwd=repo,
-                check=True,
-                capture_output=True,
-                text=True,
-                timeout=180,
-            )
+            try:
+                completed = subprocess.run(
+                    command,
+                    cwd=repo,
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                    timeout=180,
+                )
+            except subprocess.CalledProcessError as error:
+                (scenario_dir / "pipeline.failed.stdout").write_text(
+                    error.stdout or "", encoding="utf-8"
+                )
+                (scenario_dir / "pipeline.failed.stderr").write_text(
+                    error.stderr or "", encoding="utf-8"
+                )
+                raise RuntimeError(
+                    f"{scenario.name} pipeline failed ({error.returncode}); "
+                    f"see {scenario_dir / 'pipeline.failed.stderr'}"
+                ) from error
             pipeline = json.loads(completed.stdout)
             if args.require_operational_arrival_trace:
                 if pipeline.get("arrival_schedule_mode") != "operational-trace":
@@ -1152,15 +1247,20 @@ def main() -> int:
         "deadline_source": (
             "frozen-independent-pipeline-p99-factor"
             if deadline_lock_provenance is not None
+            else "replayed-common-gate-slo-topology-variant"
+            if deadline_reference_provenance is not None
             else "exploratory-command-line"
         ),
         "deadline_lock": deadline_lock_provenance,
+        "deadline_reference": deadline_reference_provenance,
         "quiet_plan": quiet_plan_provenance,
         "quiet_execution": quiet_execution,
         "quiet_plan_violation": quiet_plan_violation,
         "claim_status": (
             "diagnostic-only-plan-violation"
             if quiet_plan_violation is not None
+            else "partial-topology-comparator"
+            if any(item.critical_placement != "split" for item in selected_scenarios)
             else "exploratory-contract-smoke"
         ),
         "application_output_trace_dir": (

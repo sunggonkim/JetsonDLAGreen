@@ -40,6 +40,7 @@
       "dmr_cp95_upper": 0.03273803383353457,
       "p99_us": 1933.44637,
       "background_goodput_rps": 249.5998606,
+      "background_goodput_applicable": true,
       "reference_accuracy": 0.8333333333333334,
       "candidate_accuracy": 0.8333333333333334,
       "accuracy_delta": 0.0,
@@ -65,6 +66,7 @@
       "dmr_cp95_upper": 0.03273803383353457,
       "p99_us": 1652.86092,
       "background_goodput_rps": 0.0,
+      "background_goodput_applicable": false,
       "reference_accuracy": 0.8333333333333334,
       "candidate_accuracy": 0.8333333333333334,
       "accuracy_delta": 0.0,
@@ -90,6 +92,7 @@
       "dmr_cp95_upper": 0.03273803383353457,
       "p99_us": 1749.84952,
       "background_goodput_rps": 249.1611529,
+      "background_goodput_applicable": true,
       "reference_accuracy": 0.8333333333333334,
       "candidate_accuracy": 0.8333333333333334,
       "accuracy_delta": 0.0,
@@ -115,6 +118,7 @@
       "dmr_cp95_upper": 1.0,
       "p99_us": 3893.4520399999997,
       "background_goodput_rps": 211.75648133928885,
+      "background_goodput_applicable": true,
       "reference_accuracy": 0.8333333333333334,
       "candidate_accuracy": 0.8333333333333334,
       "accuracy_delta": 0.0,
@@ -140,6 +144,7 @@
       "dmr_cp95_upper": 1.0,
       "p99_us": 5573.20532,
       "background_goodput_rps": 166.26748459350335,
+      "background_goodput_applicable": true,
       "reference_accuracy": 0.8333333333333334,
       "candidate_accuracy": 0.8333333333333334,
       "accuracy_delta": 0.0,
@@ -165,6 +170,7 @@
       "dmr_cp95_upper": 0.06830234138898506,
       "p99_us": 4133.0,
       "background_goodput_rps": 249.7853816,
+      "background_goodput_applicable": true,
       "reference_accuracy": 0.8333333333333334,
       "candidate_accuracy": 0.8333333333333334,
       "accuracy_delta": 0.0,
@@ -183,5 +189,46 @@
       }
     }
   },
-  "claim_guard": "Every row is measured on the same labelled 90-input contract and frozen deadline. The figure reports coverage and SLO feasibility, not a formal ranking: MIG reserves both slices and admits no BE tenant, Orion's differential fidelity gate remains open, Pantheon floors its integer-microsecond deadline, and no row has session/thermal power."
+  "partial_topology_comparisons": {
+    "NVIDIA MIG (2g DAG + 1g BE)": {
+      "system": "NVIDIA MIG (2g DAG + 1g BE)",
+      "requests": 90,
+      "misses": 0,
+      "observed_dmr": 0.0,
+      "dmr_cp95_upper": 0.03273803383353457,
+      "p99_us": 1514.2526599999999,
+      "background_goodput_rps": 249.3194987,
+      "background_goodput_applicable": true,
+      "reference_accuracy": 0.8333333333333334,
+      "candidate_accuracy": 0.8444444444444444,
+      "accuracy_delta": 0.011111111111111072,
+      "topology": "colocated-2g-critical-dag-with-isolated-1g-best-effort",
+      "evidence_scope": "partial-topology-variant-same-input-arrival-deadline",
+      "timing_scope": "arrival-to-consumer-completion",
+      "observed_slo_feasible": true,
+      "confidence_qualified": false,
+      "source": {
+        "path": "results/p9-mig-colocated-imagenette-gate90-20260814-r06/summary.json",
+        "sha256": "f3360064081e7c1549730621abd17e239a4d5a4a16ac41525fb289be33646eb6"
+      },
+      "accuracy_gate": {
+        "path": "results/p9-mig-colocated-imagenette-gate90-20260814-r06/application-accuracy/accuracy-gate.json",
+        "sha256": "6c898fe232fd8dcb1dbf57ab379a68e65af3b873e1232474f33497ef3482cc28"
+      }
+    }
+  },
+  "mig_topology_constraints": {
+    "maximum_simultaneous_instances": 2,
+    "three_way_1g_supported": false,
+    "reason": "all 1g profiles have the sole placement {2}:1 while all 2g profiles occupy {0}:2",
+    "possible_placements": {
+      "path": "results/p9-mig-colocated-imagenette-gate90-20260814-r06/mig-possible-placements.txt",
+      "sha256": "f9d92d6b60e4aeed95fe24771cd2dba658905dc78520cc265772a3cfc3f66859"
+    },
+    "active_instances": {
+      "path": "results/p9-mig-colocated-imagenette-gate90-20260814-r06/active-mig-instances.txt",
+      "sha256": "463833352e8d049ef1d25830a5d686fec0dcf74a90ec872e0ffa9e7bc057ea18"
+    }
+  },
+  "claim_guard": "Every row is measured on the same labelled 90-input contract and frozen deadline. The fixed figure reports coverage and SLO feasibility, not a formal ranking: the fixed-stage MIG row reserves both slices and its BE metric is not applicable. The separate colocated-MIG control admits BE by changing stage placement and therefore remains partial evidence. Orion's differential fidelity gate remains open, Pantheon floors its integer-microsecond deadline, and no row has session/thermal power."
 }

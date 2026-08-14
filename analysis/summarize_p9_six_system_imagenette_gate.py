@@ -4,8 +4,10 @@
 The gate exists to make comparator coverage explicit.  Every displayed row
 uses the same 90 labelled inputs, operational arrival trace, current runtime
 lock, and 2,224.448-us deadline.  It is deliberately not a formal ranking:
-the run has one directional session, MIG is a no-BE capacity endpoint, and
-Orion and Pantheon retain their native-port timing/fidelity scopes.
+the run has one directional session, the fixed-stage MIG row is a no-BE
+capacity endpoint, and Orion and Pantheon retain their native-port
+timing/fidelity scopes.  A separate partial control co-locates the critical
+DAG on 2g and reserves 1g for BE; it never enters the fixed six-system rank.
 """
 
 from __future__ import annotations
@@ -48,6 +50,7 @@ DEFAULT_COMMON = ROOT / "results/p9-resnet50-imagenette-gate100-20260811/common-
 DEFAULT_LOCK = ROOT / "results/p9-resnet50-imagenette-calibration-current-r03-20260811/deadline-lock.json"
 DEFAULT_QUIET = ROOT / "results/p9-active-resnet50-imagenette-frontier-r07-20260811/sequence-0/03-quiet/summary.json"
 DEFAULT_MIG = ROOT / "results/p9-resnet50-imagenette-six-system-gate90-20260814/nvidia-mig/summary.json"
+DEFAULT_MIG_COLOCATED = ROOT / "results/p9-mig-colocated-imagenette-gate90-20260814-r06/summary.json"
 DEFAULT_MPS = ROOT / "results/p9-active-resnet50-imagenette-frontier-r07-20260811/sequence-0/01-nvidia-mps/summary.json"
 DEFAULT_XSCHED = ROOT / "results/p9-active-resnet50-imagenette-frontier-r07-20260811/sequence-0/02-xsched/verification.json"
 DEFAULT_ORION = ROOT / "results/p9-resnet50-imagenette-six-system-gate90-20260814/orion-r02/verification.json"
@@ -189,8 +192,17 @@ def _check_deadline_record(record: Any, digest: str, label: str) -> None:
         raise ValueError(f"{label} deadline lock SHA-256 differs")
 
 
-def _accuracy(path: Path, common: dict[str, Any], deadline: float, label: str) -> dict[str, Any]:
+def _accuracy(
+    path: Path,
+    common: dict[str, Any],
+    deadline: float,
+    label: str,
+    *,
+    maximum_delta: float = 0.0,
+) -> dict[str, Any]:
     value, digest = _read(path, f"{label} accuracy gate")
+    recorded_tolerance = _finite(value.get("accuracy_tolerance"), label)
+    accuracy_delta = _finite(value.get("accuracy_delta"), label)
     if (
         value.get("kind") != "p9-application-accuracy-gate"
         or value.get("status") != "passed"
@@ -203,13 +215,15 @@ def _accuracy(path: Path, common: dict[str, Any], deadline: float, label: str) -
         or value.get("dataset_manifest_sha256") != common["dataset_manifest_sha256"]
         or _finite(value.get("reference_accuracy"), label) < 0.8
         or _finite(value.get("candidate_accuracy"), label) < 0.8
-        or not math.isclose(_finite(value.get("accuracy_delta"), label), 0.0, abs_tol=1e-12)
+        or recorded_tolerance > maximum_delta + 1e-12
+        or accuracy_delta > maximum_delta + 1e-12
     ):
         raise ValueError(f"{label} accuracy gate differs")
     return {
         "reference": float(value["reference_accuracy"]),
         "candidate": float(value["candidate_accuracy"]),
-        "delta": float(value["accuracy_delta"]),
+        "delta": accuracy_delta,
+        "tolerance": recorded_tolerance,
         "gate": {"path": _portable(path), "sha256": digest},
     }
 
@@ -218,6 +232,7 @@ def _metric_row(
     *, system: str, requests: int, misses: int, p99_us: float, goodput: float,
     accuracy: dict[str, Any], source: Path, source_sha: str, topology: str,
     evidence_scope: str, timing_scope: str,
+    background_goodput_applicable: bool = True,
 ) -> dict[str, Any]:
     if requests != REQUESTS or not 0 <= misses <= requests or p99_us <= 0.0 or goodput < 0.0:
         raise ValueError(f"{system} metric values are invalid")
@@ -229,6 +244,7 @@ def _metric_row(
         "dmr_cp95_upper": _cp95(misses, requests),
         "p99_us": p99_us,
         "background_goodput_rps": goodput,
+        "background_goodput_applicable": background_goodput_applicable,
         "reference_accuracy": accuracy["reference"],
         "candidate_accuracy": accuracy["candidate"],
         "accuracy_delta": accuracy["delta"],
@@ -295,7 +311,124 @@ def _pipeline_row(
         topology=topology,
         evidence_scope=evidence_scope,
         timing_scope="arrival-to-consumer-completion",
+        background_goodput_applicable=system != "NVIDIA MIG",
     )
+
+
+def _plain_evidence(path: Path, label: str) -> dict[str, str]:
+    path = path.resolve()
+    if not path.is_file() or not path.read_bytes().endswith(b"\n"):
+        raise ValueError(f"{label} is missing or not newline-complete")
+    return {"path": _portable(path), "sha256": sha256(path)}
+
+
+def _colocated_mig_row(
+    path: Path,
+    common: dict[str, Any],
+    common_sha: str,
+    lock_sha: str,
+    deadline: float,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    label = "NVIDIA MIG (2g DAG + 1g BE)"
+    value, source_sha = _read(path, "colocated MIG evidence")
+    rows = value.get("results")
+    if (
+        value.get("kind") != "p9-dependent-small-stress-smoke"
+        or value.get("claim_status") != "partial-topology-comparator"
+        or value.get("deadline_source")
+        != "replayed-common-gate-slo-topology-variant"
+        or value.get("deadline_lock") is not None
+        or value.get("workload") != "resnet50-classification"
+        or not isinstance(rows, list)
+        or len(rows) != 1
+        or rows[0].get("system") != label
+        or not math.isclose(
+            _finite(value.get("deadline_us"), label), deadline, abs_tol=1e-9
+        )
+    ):
+        raise ValueError("colocated MIG evidence contract differs")
+    _check_common(value.get("common_workload"), common, common_sha, label)
+    _check_deadline_record(value.get("deadline_reference"), lock_sha, label)
+    row = rows[0]
+    if (
+        row.get("deadline_mode") != "wall"
+        or row.get("latency_contract")
+        != "production-wall-arrival-to-completion"
+        or row.get("production_wall_definition") != PRODUCTION_WALL
+        or row.get("correctness_validation_placement") != "post-completion"
+        or row.get("correctness_validated") is not True
+        or row.get("best_effort_admitted") is not True
+        or row.get("best_effort_status") != "completed"
+        or row.get("comparison_scope") != "partial-topology-variant"
+        or row.get("placement_variant")
+        != "colocated-2g-critical-dag-1g-best-effort"
+        or row.get("workload_contract_placement")
+        != "fixed-1g-producer-2g-consumer"
+        or row.get("producer_uuid") != row.get("consumer_uuid")
+        or row.get("producer_sms") != 12
+        or row.get("consumer_sms") != 12
+    ):
+        raise ValueError("colocated MIG topology or runtime contract differs")
+    _record(row.get("request_trace"), "colocated MIG request trace")
+    _record(row.get("application_output_trace"), "colocated MIG output trace")
+    accuracy_path = path.parent / "application-accuracy/accuracy-gate.json"
+    accuracy = _accuracy(
+        accuracy_path,
+        common,
+        deadline,
+        label,
+        maximum_delta=0.02,
+    )
+    if accuracy["candidate"] < accuracy["reference"]:
+        raise ValueError("colocated MIG loses application accuracy")
+
+    placements_path = path.parent / "mig-possible-placements.txt"
+    active_path = path.parent / "active-mig-instances.txt"
+    placements = placements_path.read_text(encoding="utf-8")
+    active = active_path.read_text(encoding="utf-8")
+    required_placements = (
+        "Profile ID 78 Placement : {2}:1",
+        "Profile ID 80 Placement : {2}:1",
+        "Profile ID 81 Placement : {2}:1",
+        "Profile ID 82 Placement : {0}:2",
+        "Profile ID 83 Placement : {0}:2",
+    )
+    if any(item not in placements for item in required_placements):
+        raise ValueError("Thor MIG placement evidence differs")
+    if (
+        "MIG 1g.0gb+me" not in active
+        or "MIG 2g.0gb+gfx" not in active
+        or active.count("Placement") != 1
+    ):
+        raise ValueError("active Thor MIG topology differs")
+    constraints = {
+        "maximum_simultaneous_instances": 2,
+        "three_way_1g_supported": False,
+        "reason": (
+            "all 1g profiles have the sole placement {2}:1 while all 2g "
+            "profiles occupy {0}:2"
+        ),
+        "possible_placements": _plain_evidence(
+            placements_path, "Thor MIG possible placements"
+        ),
+        "active_instances": _plain_evidence(
+            active_path, "Thor active MIG instances"
+        ),
+    }
+    metric = _metric_row(
+        system=label,
+        requests=int(row["pipeline_requests"]),
+        misses=int(row["deadline_misses"]),
+        p99_us=_finite(row["pipeline_p99_us"], label),
+        goodput=_finite(row["background_goodput_rps"], label),
+        accuracy=accuracy,
+        source=path,
+        source_sha=source_sha,
+        topology="colocated-2g-critical-dag-with-isolated-1g-best-effort",
+        evidence_scope="partial-topology-variant-same-input-arrival-deadline",
+        timing_scope="arrival-to-consumer-completion",
+    )
+    return metric, constraints
 
 
 def _xsched_row(
@@ -412,7 +545,8 @@ def _pantheon_row(
 
 def summarize(
     *, common_path: Path, deadline_path: Path, quiet_path: Path, mig_path: Path,
-    mps_path: Path, xsched_path: Path, orion_path: Path, pantheon_path: Path,
+    mig_colocated_path: Path, mps_path: Path, xsched_path: Path,
+    orion_path: Path, pantheon_path: Path,
 ) -> dict[str, Any]:
     common, common_sha = _common(common_path)
     _, lock_sha, deadline = _deadline(deadline_path)
@@ -426,6 +560,9 @@ def summarize(
     }
     if tuple(systems) != SYSTEM_ORDER:
         raise ValueError("fixed comparator display order differs")
+    colocated_mig, mig_constraints = _colocated_mig_row(
+        mig_colocated_path.resolve(), common, common_sha, lock_sha, deadline
+    )
     return {
         "schema_version": 1,
         "kind": "p9-six-system-imagenette-common-gate",
@@ -447,11 +584,17 @@ def summarize(
             "dataset_manifest_sha256": common["dataset_manifest_sha256"],
         },
         "systems": systems,
+        "partial_topology_comparisons": {
+            colocated_mig["system"]: colocated_mig,
+        },
+        "mig_topology_constraints": mig_constraints,
         "claim_guard": (
             "Every row is measured on the same labelled 90-input contract and frozen deadline. "
-            "The figure reports coverage and SLO feasibility, not a formal ranking: MIG reserves "
-            "both slices and admits no BE tenant, Orion's differential fidelity gate remains open, "
-            "Pantheon floors its integer-microsecond deadline, and no row has session/thermal power."
+            "The fixed figure reports coverage and SLO feasibility, not a formal ranking: the "
+            "fixed-stage MIG row reserves both slices and its BE metric is not applicable. The "
+            "separate colocated-MIG control admits BE by changing stage placement and therefore "
+            "remains partial evidence. Orion's differential fidelity gate remains open, Pantheon "
+            "floors its integer-microsecond deadline, and no row has session/thermal power."
         ),
     }
 
@@ -462,6 +605,9 @@ def main(argv: Iterable[str] | None = None) -> int:
     parser.add_argument("--deadline-lock", type=Path, default=DEFAULT_LOCK)
     parser.add_argument("--quiet", type=Path, default=DEFAULT_QUIET)
     parser.add_argument("--mig", type=Path, default=DEFAULT_MIG)
+    parser.add_argument(
+        "--mig-colocated", type=Path, default=DEFAULT_MIG_COLOCATED
+    )
     parser.add_argument("--mps", type=Path, default=DEFAULT_MPS)
     parser.add_argument("--xsched", type=Path, default=DEFAULT_XSCHED)
     parser.add_argument("--orion", type=Path, default=DEFAULT_ORION)
@@ -470,7 +616,8 @@ def main(argv: Iterable[str] | None = None) -> int:
     args = parser.parse_args(argv)
     value = summarize(
         common_path=args.common.resolve(), deadline_path=args.deadline_lock.resolve(),
-        quiet_path=args.quiet.resolve(), mig_path=args.mig.resolve(), mps_path=args.mps.resolve(),
+        quiet_path=args.quiet.resolve(), mig_path=args.mig.resolve(),
+        mig_colocated_path=args.mig_colocated.resolve(), mps_path=args.mps.resolve(),
         xsched_path=args.xsched.resolve(), orion_path=args.orion.resolve(),
         pantheon_path=args.pantheon.resolve(),
     )

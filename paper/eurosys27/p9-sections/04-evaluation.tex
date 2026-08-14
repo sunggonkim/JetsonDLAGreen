@@ -252,8 +252,8 @@ thermal contracts differ.
   \sys, NVIDIA MIG, NVIDIA MPS, XSched, Orion, and Pantheon in the same order.
   All rows consume the same 90 labelled inputs, operational arrivals, and
   $2{,}224.448~\mu$s deadline.  This one-session coverage gate is not a formal
-  rank; MIG assigns both slices to the critical DAG and therefore admits no
-  best-effort tenant.}
+  rank; MIG assigns both instances to the critical DAG, so its best-effort
+  entry is N/A because no background tenant is admitted.}
   \Description{Three vertically stacked bar charts repeat the same six systems
   for p99 latency, observed deadline-miss ratio, and background goodput.}
   \label{fig:six-system-gate}
@@ -262,10 +262,10 @@ thermal contracts differ.
 Table~\ref{tab:native-comparators} and Figure~\ref{fig:six-system-gate} keep one
 public order and one common contract.  \sys, MIG, and MPS observe zero misses,
 with p99s of $1{,}933.446$, $1{,}652.861$, and
-$1{,}749.850~\mu$s.  MIG's zero best-effort rate is a measured capacity
-endpoint: the producer and consumer occupy the two physical slices, leaving no
-slice for the background tenant.  It is therefore informative for latency but
-cannot optimize the joint DMR--goodput objective.
+$1{,}749.850~\mu$s.  MIG's best-effort entry is N/A rather than zero measured
+goodput: the producer and consumer occupy the two physical instances, and this
+layout never admits a background tenant.  It is therefore informative for
+latency but cannot optimize the joint DMR--goodput objective.
 
 Native XSched and the Orion Thor port miss all 90 deadlines, with p99s of
 $3{,}893.452$ and $5{,}573.205~\mu$s and background rates of 211.756 and
@@ -276,6 +276,38 @@ requests/s; its protobuf interface floors the common deadline to 2,224 integer
 microseconds.  Every system still preserves 0.8333 accuracy.  With only 90
 requests, even a zero-miss row has a 3.2738\% CP95 bound, so these measurements
 establish coverage and observed SLO feasibility rather than formal ranking.
+
+\PnineMigTopologyTable
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=\textwidth]{figures/p9-mig-topology-partial.pdf}
+  \caption{Directional MIG topology comparison under the common ImageNette
+  inputs, operational arrivals, and frozen deadline.  Thor cannot form three
+  simultaneous 1g instances.  The split layout assigns one critical stage to
+  each instance and has no BE entry; the colocated layout runs both critical
+  stages on 2g and admits BE on the isolated 1g instance.  Because stage
+  placement and the profile-specific producer plan change, this is partial
+  evidence rather than a fixed-roster ranking.}
+  \Description{Three side-by-side bar charts compare two Thor MIG layouts for
+  p99 latency, deadline misses, and background goodput.  Both layouts have no
+  observed misses; only the colocated layout admits a background tenant.}
+  \label{fig:mig-topology-partial}
+\end{figure*}
+
+Table~\ref{tab:mig-topology-partial} and
+Figure~\ref{fig:mig-topology-partial} answer why the fixed MIG row has no BE
+value.  Thor exposes at most two simultaneous instances; a 1g producer, 1g
+consumer, and third 1g background partition is not a supported placement.  We
+therefore evaluate the valid alternative: producer and consumer share 2g while
+BE runs on 1g.  It replays the same 90 inputs, arrival trace, and
+$2{,}224.448~\mu$s deadline, observes zero misses, records a
+$1{,}514.253~\mu$s p99, and completes 249.319 background requests/s.  TensorRT
+plans are profile-specific, so we rebuilt the FP16 producer plan for 2g from
+the same ONNX model.  One of 90 predictions changes in the favourable
+direction, raising accuracy from 0.8333 to 0.8444 and remaining within the
+configured 0.02 exploratory tolerance.  The changed placement and engine
+tactics preclude a same-placement ranking claim.
 
 \PninePartialEvidenceTable
 
@@ -293,6 +325,8 @@ from silently entering the six-system graph.
 
 Our strongest claim is deliberately narrow: one Thor device, a fixed 1g+2g
 placement, one thermal envelope, and a two-stage ImageNette chain.  The
+colocated 2g-DAG+1g-BE result is a directional topology variant, not part of
+that formal campaign; Thor provides no valid three-instance layout.  The
 production path is low-inflight; the validated three-slot ring has not yet
 carried the formal TensorRT workload.  The ASR gate establishes application
 semantics on ten measured utterances but is not a thermal SLO campaign.  The

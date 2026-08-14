@@ -279,6 +279,15 @@
       "numeric_comparison_allowed": false,
       "numeric_measurement_available": true,
       "status": "common-gate-capacity-endpoint-no-best-effort-slice",
+      "thor_topology_constraint": {
+        "maximum_simultaneous_instances": 2,
+        "three_way_1g_supported": false,
+        "reason": "all 1g profiles have the sole placement {2}:1 while all 2g profiles occupy {0}:2",
+        "possible_placements": "results/p9-mig-colocated-imagenette-gate90-20260814-r06/mig-possible-placements.txt",
+        "possible_placements_sha256": "f9d92d6b60e4aeed95fe24771cd2dba658905dc78520cc265772a3cfc3f66859",
+        "active_instances": "results/p9-mig-colocated-imagenette-gate90-20260814-r06/active-mig-instances.txt",
+        "active_instances_sha256": "463833352e8d049ef1d25830a5d686fec0dcf74a90ec872e0ffa9e7bc057ea18"
+      },
       "latest_real_imagenette_application_gate": {
         "verification": "results/p9-resnet50-imagenette-six-system-gate90-20260814/nvidia-mig/summary.json",
         "verification_sha256": "c2558ab5165b493a68eef2e548f4e1b9fa22a612790cc6dff679175ffed66203",
@@ -294,8 +303,37 @@
         "deadline_misses": 0,
         "dmr": 0.0,
         "background_goodput_rps": 0.0,
+        "background_goodput_applicable": false,
+        "background_goodput_display": "N/A",
         "formal_claim_allowed": false,
         "claim_status": "same-labelled-common-gate-capacity-endpoint-no-best-effort-slice"
+      },
+      "partial_topology_variant": {
+        "status": "passed-directional-partial-gate",
+        "verification": "results/p9-mig-colocated-imagenette-gate90-20260814-r06/summary.json",
+        "verification_sha256": "f3360064081e7c1549730621abd17e239a4d5a4a16ac41525fb289be33646eb6",
+        "accuracy_gate": "results/p9-mig-colocated-imagenette-gate90-20260814-r06/application-accuracy/accuracy-gate.json",
+        "accuracy_gate_sha256": "6c898fe232fd8dcb1dbf57ab379a68e65af3b873e1232474f33497ef3482cc28",
+        "topology": "colocated-2g-critical-dag-with-isolated-1g-best-effort",
+        "producer_engine_sha256": "8140d548d6fd1d611c52e893723d605587ad76d55928dbdadea2fd41f2c0dc57",
+        "pipeline_binary_sha256": "14427ce54231891c25477c14a42aeba1b38d7c222e9c562dd678250ecc9ea869",
+        "workload": "resnet50-classification",
+        "requests": 90,
+        "reference_accuracy": 0.8333333333333334,
+        "candidate_accuracy": 0.8444444444444444,
+        "accuracy_delta": 0.011111111111111072,
+        "accuracy_tolerance": 0.02,
+        "deadline_us": 2224.4481160000005,
+        "p99_us": 1514.2526599999999,
+        "deadline_misses": 0,
+        "dmr": 0.0,
+        "background_goodput_rps": 249.3194987,
+        "background_goodput_applicable": true,
+        "same_contract_dimensions": ["labelled_inputs", "operational_arrival_trace", "deadline"],
+        "changed_dimensions": ["stage_placement", "profile_specific_producer_plan"],
+        "formal_claim_allowed": false,
+        "ranking_allowed": false,
+        "claim_status": "partial-topology-variant-same-input-arrival-deadline"
       }
     },
     "NVIDIA MPS": {

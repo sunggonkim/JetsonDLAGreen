@@ -12,6 +12,10 @@
       "path": "results/p9-resnet50-imagenette-six-system-gate90-20260814/nvidia-mig/summary.json",
       "sha256": "c2558ab5165b493a68eef2e548f4e1b9fa22a612790cc6dff679175ffed66203"
     },
+    "mig_colocated": {
+      "path": "results/p9-mig-colocated-imagenette-gate90-20260814-r06/summary.json",
+      "sha256": "f3360064081e7c1549730621abd17e239a4d5a4a16ac41525fb289be33646eb6"
+    },
     "mps": {
       "path": "results/p9-active-resnet50-imagenette-frontier-r07-20260811/sequence-0/01-nvidia-mps/summary.json",
       "sha256": "702d8e46cead1afb2a77cdacc3411751a8e3f8904747e5bf1c618d014f1d9f5c"
@@ -35,9 +39,11 @@
   },
   "kind": "p9-six-system-imagenette-gate-figure-provenance",
   "outputs": {
-    "paper/eurosys27/figures/p9-six-system-imagenette-gate.pdf": "026e6b448bd98458fb12e5a7b315fa80f01ac764c8dc7118e6dbfd5e4ce871b5",
-    "paper/eurosys27/figures/p9-six-system-imagenette-gate.png": "a999cc6ad7e687c150b4e52b7774cda0f31ed67530fb1fe33510afab2a982065",
-    "paper/eurosys27/generated/p9-six-system-imagenette-gate.json": "3796512df3ecbfadad5c560ed3d42ef1bea6ae52919741ef9548eeaea4569c23"
+    "paper/eurosys27/figures/p9-mig-topology-partial.pdf": "8faa821ada3eff29e051c63dfc6bef383614518c002831f5c541d07104fd4e07",
+    "paper/eurosys27/figures/p9-mig-topology-partial.png": "dd99bc3802552a79fd5e24aab7f9bae8d0294ad6f78a6a1ac467bda26a8b7e78",
+    "paper/eurosys27/figures/p9-six-system-imagenette-gate.pdf": "b829e994c754e25ab58cb59cf2a17e21a503810bed139dbb39e3809ffba3122e",
+    "paper/eurosys27/figures/p9-six-system-imagenette-gate.png": "065b62f5045e6a882b92deeb4c6a5a0f3c7676cd6892b692a735b25bfed3d82c",
+    "paper/eurosys27/generated/p9-six-system-imagenette-gate.json": "fdd908e951d82c5de712fa1c1f5e233ebfb9219b9ea9ad299fd650f021f16383"
   },
   "schema_version": 1
 }

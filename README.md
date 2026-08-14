@@ -58,7 +58,7 @@ and 2,224.448-us deadline. Every row reaches the application accuracy gate.
 | System | Requests | Misses | Observed DMR | CP95 DMR | p99 (us) | BE requests/s | Accuracy | Scope |
 |---|---:|---:|---:|---:|---:|---:|---:|---|
 | **QUIET** | 90 | **0** | **0.0000%** | 3.2738% | 1,933.446 | 249.600 | 0.8333 | Proposed system, common gate |
-| NVIDIA MIG | 90 | **0** | **0.0000%** | 3.2738% | **1,652.861** | 0.000 | 0.8333 | Physical-capacity endpoint; both slices serve the critical DAG, so no BE slice exists |
+| NVIDIA MIG | 90 | **0** | **0.0000%** | 3.2738% | **1,652.861** | N/A | 0.8333 | Physical-capacity endpoint; both slices serve the critical DAG, so no BE tenant is admitted |
 | NVIDIA MPS | 90 | **0** | **0.0000%** | 3.2738% | 1,749.850 | 249.161 | 0.8333 | Vendor sharing baseline |
 | [XSched](baselines/xsched/) (OSDI 2025) | 90 | 90 | 100.0000% | 100.0000% | 3,893.452 | 211.756 | 0.8333 | Pinned native XQueue runtime |
 | [Orion](baselines/orion/) (EuroSys 2024) | 90 | 90 | 100.0000% | 100.0000% | 5,573.205 | 166.267 | 0.8333 | Executed Thor port; upstream differential-fidelity gate remains open |
@@ -70,14 +70,42 @@ and 2,224.448-us deadline. Every row reaches the application accuracy gate.
 
 This is a directional coverage gate, not a formal ranking. With only 90
 requests, even a zero-miss row has a 3.2738% one-sided CP95 bound and cannot
-certify the 0.05% DMR target. MIG's 0-rps value is measured semantics, not
-missing data: fixed 1g+2g physical isolation gives both slices to the two
-critical stages and leaves no slice on which to admit the BE tenant.
+certify the 0.05% DMR target. MIG's BE entry is **N/A**, not zero measured
+goodput: fixed 1g+2g physical isolation gives both instances to the two
+critical stages, so that layout never admits a BE tenant.
 
 The checked-in compact summary is
 [`p9-six-system-imagenette-gate.json`](paper/eurosys27/generated/p9-six-system-imagenette-gate.json),
 and its raw-input/output hashes are bound by
 [`p9-six-system-imagenette-gate-provenance.json`](paper/eurosys27/generated/p9-six-system-imagenette-gate-provenance.json).
+
+### MIG topology partial comparison
+
+Thor cannot be divided into three simultaneous 1g MIG instances. The `3g`
+capacity label describes the whole GPU, not three independently placeable 1g
+slots: the local `nvidia-smi mig -lgipp` inventory exposes one 1g placement
+and one 2g placement, and NVIDIA documents a maximum of two simultaneous Thor
+instances in its [supported MIG profiles](https://docs.nvidia.com/datacenter/tesla/mig-user-guide/supported-mig-profiles.html).
+Consequently, there are two relevant two-instance layouts:
+
+| MIG layout | Producer | Consumer | BE tenant | Requests | Misses | p99 (us) | BE requests/s | Accuracy | Comparison scope |
+|---|---|---|---|---:|---:|---:|---:|---:|---|
+| Split critical stages | 1g | 2g | Not admitted | 90 | 0 | 1,652.861 | N/A | 0.8333 | Fixed six-system capacity endpoint |
+| Colocated critical DAG | 2g | Same 2g | Isolated 1g | 90 | 0 | **1,514.253** | **249.319** | 0.8444 | Partial topology variant |
+
+<p align="center">
+  <img src="paper/eurosys27/figures/p9-mig-topology-partial.png" width="100%" alt="Two MIG topology variants use the same 90 inputs, arrivals, and deadline. Split stages use the 1g and 2g instances and cannot admit best-effort work; colocated producer and consumer use 2g while best-effort work runs on 1g.">
+</p>
+
+Both rows replay the same 90 labelled inputs, operational arrival trace, and
+2,224.448-us deadline. The colocated row validates 0/90 misses and 249.319 BE
+requests/s, while its FP16 producer plan changes one prediction in the
+favourable direction (0.8333 to 0.8444 accuracy) and passes the configured
+0.02 exploratory tolerance. TensorRT plans are MIG-profile-specific, so the
+producer plan had to be rebuilt for 2g; stage placement and engine tactics
+therefore differ from the fixed roster. This row answers whether MIG can
+admit BE by colocating the DAG, but it is a **partial comparison**, not a
+formal six-system ranking point.
 
 ## Formal promotion ledger — same fixed roster
 
@@ -234,6 +262,14 @@ Project targets compile with strict host warnings, including `-Wall`,
 machine-local environment file. The variable schema is shown in
 [`configs/mig.env.example`](configs/mig.env.example); real UUIDs are never
 committed.
+
+Thor supports at most two simultaneous MIG instances, so a three-way
+producer/consumer/BE split is unavailable. The alternative measured layout
+places both critical stages on 2g and BE on the isolated 1g instance:
+
+```bash
+scripts/run_p9_mig_colocated_imagenette.sh
+```
 
 Experiment runners validate MIG UUIDs, model/input hashes, operational release
 traces, thermal sensors, and runtime binaries before admitting a run.
