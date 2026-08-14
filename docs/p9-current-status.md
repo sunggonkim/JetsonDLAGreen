@@ -7,7 +7,9 @@ traceability but do not widen this scope.
 
 ## System contract
 
-QUIET executes a low-inflight two-stage TensorRT chain on one Jetson AGX Thor.
+QUIET's promoted vision path executes a low-inflight two-stage TensorRT chain
+on one Jetson AGX Thor.  Its non-promoted Whisper motivation path uses a
+bounded three-slot credit window to overlap adjacent requests.
 The producer runs in a 1g MIG instance and the trained consumer head runs in a
 2g instance.  Both processes register the same page-aligned system-memory
 mapping in their own CUDA contexts and bind context-local pointers directly to
@@ -80,6 +82,12 @@ Only QUIET is a proposed system name.
 
 ## Non-promoted controls
 
+- A three-session nonthermal Whisper-Tiny crossover uses 19 requests/s, a
+  250-ms internal deadline, and 300 requests per system.  NVIDIA MIG misses
+  167/300 requests, static NVIDIA MPS misses 64/300, and QUIET misses 0/300.
+  All outputs are byte-identical.  This is workload-real but arrival-trace
+  partial: twelve labelled windows are cyclically replayed, so it is motivation
+  evidence rather than a formal SLO or accuracy expansion.
 - The three-load frontier has 3,300 requests per point and is not thermal
   normalized.  Its CP95 bounds are descriptive and no point is used for
   ranking.
@@ -87,7 +95,8 @@ Only QUIET is a proposed system name.
   support the mechanism claim that precedence changes shared-SoC contention;
   they do not establish a formal SLO or universal transport ranking.
 - The validated three-slot external-process ring is not yet integrated with
-  the production TensorRT path.
+  the formal vision TensorRT path.  Whisper uses a narrower three-slot credit
+  window without the standalone ring's timeout and stale-owner recovery.
 - The planner can validate larger DAG schemas, but the promoted application is
   a two-stage chain and does not support an arbitrary-DAG performance claim.
 
@@ -98,6 +107,9 @@ Only QUIET is a proposed system name.
 - Figure/input hashes:
   `paper/eurosys27/generated/p9-figure-provenance.json`
 - Figure generator: `analysis/generate_p9_current_figures.py`
+- ASR crossover generator and compact evidence:
+  `analysis/generate_p9_whisper_asr_crossover_figure.py` and
+  `paper/eurosys27/generated/p9-whisper-asr-mig-crossover.json`
 - Machine audit: `analysis/audit_p9_goal_completion.py`
 - Real-application runbook: `docs/p9-real-application-runbook.md`
 - Native-port contract: `docs/p9-sota-native-port-contract.md`

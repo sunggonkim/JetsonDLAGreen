@@ -16,6 +16,8 @@ manuscript and must not be used as the current result.
 - generated/p9-current-results.tex: evidence-backed application, formal,
   common-comparator, and partial-evidence tables.
 - generated/p9-figure-provenance.json: input and output SHA-256 bindings.
+- generated/p9-whisper-asr-mig-crossover.json: compact nonthermal motivation
+  rows plus raw, binary, engine, input, output, and figure SHA-256 bindings.
 
 ## Generate figures
 
@@ -23,6 +25,7 @@ From the repository root, generate every current figure and table with:
 
     python3 analysis/generate_p9_six_system_figure.py
     python3 analysis/generate_p9_current_figures.py
+    python3 analysis/generate_p9_whisper_asr_crossover_figure.py
 
 The generator fails if a recorded input hash, request count, miss count,
 application gate, thermal gate, or replayed p99 is inconsistent.
@@ -37,8 +40,9 @@ From this directory:
     pdflatex p9-main.tex
 
 The public system name is QUIET.  The current formal headline is limited to
-the thermal-normalized ImageNette campaign.  Causal and load-sweep figures
-retain their exploratory/descriptive labels.  Every end-to-end table and graph
-repeats QUIET, NVIDIA MIG, NVIDIA MPS, XSched, Orion, and Pantheon in that
-order.  Executed mechanism-only or incompatible artifacts remain visible in a
-separate partial-evidence table.
+the thermal-normalized ImageNette campaign.  Causal, load-sweep, and Whisper
+crossover figures retain their exploratory/descriptive labels.  Fixed-roster
+figures repeat QUIET, NVIDIA MIG, NVIDIA MPS, XSched, Orion, and Pantheon in
+that order; the three-system Whisper figure preserves the same QUIET, MIG,
+MPS prefix.  Executed mechanism-only or incompatible artifacts remain visible
+in a separate partial-evidence table.

@@ -32,7 +32,13 @@ peer-death paths inspect process liveness, reclaim stale ownership, and unpause
 surviving tenants.  Normal wraparound and delayed-consumer tests complete
 without mismatches; the timeout test exits within its bound, and injected
 consumer death records a stale reclaim.  Integrating this ring with the
-production TensorRT path is future work.
+formal vision TensorRT path is future work.  The Whisper motivation path uses
+a narrower three-slot credit window: each transfer carries a dense slot index,
+the consumer acknowledges only after decoding, and the producer must receive a
+credit before reusing that slot.  TensorRT rebinds the encoder output and
+decoder input to the selected registered range.  This path provides real-model
+request overlap and backpressure, but it does not claim the standalone ring's
+timeout and stale-owner recovery contract.
 
 \subsection{Release, Protection, and Trace Collection}
 
@@ -43,6 +49,10 @@ Pause and resume use cooperative process control.  The runtime records
 \texttt{pause\_begin}, \texttt{pause\_complete},
 \texttt{publication}, \texttt{resume\_issued}, and
 \texttt{resume\_observed} for every request.
+The exploratory Whisper runner uses verified \texttt{SIGSTOP} and
+\texttt{SIGCONT} control around the same producer's publication boundary and
+records gate hold and acquisition separately; this distinction is retained in
+its provenance.
 
 The publication code sends the dependent consumer's transfer record and then
 resumes producer-scoped best-effort workers.  Producer checksum calculation

@@ -94,15 +94,19 @@ such as Miriam and Pantheon~\cite{miriam2023,pantheon2024} establish
 complementary model-aware and preemptive designs.  We retain their names only
 for faithful native mechanisms, never for a local approximation.
 
-Our evaluation produces four results.  First, both a 90-request ImageNette
+Our evaluation produces five results.  First, both a 90-request ImageNette
 classification gate and a 10-request LibriSpeech ASR gate preserve their
 reference metrics; the latter produces byte-identical output traces.  Second,
-same-activation causal replay shows that precedence changes shared-resource
-overlap, not merely copy time: across three exploratory pairs, \sys's
+a three-slot nonthermal Whisper motivation identifies the regime that gives
+\sys purpose beyond MIG isolation: at 19 requests/s, MIG misses 167/300
+deadlines, static MPS misses 64/300, and \sys misses 0/300 while preserving
+byte-identical outputs.  Third, same-activation causal replay shows that
+precedence changes shared-resource overlap, not merely copy time: across three
+exploratory pairs, \sys's
 dependent execution has a $2{,}081.286~\mu$s lower mean p99 than the replayed
-independent arm.  Third, in the thermal-normalized campaign, \sys is the only
+independent arm.  Fourth, in the thermal-normalized campaign, \sys is the only
 tested system whose 95\% upper deadline-miss bound qualifies for the 0.05\%
-target.  Fourth, offered-load points reveal the expected statistical boundary:
+target.  Fifth, offered-load points reveal the expected statistical boundary:
 three 3,300-request points can describe behavior but cannot certify a
 0.05\% target when zero misses alone would still yield a 0.0907\% upper bound.
 
@@ -113,7 +117,8 @@ three 3,300-request points can describe behavior but cannot certify a
   activation edge and protection must follow publication state.
   \item We implement a full-coherent registered system-memory activation edge
   for unmodified TensorRT engines in separate Thor MIG contexts, together with
-  request-indexed activation replay and post-completion output validation.
+  a bounded three-slot real-ASR path, request-indexed activation replay, and
+  post-completion output validation.
   \item We design a hash-bound planner and stage-aware quiescence protocol that
   reserves a measured joint tail and resumes best-effort work immediately
   after producer publication.

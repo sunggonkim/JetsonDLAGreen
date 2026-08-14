@@ -77,6 +77,63 @@ hardware isolation or fine-grained scheduling.  It adds the dependency,
 publication, and deadline contracts required to use those mechanisms for a
 cross-partition pipeline.
 
+\subsection{A Request-Rate Crossover}
+
+Isolation is sufficient when the dependent stages fit comfortably inside one
+instance.  Our ImageNette control is in this regime: its consumer is much
+shorter than its producer, and colocating both stages on 2g avoids an
+unproductive split.  The relevant counterexample is a pipeline with substantial
+work on both sides of the edge and more than one request in flight.
+
+We test that counterexample with the real encoder and decoder of
+Whisper-Tiny~\cite{radford2022whisper}.  Three activation slots allow encoder
+request $i+1$ on 1g to overlap decoder request $i$ on 2g.  Every arm replays the
+same labelled LibriSpeech windows, $2{,}304{,}000$-byte FP32 activation,
+19-request/s release schedule, $250$-ms deadline, saturated DistilBERT
+best-effort tenant, and output oracle.  We rotate the treatment order over
+three sessions of 100 measured requests.  NVIDIA MIG places both critical
+stages on 2g and isolates best effort on 1g; static NVIDIA MPS splits the
+stages but continuously shares 1g; \sys uses the same split and protects 1g
+only through producer publication.  TensorRT requires profile-specific
+encoder plans, so we rebuild and hash-bind 1g and 2g FP32 plans while holding
+the model, decoder plans, inputs, and outputs fixed.
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=\textwidth]{figures/p9-whisper-asr-mig-crossover.pdf}
+  \caption{Nonthermal Whisper-ASR motivation at 19 requests/s.  Every panel
+  repeats \sys, NVIDIA MIG, and NVIDIA MPS in the same order.  Bars aggregate
+  three 100-request sessions; p99 and best-effort whiskers show the session
+  range.  The twelve real windows are cyclically replayed for performance and
+  do not constitute additional accuracy coverage.}
+  \label{fig:asr-mig-crossover}
+  \Description{Three bar charts compare QUIET, NVIDIA MIG, and NVIDIA MPS.
+  QUIET has zero of 300 deadline misses and 156 ms mean session p99.  MIG has
+  167 misses and 412 ms p99.  MPS has 64 misses and 266 ms p99.  MIG has the
+  highest background goodput; QUIET and MPS have similar background goodput.}
+\end{figure*}
+
+Figure~\ref{fig:asr-mig-crossover} exposes the crossover.  MIG misses 167 of
+300 deadlines because co-located stages sustain only 17.791 requests/s and
+queue p99 reaches 241.104 ms.  Static MPS misses 64 requests, all in one
+session.  \sys records 0/300 misses, a 155.581-ms mean session p99, and 18.732
+critical requests/s.  Its 843.645 best-effort requests/s differs by only
+$-0.5\%$ from static MPS, while MIG preserves 924.073 requests/s by dedicating
+1g to best effort.  All nine output traces are byte-identical.  The result
+therefore identifies a dependency-rate regime in which rigid isolation is not
+the correct placement and ungated sharing is not stable enough.
+
+The architecture and dependency are deployment-real, but the load point is
+only partially so.  Thor officially supports concurrent hardware-isolated tenants in this 1g+2g
+geometry~\cite{nvidiathormig}; Whisper is a real 30-second-window
+encoder--decoder application, and prior work adapts it to live streaming
+service~\cite{machacek2023whisperstreaming}.  Our fixed 19-request/s trace can
+represent a multi-channel edge gateway or queued transcription service, but it
+is a cyclic replay rather than a measured deployment arrival trace.  The
+250-ms deadline is an internal inference budget, not a universal ASR response
+target.  We consequently use Figure~\ref{fig:asr-mig-crossover} as nonthermal
+motivation, not as a formal headline or accuracy expansion.
+
 \subsection{Execution and Evidence Contract}
 
 For request $i$, let $a_i$ be its actual release and $c_i$ the consumer's

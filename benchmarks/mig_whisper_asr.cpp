@@ -19,9 +19,11 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <thread>
 #include <sys/mman.h>
 #include <signal.h>
 #include <sys/wait.h>
+#include <time.h>
 #include <unistd.h>
 #include <unordered_map>
 #include <utility>
@@ -50,9 +52,12 @@ struct Options {
   std::string producer_uuid;
   std::string consumer_uuid;
   std::string mps_pipe;
+  std::vector<pid_t> gate_pids;
   int warmup{2};
   int iterations{10};
   int max_tokens{64};
+  int pipeline_slots{1};
+  double arrival_period_us{};
   double deadline_us{};
 };
 
@@ -64,10 +69,16 @@ struct Ready {
 struct Transfer {
   std::uint32_t iteration{};
   std::uint32_t warmup{};
+  std::uint32_t slot{};
   std::array<char, 65> input_sha256{};
   std::uint64_t arrival_ns{};
+  std::uint64_t release_ns{};
   std::uint64_t producer_start_ns{};
   std::uint64_t producer_done_ns{};
+  std::uint64_t pause_begin_ns{};
+  std::uint64_t pause_complete_ns{};
+  std::uint64_t resume_issued_ns{};
+  std::uint64_t resume_observed_ns{};
 };
 
 struct ConsumerResult {
@@ -113,6 +124,85 @@ void check_cuda(const cudaError_t status, const std::string_view operation) {
       std::chrono::duration_cast<std::chrono::nanoseconds>(
           std::chrono::steady_clock::now().time_since_epoch())
           .count());
+}
+
+void wait_until_ns(const std::uint64_t target_ns) {
+  timespec target{};
+  target.tv_sec = static_cast<time_t>(target_ns / 1'000'000'000ULL);
+  target.tv_nsec = static_cast<long>(target_ns % 1'000'000'000ULL);
+  while (clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &target, nullptr) != 0) {
+    if (errno != EINTR) {
+      fail("clock_nanosleep failed");
+    }
+  }
+}
+
+[[nodiscard]] char process_state(const pid_t pid) {
+  std::ifstream input("/proc/" + std::to_string(pid) + "/stat");
+  std::string line;
+  if (!std::getline(input, line)) {
+    fail("cannot read gate process state for PID " + std::to_string(pid));
+  }
+  const std::size_t end = line.rfind(')');
+  require(end != std::string::npos && end + 2U < line.size(),
+          "malformed gate process state");
+  return line[end + 2U];
+}
+
+void pause_processes(const std::vector<pid_t>& pids) {
+  for (const pid_t pid : pids) {
+    const char state = process_state(pid);
+    if (state != 'T' && state != 't' && kill(pid, SIGSTOP) != 0) {
+      fail("failed to pause gate PID " + std::to_string(pid) + ": " +
+           std::strerror(errno));
+    }
+  }
+  const auto deadline = std::chrono::steady_clock::now() +
+                        std::chrono::milliseconds(100);
+  while (!pids.empty()) {
+    const bool stopped = std::all_of(pids.begin(), pids.end(), [](const pid_t pid) {
+      const char state = process_state(pid);
+      return state == 'T' || state == 't';
+    });
+    if (stopped) {
+      return;
+    }
+    if (std::chrono::steady_clock::now() >= deadline) {
+      fail("gate processes did not stop within 100 ms");
+    }
+    std::this_thread::sleep_for(std::chrono::microseconds(50));
+  }
+}
+
+void resume_processes(const std::vector<pid_t>& pids,
+                      std::uint64_t& issued_ns,
+                      std::uint64_t& observed_ns) {
+  if (pids.empty()) {
+    return;
+  }
+  issued_ns = monotonic_ns();
+  for (const pid_t pid : pids) {
+    if (kill(pid, SIGCONT) != 0) {
+      fail("failed to resume gate PID " + std::to_string(pid) + ": " +
+           std::strerror(errno));
+    }
+  }
+  const auto deadline = std::chrono::steady_clock::now() +
+                        std::chrono::milliseconds(100);
+  while (true) {
+    const bool running = std::all_of(pids.begin(), pids.end(), [](const pid_t pid) {
+      const char state = process_state(pid);
+      return state != 'T' && state != 't';
+    });
+    if (running) {
+      observed_ns = monotonic_ns();
+      return;
+    }
+    if (std::chrono::steady_clock::now() >= deadline) {
+      fail("gate processes did not resume within 100 ms");
+    }
+    std::this_thread::sleep_for(std::chrono::microseconds(50));
+  }
 }
 
 [[nodiscard]] std::vector<char> read_file(const std::filesystem::path& path) {
@@ -476,7 +566,7 @@ class EncoderRunner {
  public:
   EncoderRunner(const std::filesystem::path& engine_path, Logger& logger,
                 void* const activation_device)
-      : runtime_(engine_path, logger), activation_device_(activation_device) {
+      : runtime_(engine_path, logger) {
     require(runtime_.type("input_features") == nvinfer1::DataType::kFLOAT,
             "Whisper input_features must be float32");
     require(runtime_.bytes("input_features") == kInputBytes,
@@ -486,19 +576,24 @@ class EncoderRunner {
     require(runtime_.bytes("last_hidden_state") == kActivationBytes,
             "Whisper encoder output shape differs");
     runtime_.allocate_recorded("input_features");
-    runtime_.bind_recorded("last_hidden_state", activation_device_);
+    runtime_.bind_recorded("last_hidden_state", activation_device);
     runtime_.validate_bindings();
   }
 
-  void infer(const void* const input) {
+  void infer(const void* const input, void* const activation_device) {
+    runtime_.bind_recorded("last_hidden_state", activation_device);
     runtime_.copy_to("input_features", input, kInputBytes);
     runtime_.run();
   }
 
  private:
   TensorRuntime runtime_;
-  void* activation_device_{};
 };
+
+[[nodiscard]] void* activation_slot(void* const base, const std::uint32_t slot) {
+  return static_cast<void*>(static_cast<std::byte*>(base) +
+                            static_cast<std::size_t>(slot) * kActivationBytes);
+}
 
 struct KeyValueStorage {
   std::array<void*, kDecoderLayers> decoder_key{};
@@ -760,31 +855,64 @@ void producer_main(const Options& options, void* const mapping,
       _exit(3);
     }
     InputTrace input(options.input_trace);
-    RegisteredMapping activation(mapping, kActivationBytes);
+    const std::size_t mapping_bytes =
+        kActivationBytes * static_cast<std::size_t>(options.pipeline_slots);
+    RegisteredMapping activation(mapping, mapping_bytes);
     Logger logger;
     EncoderRunner encoder(options.encoder_engine, logger, activation.device());
     const int total = options.warmup + options.iterations;
     require(input.count() == static_cast<std::size_t>(total),
             "input trace count differs from warmup plus iterations");
+    const std::uint64_t epoch_ns = monotonic_ns();
+    const std::uint64_t period_ns = static_cast<std::uint64_t>(
+        std::llround(options.arrival_period_us * 1000.0));
+    int acknowledgements = 0;
     for (int index = 0; index < total; ++index) {
       Transfer transfer{};
       transfer.iteration = static_cast<std::uint32_t>(index);
       transfer.warmup = static_cast<std::uint32_t>(index < options.warmup);
+      transfer.slot = static_cast<std::uint32_t>(index % options.pipeline_slots);
       std::copy(input.hash(index).begin(), input.hash(index).end(),
                 transfer.input_sha256.begin());
-      transfer.arrival_ns = monotonic_ns();
+      if (period_ns != 0U) {
+        transfer.arrival_ns =
+            epoch_ns + static_cast<std::uint64_t>(index) * period_ns;
+        wait_until_ns(transfer.arrival_ns);
+      } else {
+        transfer.arrival_ns = monotonic_ns();
+      }
+      transfer.release_ns = monotonic_ns();
+      if (index >= options.pipeline_slots) {
+        char ack = 0;
+        if (!read_all(ack_fd, &ack, sizeof(ack))) {
+          _exit(4);
+        }
+        ++acknowledgements;
+      }
+      transfer.pause_begin_ns = monotonic_ns();
+      pause_processes(options.gate_pids);
+      transfer.pause_complete_ns = monotonic_ns();
       transfer.producer_start_ns = monotonic_ns();
-      encoder.infer(input.sample(index));
+      encoder.infer(input.sample(index),
+                    activation_slot(activation.device(), transfer.slot));
       transfer.producer_done_ns = monotonic_ns();
+      resume_processes(options.gate_pids, transfer.resume_issued_ns,
+                       transfer.resume_observed_ns);
       metadata[index] = transfer;
       write_all(transfer_fd, &transfer, sizeof(transfer));
+    }
+    while (acknowledgements < total) {
       char ack = 0;
       if (!read_all(ack_fd, &ack, sizeof(ack))) {
         _exit(4);
       }
+      ++acknowledgements;
     }
     _exit(0);
   } catch (const std::exception& error) {
+    for (const pid_t pid : options.gate_pids) {
+      static_cast<void>(kill(pid, SIGCONT));
+    }
     const Ready failure{0, 1};
     try {
       write_all(ready_fd, &failure, sizeof(failure));
@@ -810,7 +938,9 @@ void consumer_main(const Options& options, void* const mapping,
     if (!read_all(go_fd, &go, sizeof(go))) {
       _exit(3);
     }
-    RegisteredMapping activation(mapping, kActivationBytes);
+    const std::size_t mapping_bytes =
+        kActivationBytes * static_cast<std::size_t>(options.pipeline_slots);
+    RegisteredMapping activation(mapping, mapping_bytes);
     Logger logger;
     WhisperDecoderRunner decoder(options.decoder_initial_engine,
                                  options.decoder_with_past_engine, logger,
@@ -820,10 +950,15 @@ void consumer_main(const Options& options, void* const mapping,
       if (!read_all(transfer_fd, &transfer, sizeof(transfer))) {
         break;
       }
+      require(transfer.slot ==
+                  transfer.iteration %
+                      static_cast<std::uint32_t>(options.pipeline_slots),
+              "Whisper activation slot ownership differs");
       ConsumerResult result{};
       result.transfer = transfer;
       result.consumer_start_ns = monotonic_ns();
-      const std::vector<std::uint32_t> tokens = decoder.decode(activation.device());
+      const std::vector<std::uint32_t> tokens = decoder.decode(
+          activation_slot(activation.device(), transfer.slot));
       result.consumer_done_ns = monotonic_ns();
       require(tokens.size() <= result.tokens.size(), "Whisper token output is too long");
       result.token_count = static_cast<std::uint32_t>(tokens.size());
@@ -853,6 +988,27 @@ void consumer_main(const Options& options, void* const mapping,
     fail("invalid " + std::string(name) + ": " + value);
   }
   return static_cast<int>(parsed);
+}
+
+[[nodiscard]] std::vector<pid_t> parse_pids(const std::string& text) {
+  std::vector<pid_t> pids;
+  std::size_t begin = 0U;
+  while (begin < text.size()) {
+    const std::size_t end = text.find(',', begin);
+    const std::string token = text.substr(begin, end - begin);
+    const int value = parse_int(token, "gate PID");
+    require(value != getpid(), "gate PID must not be the pipeline parent");
+    pids.push_back(static_cast<pid_t>(value));
+    if (end == std::string::npos) {
+      break;
+    }
+    begin = end + 1U;
+  }
+  std::sort(pids.begin(), pids.end());
+  require(!pids.empty(), "gate PID list must not be empty");
+  require(std::adjacent_find(pids.begin(), pids.end()) == pids.end(),
+          "gate PIDs must be unique");
+  return pids;
 }
 
 Options parse_options(const int argc, char** argv) {
@@ -892,12 +1048,24 @@ Options parse_options(const int argc, char** argv) {
       options.consumer_uuid = next();
     } else if (argument == "--mps-pipe") {
       options.mps_pipe = next();
+    } else if (argument == "--gate-pids") {
+      options.gate_pids = parse_pids(next());
     } else if (argument == "--warmup") {
       options.warmup = parse_int(next(), "warmup", true);
     } else if (argument == "--iterations") {
       options.iterations = parse_int(next(), "iterations");
     } else if (argument == "--max-tokens") {
       options.max_tokens = parse_int(next(), "max-tokens");
+    } else if (argument == "--pipeline-slots") {
+      options.pipeline_slots = parse_int(next(), "pipeline-slots");
+    } else if (argument == "--arrival-period-us") {
+      const std::string value = next();
+      std::size_t consumed = 0U;
+      options.arrival_period_us = std::stod(value, &consumed);
+      require(consumed == value.size() &&
+                  std::isfinite(options.arrival_period_us) &&
+                  options.arrival_period_us >= 0.0,
+              "arrival-period-us must be finite and non-negative");
     } else if (argument == "--deadline-us") {
       const std::string value = next();
       std::size_t consumed = 0U;
@@ -911,8 +1079,9 @@ Options parse_options(const int argc, char** argv) {
              "--decoder-initial-engine PATH --decoder-with-past-engine PATH "
              "--input-trace PATH --output-trace PATH --trace-csv PATH "
              "[--warmup N] [--iterations N] [--max-tokens N] "
+             "[--pipeline-slots 1|3] [--arrival-period-us US] "
              "[--deadline-us US] [--producer UUID] [--consumer UUID] "
-             "[--mps-pipe PATH]\n";
+             "[--mps-pipe PATH] [--gate-pids PID,...]\n";
       std::exit(0);
     } else {
       fail("unknown argument: " + argument);
@@ -930,6 +1099,8 @@ Options parse_options(const int argc, char** argv) {
           "warmup plus iterations must be positive");
   require(options.max_tokens <= static_cast<int>(kMaxGeneratedTokens),
           "max-tokens exceeds output schema capacity");
+  require(options.pipeline_slots == 1 || options.pipeline_slots == 3,
+          "pipeline-slots must be 1 or 3");
   return options;
 }
 
@@ -962,7 +1133,12 @@ int main(const int argc, char** argv) {
     const InputTrace input(options.input_trace);
     const std::size_t total = static_cast<std::size_t>(options.warmup + options.iterations);
     require(input.count() == total, "input trace count differs from requested run");
-    void* const mapping = mmap(nullptr, kActivationBytes, PROT_READ | PROT_WRITE,
+    require(static_cast<std::size_t>(options.pipeline_slots) <=
+                std::numeric_limits<std::size_t>::max() / kActivationBytes,
+            "activation mapping size overflows");
+    const std::size_t mapping_bytes =
+        kActivationBytes * static_cast<std::size_t>(options.pipeline_slots);
+    void* const mapping = mmap(nullptr, mapping_bytes, PROT_READ | PROT_WRITE,
                                MAP_SHARED | MAP_ANONYMOUS, -1, 0);
     require(mapping != MAP_FAILED, "shared activation mmap failed");
     auto* const metadata = static_cast<Transfer*>(mmap(
@@ -1038,7 +1214,7 @@ int main(const int argc, char** argv) {
     close_fd(result[0]);
     const int producer_status = wait_child(producer);
     const int consumer_status = wait_child(consumer);
-    static_cast<void>(munmap(mapping, kActivationBytes));
+    static_cast<void>(munmap(mapping, mapping_bytes));
     static_cast<void>(munmap(metadata, total * sizeof(Transfer)));
     require(results.size() == total && producer_status == 0 && consumer_status == 0,
             "Whisper ASR child run did not complete all requests");
@@ -1049,39 +1225,98 @@ int main(const int argc, char** argv) {
 
     std::ofstream trace(options.trace_csv, std::ios::out | std::ios::trunc);
     require(trace.is_open(), "failed to open ASR timing trace");
-    trace << "request,input_sha256,producer_start_ns,producer_done_ns,"
-             "consumer_start_ns,consumer_done_ns,wall_end_to_end_us,deadline_miss\n";
+    trace << "request,slot,input_sha256,declared_arrival_ns,release_ns,"
+             "producer_start_ns,producer_done_ns,consumer_start_ns,"
+             "consumer_done_ns,pause_begin_ns,pause_complete_ns,"
+             "resume_issued_ns,resume_observed_ns,queue_delay_us,"
+             "gate_hold_us,gate_acquire_us,wall_end_to_end_us,deadline_miss\n";
     std::size_t misses = 0U;
     std::vector<double> latency_us;
+    std::vector<double> queue_us;
+    std::vector<double> gate_hold_us;
+    std::vector<double> gate_acquire_us;
+    std::uint64_t first_measured_arrival_ns = 0U;
+    std::uint64_t last_measured_completion_ns = 0U;
     for (const ConsumerResult& item : results) {
       require(item.consumer_done_ns >= item.transfer.arrival_ns,
               "ASR completion precedes arrival");
+      require(item.transfer.producer_start_ns >= item.transfer.arrival_ns,
+              "ASR producer starts before declared arrival");
       const double wall = static_cast<double>(item.consumer_done_ns -
                                               item.transfer.arrival_ns) /
                           1000.0;
-      const bool miss = options.deadline_us > 0.0 && wall > options.deadline_us;
-      misses += miss ? 1U : 0U;
-      if (item.transfer.warmup == 0U) {
-        latency_us.push_back(wall);
+      const double queue = static_cast<double>(item.transfer.producer_start_ns -
+                                               item.transfer.arrival_ns) /
+                           1000.0;
+      const bool gated = !options.gate_pids.empty();
+      if (gated) {
+        require(item.transfer.pause_complete_ns >= item.transfer.pause_begin_ns &&
+                    item.transfer.resume_observed_ns >=
+                        item.transfer.pause_begin_ns,
+                "ASR gate timestamps are incomplete");
       }
-      trace << item.transfer.iteration << ',' << item.transfer.input_sha256.data()
-            << ',' << item.transfer.producer_start_ns << ','
+      const double gate_hold =
+          gated ? static_cast<double>(item.transfer.resume_observed_ns -
+                                      item.transfer.pause_begin_ns) /
+                      1000.0
+                : 0.0;
+      const double gate_acquire =
+          gated ? static_cast<double>(item.transfer.pause_complete_ns -
+                                      item.transfer.pause_begin_ns) /
+                      1000.0
+                : 0.0;
+      const bool miss = options.deadline_us > 0.0 && wall > options.deadline_us;
+      if (item.transfer.warmup == 0U) {
+        misses += miss ? 1U : 0U;
+        latency_us.push_back(wall);
+        queue_us.push_back(queue);
+        if (gated) {
+          gate_hold_us.push_back(gate_hold);
+          gate_acquire_us.push_back(gate_acquire);
+        }
+        if (first_measured_arrival_ns == 0U) {
+          first_measured_arrival_ns = item.transfer.arrival_ns;
+        }
+        last_measured_completion_ns =
+            std::max(last_measured_completion_ns, item.consumer_done_ns);
+      }
+      trace << item.transfer.iteration << ',' << item.transfer.slot << ','
+            << item.transfer.input_sha256.data() << ','
+            << item.transfer.arrival_ns << ',' << item.transfer.release_ns << ','
+            << item.transfer.producer_start_ns << ','
             << item.transfer.producer_done_ns << ',' << item.consumer_start_ns
-            << ',' << item.consumer_done_ns << ',' << wall << ',' << (miss ? 1 : 0)
+            << ',' << item.consumer_done_ns << ',' << item.transfer.pause_begin_ns
+            << ',' << item.transfer.pause_complete_ns << ','
+            << item.transfer.resume_issued_ns << ','
+            << item.transfer.resume_observed_ns << ',' << queue << ','
+            << gate_hold << ',' << gate_acquire << ',' << wall << ','
+            << (miss ? 1 : 0)
             << '\n';
     }
     trace.flush();
     require(trace.good(), "failed to write ASR timing trace");
     write_asr_trace(options.output_trace, results);
     std::sort(latency_us.begin(), latency_us.end());
-    const auto percentile = [&latency_us](const double probability) {
-      require(!latency_us.empty(), "ASR latency trace is empty");
-      const double position = probability * static_cast<double>(latency_us.size() - 1U);
+    std::sort(queue_us.begin(), queue_us.end());
+    std::sort(gate_hold_us.begin(), gate_hold_us.end());
+    std::sort(gate_acquire_us.begin(), gate_acquire_us.end());
+    const auto percentile = [](const std::vector<double>& values,
+                               const double probability) {
+      require(!values.empty(), "ASR latency trace is empty");
+      const double position = probability * static_cast<double>(values.size() - 1U);
       const auto lower = static_cast<std::size_t>(position);
-      const auto upper = std::min(lower + 1U, latency_us.size() - 1U);
-      return latency_us[lower] + (latency_us[upper] - latency_us[lower]) *
-                                     (position - static_cast<double>(lower));
+      const auto upper = std::min(lower + 1U, values.size() - 1U);
+      return values[lower] + (values[upper] - values[lower]) *
+                                 (position - static_cast<double>(lower));
     };
+    require(last_measured_completion_ns > first_measured_arrival_ns,
+            "ASR measured service window is invalid");
+    const double service_window_s =
+        static_cast<double>(last_measured_completion_ns -
+                            first_measured_arrival_ns) /
+        1.0e9;
+    const double request_goodput_rps =
+        static_cast<double>(options.iterations) / service_window_s;
     std::cout << "{\"schema_version\":1,\"status\":\"ok\","
                  "\"task\":\"asr\","
                  "\"transport\":\"registered-shared-sysmem-direct-binding\","
@@ -1091,14 +1326,30 @@ int main(const int argc, char** argv) {
               << "\",\"payload_bytes\":" << kActivationBytes
               << ",\"warmup\":" << options.warmup
               << ",\"iterations\":" << options.iterations
+              << ",\"pipeline_slots\":" << options.pipeline_slots
+              << ",\"arrival_period_us\":" << options.arrival_period_us
+              << ",\"gated_processes\":" << options.gate_pids.size()
               << ",\"deadline_us\":" << options.deadline_us
               << ",\"deadline_misses\":" << misses
               << ",\"accuracy_validation_placement\":\"post-completion\""
                  ",\"application_output_trace\":\""
               << options.output_trace.string()
               << "\",\"input_trace\":\"" << options.input_trace.string()
-              << "\",\"p50_us\":" << percentile(0.50)
-              << ",\"p99_us\":" << percentile(0.99) << "}\n";
+              << "\",\"p50_us\":" << percentile(latency_us, 0.50)
+              << ",\"p99_us\":" << percentile(latency_us, 0.99)
+              << ",\"queue_p50_us\":" << percentile(queue_us, 0.50)
+              << ",\"queue_p99_us\":" << percentile(queue_us, 0.99)
+              << ",\"service_window_s\":" << service_window_s
+              << ",\"request_goodput_rps\":" << request_goodput_rps;
+    if (!gate_hold_us.empty()) {
+      std::cout << ",\"gate_hold_p50_us\":"
+                << percentile(gate_hold_us, 0.50)
+                << ",\"gate_hold_p99_us\":"
+                << percentile(gate_hold_us, 0.99)
+                << ",\"gate_acquire_p99_us\":"
+                << percentile(gate_acquire_us, 0.99);
+    }
+    std::cout << "}\n";
     return 0;
   } catch (const std::exception& error) {
     std::cerr << "{\"schema_version\":1,\"status\":\"error\",\"message\":\""

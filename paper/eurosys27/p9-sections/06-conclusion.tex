@@ -21,9 +21,18 @@ and LibriSpeech ASR preserve their reference metrics.  BLESS, BOER, ParvaGPU,
 gpulet, GSLICE, and DeepPlan remain visible in a separate partial-evidence
 table, without treating unlike contracts as a common rank.
 
-Our claims are bounded to one Thor, a fixed 1g+2g placement, and a low-inflight
-two-stage path; causal, transport, and load controls remain exploratory or
-descriptive.  Only \sys is a proposed system name; comparators retain their
-original roles.  Within this boundary, the evidence suggests a broader lesson:
+A separate nonthermal three-slot Whisper motivation isolates where MIG ceases
+to be sufficient.  At 19 requests/s, colocating both critical stages on 2g
+preserves the isolated 1g tenant but incurs 167/300 misses; static MPS splitting
+incurs 64/300; \sys's split and publication-scoped protection incurs 0/300.
+The inputs and outputs are real and byte-identical, but the arrivals cyclically
+replay twelve windows, so this result establishes a mechanism and load regime
+rather than a deployment SLO.
+
+Our claims are bounded to one Thor and a fixed 1g+2g placement.  The formal
+vision path is low-inflight, and the three-slot ASR path lacks the standalone
+ring's fault-recovery contract; causal, transport, and load controls remain
+exploratory or descriptive.  Only \sys is a proposed system name; comparators
+retain their original roles.  Within this boundary, the evidence suggests a broader lesson:
 on a coherent edge SoC, GPU management should follow the activation, its
 publication, and the remaining end-to-end slack connecting dependent stages.

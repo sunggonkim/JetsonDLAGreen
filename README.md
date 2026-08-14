@@ -109,6 +109,57 @@ the MIG value repeated in the primary six-system table and all three graph
 panels. It remains a one-session directional result rather than a formal
 repeated-session ranking point.
 
+### Where isolated MIG stops being enough — nonthermal ASR motivation
+
+The ImageNette stages above are highly unbalanced, so colocating them on 2g is
+the correct choice. A real Whisper-Tiny encoder–decoder pipeline exposes the
+opposite regime: with three requests in flight, encoder request *i+1* can run
+on 1g while decoder request *i* runs on 2g. The comparison below keeps the
+same FP32 model, 2,304,000-byte activation, 19-request/s release schedule,
+250-ms deadline, saturated DistilBERT BE tenant, and output oracle. Only
+placement and producer protection differ. The encoder plan is rebuilt and
+hash-bound for each MIG profile, as TensorRT requires; precision, model,
+decoder plans, inputs, and outputs remain fixed.
+
+| System | Placement and protection | Requests | Session misses | Observed DMR | Mean session p99 (ms) | Queue p99 (ms) | Critical requests/s | BE requests/s |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| **QUIET** | P:1g with BE, C:2g; pause BE only through producer publication | 300 | **0 / 0 / 0** | **0.000%** | **155.581** | **0.903** | **18.732** | 843.645 |
+| NVIDIA MIG | P+C:2g; BE isolated on 1g | 300 | 59 / 57 / 51 | 55.667% | 412.060 | 241.104 | 17.791 | **924.073** |
+| NVIDIA MPS | Static P:1g with BE, C:2g; no request gate | 300 | 0 / 0 / 64 | 21.333% | 266.168 | 100.938 | 18.329 | 847.754 |
+
+<p align="center">
+  <img src="paper/eurosys27/figures/p9-whisper-asr-mig-crossover.png" width="100%" alt="Three panels repeat QUIET, NVIDIA MIG, and NVIDIA MPS in that order. QUIET has zero deadline misses and the lowest p99; MIG preserves the most background goodput but misses 167 of 300 requests; static MPS lies between them and is unstable in one session.">
+</p>
+
+This is the missing MIG crossover. At 19 requests/s, colocating both critical
+stages on 2g leaves the critical path below the offered rate even though the
+BE tenant is isolated: queue p99 grows to 241.104 ms and MIG misses 167 of 300
+deadlines. Static splitting recovers pipeline parallelism but remains at the
+contention boundary. QUIET's publication-scoped gate makes all three sessions
+stable, reduces mean session p99 by 62.2% relative to MIG, and raises critical
+goodput by 5.3%. Relative to static MPS, it reduces p99 by 41.5% while changing
+BE goodput by -0.5%. All nine application output traces have the same SHA-256.
+
+The realism boundary is explicit. NVIDIA documents Thor MIG as hardware-level
+isolation for concurrent tenants, but also documents that the Thor iGPU uses
+CPU-shared unified system memory and exposes only the 1g+2g geometry used
+here ([Jetson MIG guide](https://docs.nvidia.com/jetson/archives/r39.2/DeveloperGuide/SD/MiG.html),
+[Thor profiles](https://docs.nvidia.com/datacenter/tesla/mig-user-guide/supported-mig-profiles.html)).
+Whisper itself is an encoder–decoder model over 30-second audio windows
+([original paper](https://cdn.openai.com/papers/whisper.pdf)), and pipelined
+streaming adaptations are demonstrated research workloads
+([Whisper-Streaming](https://arxiv.org/abs/2307.14743)). Thus the dependency,
+stage overlap, multi-tenant placement, and data are realistic. The exact load
+is not yet a field trace: it cyclically replays 12 labelled LibriSpeech windows
+and the 250-ms value is an internal inference budget, not a universal
+end-user ASR SLO. The defensible scope is a multi-channel edge ASR gateway or
+queued transcription service under saturation—not a single-user assistant.
+This result is therefore a nonthermal motivation experiment, not a promoted
+formal ranking or an accuracy-coverage expansion.
+
+The checked-in compact evidence is
+[`p9-whisper-asr-mig-crossover.json`](paper/eurosys27/generated/p9-whisper-asr-mig-crossover.json).
+
 ## Formal promotion ledger — same fixed roster
 
 The thermal formal campaign is a separate contract: six counterbalanced

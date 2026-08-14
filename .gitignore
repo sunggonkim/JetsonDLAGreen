@@ -46,6 +46,7 @@ __pycache__/
 !/paper/eurosys27/generated/p9-figure-provenance.json
 !/paper/eurosys27/generated/p9-six-system-imagenette-gate.json
 !/paper/eurosys27/generated/p9-six-system-imagenette-gate-provenance.json
+!/paper/eurosys27/generated/p9-whisper-asr-mig-crossover.json
 
 # Local planning/source material that is not part of the public artifact
 /BigdataLab_progress_ppt(26.08.05)_KCJ (1).pptx
