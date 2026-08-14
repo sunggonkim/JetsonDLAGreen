@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "kind": "p9-whisper-edge-mix-regimes-compact",
   "evidence_class": "exploratory-nonthermal-motivation",
   "thermal_campaign": false,
@@ -9,32 +9,64 @@
     "NVIDIA MPS"
   ],
   "scenario_order": [
-    "speech-plus-nlp",
-    "speech-plus-vision",
-    "speech-plus-speech",
-    "speech-plus-multimodal"
+    "mig-placement-nlp",
+    "mig-placement-vision",
+    "mps-interference-speech-20",
+    "mps-interference-vision-24"
   ],
-  "directional_rates_rps": [
-    15.0,
-    17.0,
-    19.0,
-    20.0,
-    21.0
-  ],
+  "directional_rates_rps": {
+    "mig-placement-nlp": [
+      15.0,
+      17.0,
+      19.0,
+      20.0,
+      21.0
+    ],
+    "mig-placement-vision": [
+      15.0,
+      17.0,
+      19.0,
+      20.0,
+      21.0
+    ],
+    "mps-interference-speech-20": [
+      15.0,
+      17.0,
+      18.0,
+      19.0
+    ],
+    "mps-interference-vision-24": [
+      15.0,
+      17.0,
+      18.0,
+      19.0,
+      20.0
+    ]
+  },
   "deadline_us": 250000.0,
   "pipeline_slots": 3,
   "foreground": "Whisper-Tiny encoder-decoder on labelled LibriSpeech windows",
   "input_policy": "12 labelled windows cyclically replayed to 102 records; performance only, not an accuracy expansion",
-  "background_policy": "saturated queued TensorRT workers using real DistilBERT-SST2, ResNet10-detection, and Whisper-Tiny encoder plans",
-  "balanced_rate_policy": "first-directional-rate-with-MIG-misses-and-both-split-modes-zero",
+  "background_policy": "saturated queued TensorRT workers using real DistilBERT-SST2, ResNet10-detection, and Whisper-Tiny encoder plans; high-fanout interference regimes use 20 speech or 24 vision workers",
+  "balanced_rate_policy": "first-directional-rate-with-target-baseline-misses-and-other-baselines-zero",
   "scenarios": {
-    "speech-plus-nlp": {
-      "label": "Speech + NLP",
+    "mig-placement-nlp": {
+      "label": "MIG placement: NLP",
+      "short_label": "NLP\nMIG@19",
+      "failure_target": "NVIDIA MIG",
+      "failure_class": "placement",
       "background_workers": 1,
       "background_models": [
         "distilbert-sst2"
       ],
       "deployment_scope": "multi-channel-robot-or-edge-gateway-stress",
+      "directional_rates_rps": [
+        15.0,
+        17.0,
+        19.0,
+        20.0,
+        21.0
+      ],
       "balanced_rate_rps": 19.0,
       "systems": {
         "QUIET": {
@@ -48,15 +80,15 @@
               "session_misses": [
                 0
               ],
-              "mean_session_p50_us": 60509.0,
-              "mean_session_p99_us": 148992.0,
-              "min_session_p99_us": 148992.0,
-              "max_session_p99_us": 148992.0,
-              "mean_queue_p99_us": 778.67,
-              "mean_critical_goodput_rps": 14.8956,
-              "mean_background_goodput_rps": 897.4305667,
-              "mean_producer_us": 7792.79401,
-              "mean_consumer_us": 49419.46107,
+              "mean_session_p50_us": 60595.2,
+              "mean_session_p99_us": 149845.0,
+              "min_session_p99_us": 149845.0,
+              "max_session_p99_us": 149845.0,
+              "mean_queue_p99_us": 809.455,
+              "mean_critical_goodput_rps": 14.8966,
+              "mean_background_goodput_rps": 895.7170021,
+              "mean_producer_us": 7852.79336,
+              "mean_consumer_us": 49246.95142,
               "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
               "rate_rps": 15.0
             },
@@ -68,15 +100,15 @@
               "session_misses": [
                 0
               ],
-              "mean_session_p50_us": 68444.0,
-              "mean_session_p99_us": 150046.0,
-              "min_session_p99_us": 150046.0,
-              "max_session_p99_us": 150046.0,
-              "mean_queue_p99_us": 814.715,
-              "mean_critical_goodput_rps": 16.8159,
-              "mean_background_goodput_rps": 871.8978584,
-              "mean_producer_us": 8112.59038,
-              "mean_consumer_us": 49836.432740000004,
+              "mean_session_p50_us": 66660.5,
+              "mean_session_p99_us": 148973.0,
+              "min_session_p99_us": 148973.0,
+              "max_session_p99_us": 148973.0,
+              "mean_queue_p99_us": 798.959,
+              "mean_critical_goodput_rps": 16.8215,
+              "mean_background_goodput_rps": 868.7753872,
+              "mean_producer_us": 8170.58728,
+              "mean_consumer_us": 49526.88267,
               "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
               "rate_rps": 17.0
             },
@@ -88,15 +120,15 @@
               "session_misses": [
                 0
               ],
-              "mean_session_p50_us": 73756.2,
-              "mean_session_p99_us": 150694.0,
-              "min_session_p99_us": 150694.0,
-              "max_session_p99_us": 150694.0,
-              "mean_queue_p99_us": 837.854,
-              "mean_critical_goodput_rps": 18.7356,
-              "mean_background_goodput_rps": 840.8676919,
-              "mean_producer_us": 8454.30688,
-              "mean_consumer_us": 49551.813449999994,
+              "mean_session_p50_us": 74131.3,
+              "mean_session_p99_us": 149925.0,
+              "min_session_p99_us": 149925.0,
+              "max_session_p99_us": 149925.0,
+              "mean_queue_p99_us": 4057.39,
+              "mean_critical_goodput_rps": 18.7344,
+              "mean_background_goodput_rps": 840.3743433,
+              "mean_producer_us": 8570.27162,
+              "mean_consumer_us": 49858.54694,
               "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
               "rate_rps": 19.0
             },
@@ -108,35 +140,35 @@
               "session_misses": [
                 0
               ],
-              "mean_session_p50_us": 98306.4,
-              "mean_session_p99_us": 171494.0,
-              "min_session_p99_us": 171494.0,
-              "max_session_p99_us": 171494.0,
-              "mean_queue_p99_us": 22146.2,
-              "mean_critical_goodput_rps": 19.6703,
-              "mean_background_goodput_rps": 828.4814166,
-              "mean_producer_us": 8880.56346,
-              "mean_consumer_us": 50382.9989,
+              "mean_session_p50_us": 100193.0,
+              "mean_session_p99_us": 175776.0,
+              "min_session_p99_us": 175776.0,
+              "max_session_p99_us": 175776.0,
+              "mean_queue_p99_us": 26471.5,
+              "mean_critical_goodput_rps": 19.6772,
+              "mean_background_goodput_rps": 825.6687458,
+              "mean_producer_us": 8910.76353,
+              "mean_consumer_us": 50281.94074,
               "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
               "rate_rps": 20.0
             },
             {
               "sessions": 1,
               "requests": 100,
-              "misses": 39,
-              "observed_dmr": 0.39,
+              "misses": 32,
+              "observed_dmr": 0.32,
               "session_misses": [
-                39
+                32
               ],
-              "mean_session_p50_us": 227435.0,
-              "mean_session_p99_us": 363384.0,
-              "min_session_p99_us": 363384.0,
-              "max_session_p99_us": 363384.0,
-              "mean_queue_p99_us": 204008.0,
-              "mean_critical_goodput_rps": 19.6947,
-              "mean_background_goodput_rps": 824.2739813,
-              "mean_producer_us": 8985.4064,
-              "mean_consumer_us": 50332.76352,
+              "mean_session_p50_us": 219804.0,
+              "mean_session_p99_us": 344902.0,
+              "min_session_p99_us": 344902.0,
+              "max_session_p99_us": 344902.0,
+              "mean_queue_p99_us": 183336.0,
+              "mean_critical_goodput_rps": 19.7666,
+              "mean_background_goodput_rps": 824.1036126,
+              "mean_producer_us": 9094.34837,
+              "mean_consumer_us": 50230.570470000006,
               "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
               "rate_rps": 21.0
             }
@@ -151,15 +183,15 @@
               0,
               0
             ],
-            "mean_session_p50_us": 74150.46666666667,
-            "mean_session_p99_us": 153562.66666666666,
-            "min_session_p99_us": 151554.0,
-            "max_session_p99_us": 155077.0,
-            "mean_queue_p99_us": 889.8633333333333,
-            "mean_critical_goodput_rps": 18.731799999999996,
-            "mean_background_goodput_rps": 839.3542867333334,
-            "mean_producer_us": 8546.2739,
-            "mean_consumer_us": 49784.59963333333,
+            "mean_session_p50_us": 79590.09999999999,
+            "mean_session_p99_us": 156650.66666666666,
+            "min_session_p99_us": 155583.0,
+            "max_session_p99_us": 158365.0,
+            "mean_queue_p99_us": 993.1543333333334,
+            "mean_critical_goodput_rps": 18.7201,
+            "mean_background_goodput_rps": 825.3106531333333,
+            "mean_producer_us": 8795.07258,
+            "mean_consumer_us": 50820.84519,
             "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4"
           }
         },
@@ -174,15 +206,15 @@
               "session_misses": [
                 0
               ],
-              "mean_session_p50_us": 59522.2,
-              "mean_session_p99_us": 159308.0,
-              "min_session_p99_us": 159308.0,
-              "max_session_p99_us": 159308.0,
-              "mean_queue_p99_us": 533.625,
-              "mean_critical_goodput_rps": 14.8869,
-              "mean_background_goodput_rps": 951.1202997,
-              "mean_producer_us": 7340.4865500000005,
-              "mean_consumer_us": 51315.73323,
+              "mean_session_p50_us": 59247.9,
+              "mean_session_p99_us": 159362.0,
+              "min_session_p99_us": 159362.0,
+              "max_session_p99_us": 159362.0,
+              "mean_queue_p99_us": 513.315,
+              "mean_critical_goodput_rps": 14.8854,
+              "mean_background_goodput_rps": 950.066233,
+              "mean_producer_us": 7454.49512,
+              "mean_consumer_us": 51466.098020000005,
               "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
               "rate_rps": 15.0
             },
@@ -194,55 +226,55 @@
               "session_misses": [
                 0
               ],
-              "mean_session_p50_us": 76992.7,
-              "mean_session_p99_us": 165306.0,
-              "min_session_p99_us": 165306.0,
-              "max_session_p99_us": 165306.0,
-              "mean_queue_p99_us": 699.075,
-              "mean_critical_goodput_rps": 16.8046,
-              "mean_background_goodput_rps": 934.7083423,
-              "mean_producer_us": 8057.515380000001,
-              "mean_consumer_us": 52784.32673,
+              "mean_session_p50_us": 76606.9,
+              "mean_session_p99_us": 162916.0,
+              "min_session_p99_us": 162916.0,
+              "max_session_p99_us": 162916.0,
+              "mean_queue_p99_us": 403.942,
+              "mean_critical_goodput_rps": 16.8088,
+              "mean_background_goodput_rps": 934.2524227,
+              "mean_producer_us": 7949.74622,
+              "mean_consumer_us": 52687.3788,
               "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
               "rate_rps": 17.0
             },
             {
               "sessions": 1,
               "requests": 100,
-              "misses": 57,
-              "observed_dmr": 0.57,
+              "misses": 55,
+              "observed_dmr": 0.55,
               "session_misses": [
-                57
+                55
               ],
-              "mean_session_p50_us": 265580.0,
-              "mean_session_p99_us": 421234.0,
-              "min_session_p99_us": 421234.0,
-              "max_session_p99_us": 421234.0,
-              "mean_queue_p99_us": 248801.0,
-              "mean_critical_goodput_rps": 17.7571,
-              "mean_background_goodput_rps": 925.7193334,
-              "mean_producer_us": 10112.31244,
-              "mean_consumer_us": 55950.59621,
+              "mean_session_p50_us": 256693.0,
+              "mean_session_p99_us": 408192.0,
+              "min_session_p99_us": 408192.0,
+              "max_session_p99_us": 408192.0,
+              "mean_queue_p99_us": 237565.0,
+              "mean_critical_goodput_rps": 17.7984,
+              "mean_background_goodput_rps": 921.8465747,
+              "mean_producer_us": 9797.97848,
+              "mean_consumer_us": 55764.19426,
               "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
               "rate_rps": 19.0
             },
             {
               "sessions": 1,
               "requests": 100,
-              "misses": 78,
-              "observed_dmr": 0.78,
+              "misses": 76,
+              "observed_dmr": 0.76,
               "session_misses": [
-                78
+                76
               ],
-              "mean_session_p50_us": 396297.0,
-              "mean_session_p99_us": 670770.0,
-              "min_session_p99_us": 670770.0,
-              "max_session_p99_us": 670770.0,
-              "mean_queue_p99_us": 475142.0,
-              "mean_critical_goodput_rps": 17.7917,
-              "mean_background_goodput_rps": 923.3380444,
-              "mean_producer_us": 9755.53047,
-              "mean_consumer_us": 55785.403569999995,
+              "mean_session_p50_us": 385208.0,
+              "mean_session_p99_us": 646763.0,
+              "min_session_p99_us": 646763.0,
+              "max_session_p99_us": 646763.0,
+              "mean_queue_p99_us": 454987.0,
+              "mean_critical_goodput_rps": 17.868,
+              "mean_background_goodput_rps": 923.3289481,
+              "mean_producer_us": 9555.84574,
+              "mean_consumer_us": 55548.96961,
               "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
               "rate_rps": 20.0
             },
@@ -254,15 +286,15 @@
               "session_misses": [
                 86
               ],
-              "mean_session_p50_us": 512463.0,
-              "mean_session_p99_us": 907511.0,
-              "min_session_p99_us": 907511.0,
-              "max_session_p99_us": 907511.0,
-              "mean_queue_p99_us": 695678.0,
-              "mean_critical_goodput_rps": 17.7884,
-              "mean_background_goodput_rps": 924.8134961,
-              "mean_producer_us": 9715.25014,
-              "mean_consumer_us": 55751.23727,
+              "mean_session_p50_us": 516354.0,
+              "mean_session_p99_us": 929975.0,
+              "min_session_p99_us": 929975.0,
+              "max_session_p99_us": 929975.0,
+              "mean_queue_p99_us": 718311.0,
+              "mean_critical_goodput_rps": 17.7176,
+              "mean_background_goodput_rps": 920.6565726,
+              "mean_producer_us": 9987.04078,
+              "mean_consumer_us": 55991.031370000004,
               "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
               "rate_rps": 21.0
             }
@@ -270,22 +302,22 @@
           "balanced": {
             "sessions": 3,
             "requests": 300,
-            "misses": 137,
-            "observed_dmr": 0.45666666666666667,
+            "misses": 196,
+            "observed_dmr": 0.6533333333333333,
             "session_misses": [
-              52,
-              38,
-              47
+              64,
+              67,
+              65
             ],
-            "mean_session_p50_us": 240118.33333333334,
-            "mean_session_p99_us": 379680.0,
-            "min_session_p99_us": 360664.0,
-            "max_session_p99_us": 403485.0,
-            "mean_queue_p99_us": 208883.0,
-            "mean_critical_goodput_rps": 17.9016,
-            "mean_background_goodput_rps": 922.0042087333333,
-            "mean_producer_us": 9497.571859999998,
-            "mean_consumer_us": 55480.476859999995,
+            "mean_session_p50_us": 298742.3333333333,
+            "mean_session_p99_us": 485141.6666666667,
+            "min_session_p99_us": 479453.0,
+            "max_session_p99_us": 493480.0,
+            "mean_queue_p99_us": 306738.0,
+            "mean_critical_goodput_rps": 17.55783333333333,
+            "mean_background_goodput_rps": 907.3718359,
+            "mean_producer_us": 9734.572460000001,
+            "mean_consumer_us": 56602.48475333333,
             "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4"
           }
         },
@@ -300,15 +332,15 @@
               "session_misses": [
                 0
               ],
-              "mean_session_p50_us": 60945.0,
-              "mean_session_p99_us": 149116.0,
-              "min_session_p99_us": 149116.0,
-              "max_session_p99_us": 149116.0,
-              "mean_queue_p99_us": 265.306,
-              "mean_critical_goodput_rps": 14.8952,
-              "mean_background_goodput_rps": 896.8805394,
-              "mean_producer_us": 8630.4439,
-              "mean_consumer_us": 49226.86336,
+              "mean_session_p50_us": 61138.6,
+              "mean_session_p99_us": 150276.0,
+              "min_session_p99_us": 150276.0,
+              "max_session_p99_us": 150276.0,
+              "mean_queue_p99_us": 546.905,
+              "mean_critical_goodput_rps": 14.8939,
+              "mean_background_goodput_rps": 900.6334829,
+              "mean_producer_us": 8643.38864,
+              "mean_consumer_us": 49422.48499,
               "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
               "rate_rps": 15.0
             },
@@ -320,15 +352,15 @@
               "session_misses": [
                 0
               ],
-              "mean_session_p50_us": 66090.7,
-              "mean_session_p99_us": 148643.0,
-              "min_session_p99_us": 148643.0,
-              "max_session_p99_us": 148643.0,
-              "mean_queue_p99_us": 449.616,
-              "mean_critical_goodput_rps": 16.8222,
-              "mean_background_goodput_rps": 873.2789523,
-              "mean_producer_us": 8942.30033,
-              "mean_consumer_us": 49268.163140000004,
+              "mean_session_p50_us": 67258.1,
+              "mean_session_p99_us": 151332.0,
+              "min_session_p99_us": 151332.0,
+              "max_session_p99_us": 151332.0,
+              "mean_queue_p99_us": 551.622,
+              "mean_critical_goodput_rps": 16.8212,
+              "mean_background_goodput_rps": 870.9935862,
+              "mean_producer_us": 8998.24242,
+              "mean_consumer_us": 49534.2649,
               "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
               "rate_rps": 17.0
             },
@@ -340,15 +372,15 @@
               "session_misses": [
                 0
               ],
-              "mean_session_p50_us": 74001.7,
-              "mean_session_p99_us": 154159.0,
-              "min_session_p99_us": 154159.0,
-              "max_session_p99_us": 154159.0,
-              "mean_queue_p99_us": 653.15,
-              "mean_critical_goodput_rps": 18.728,
-              "mean_background_goodput_rps": 843.5250611,
-              "mean_producer_us": 9431.93577,
-              "mean_consumer_us": 49764.16113,
+              "mean_session_p50_us": 73723.8,
+              "mean_session_p99_us": 152316.0,
+              "min_session_p99_us": 152316.0,
+              "max_session_p99_us": 152316.0,
+              "mean_queue_p99_us": 540.779,
+              "mean_critical_goodput_rps": 18.7313,
+              "mean_background_goodput_rps": 840.6169881,
+              "mean_producer_us": 9401.26838,
+              "mean_consumer_us": 49399.05604,
               "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
               "rate_rps": 19.0
             },
@@ -360,35 +392,35 @@
               "session_misses": [
                 0
               ],
-              "mean_session_p50_us": 89358.0,
-              "mean_session_p99_us": 162248.0,
-              "min_session_p99_us": 162248.0,
-              "max_session_p99_us": 162248.0,
-              "mean_queue_p99_us": 12777.0,
-              "mean_critical_goodput_rps": 19.6768,
-              "mean_background_goodput_rps": 827.932779,
-              "mean_producer_us": 9692.27144,
-              "mean_consumer_us": 49765.11125,
+              "mean_session_p50_us": 90009.5,
+              "mean_session_p99_us": 168864.0,
+              "min_session_p99_us": 168864.0,
+              "max_session_p99_us": 168864.0,
+              "mean_queue_p99_us": 19350.2,
+              "mean_critical_goodput_rps": 19.6812,
+              "mean_background_goodput_rps": 827.7604466,
+              "mean_producer_us": 9732.24433,
+              "mean_consumer_us": 49720.55259,
               "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
               "rate_rps": 20.0
             },
             {
               "sessions": 1,
               "requests": 100,
-              "misses": 26,
-              "observed_dmr": 0.26,
+              "misses": 30,
+              "observed_dmr": 0.3,
               "session_misses": [
-                26
+                30
               ],
-              "mean_session_p50_us": 209393.0,
-              "mean_session_p99_us": 331854.0,
-              "min_session_p99_us": 331854.0,
-              "max_session_p99_us": 331854.0,
-              "mean_queue_p99_us": 172106.0,
-              "mean_critical_goodput_rps": 19.8177,
-              "mean_background_goodput_rps": 829.4536817,
-              "mean_producer_us": 9909.07126,
-              "mean_consumer_us": 50113.13876,
+              "mean_session_p50_us": 214500.0,
+              "mean_session_p99_us": 340913.0,
+              "min_session_p99_us": 340913.0,
+              "max_session_p99_us": 340913.0,
+              "mean_queue_p99_us": 179244.0,
+              "mean_critical_goodput_rps": 19.7822,
+              "mean_background_goodput_rps": 827.2794409,
+              "mean_producer_us": 9950.61284,
+              "mean_consumer_us": 50167.55254,
               "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
               "rate_rps": 21.0
             }
@@ -403,15 +435,15 @@
               0,
               0
             ],
-            "mean_session_p50_us": 74018.46666666666,
-            "mean_session_p99_us": 153555.0,
-            "min_session_p99_us": 152270.0,
-            "max_session_p99_us": 155223.0,
-            "mean_queue_p99_us": 660.0426666666667,
-            "mean_critical_goodput_rps": 18.728233333333332,
-            "mean_background_goodput_rps": 846.0012953666668,
-            "mean_producer_us": 9423.383243333334,
-            "mean_consumer_us": 49758.057713333335,
+            "mean_session_p50_us": 78159.23333333334,
+            "mean_session_p99_us": 156730.0,
+            "min_session_p99_us": 155503.0,
+            "max_session_p99_us": 157735.0,
+            "mean_queue_p99_us": 702.323,
+            "mean_critical_goodput_rps": 18.715999999999998,
+            "mean_background_goodput_rps": 828.7188633666666,
+            "mean_producer_us": 9636.391986666667,
+            "mean_consumer_us": 50571.836456666664,
             "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4"
           }
         }
@@ -419,33 +451,43 @@
       "sources": {
         "directional": {
           "summary": {
-            "path": "results/p9-whisper-edge-mix-campaign-r03-20260814/directional/speech-plus-nlp/summary.json",
-            "sha256": "79cf11857d29038293bcbd152a53b7d5591fc61486ab8a4c8dad682edbad4ec1"
+            "path": "results/p9-whisper-mixed-regime-campaign-r01-20260814/directional/mig-placement-nlp/summary.json",
+            "sha256": "96466245e245b43a384723c680c22eabee96be63b30e6a1a148a41121484fc7f"
           },
           "provenance": {
-            "path": "results/p9-whisper-edge-mix-campaign-r03-20260814/directional/speech-plus-nlp/provenance.json",
-            "sha256": "90875774eccba80ad113cdde69749f66acb64d4d2b1796a8f5af8638db209f0f"
+            "path": "results/p9-whisper-mixed-regime-campaign-r01-20260814/directional/mig-placement-nlp/provenance.json",
+            "sha256": "f5304770ff2f0ec82f680adba2f41d02b3e86722124e2982a4286cb6b75396f6"
           }
         },
         "balanced": {
           "summary": {
-            "path": "results/p9-whisper-edge-mix-campaign-r03-20260814/balanced/speech-plus-nlp/summary.json",
-            "sha256": "d36fdd961f0a5346df88082dd667243e9d0d3c2a9e941300d18c3b124e6a63be"
+            "path": "results/p9-whisper-mixed-regime-campaign-r01-20260814/balanced/mig-placement-nlp/summary.json",
+            "sha256": "2e7f3fafce44560b2349950c34e77e4865eaeb398a0971caa2a20c97a22aa0c1"
           },
           "provenance": {
-            "path": "results/p9-whisper-edge-mix-campaign-r03-20260814/balanced/speech-plus-nlp/provenance.json",
-            "sha256": "90875774eccba80ad113cdde69749f66acb64d4d2b1796a8f5af8638db209f0f"
+            "path": "results/p9-whisper-mixed-regime-campaign-r01-20260814/balanced/mig-placement-nlp/provenance.json",
+            "sha256": "f5304770ff2f0ec82f680adba2f41d02b3e86722124e2982a4286cb6b75396f6"
           }
         }
       }
     },
-    "speech-plus-vision": {
-      "label": "Speech + Vision",
+    "mig-placement-vision": {
+      "label": "MIG placement: vision",
+      "short_label": "Vision\nMIG@21",
+      "failure_target": "NVIDIA MIG",
+      "failure_class": "placement",
       "background_workers": 1,
       "background_models": [
         "resnet10-detection"
       ],
       "deployment_scope": "multi-sensor-robot-or-video-gateway-stress",
+      "directional_rates_rps": [
+        15.0,
+        17.0,
+        19.0,
+        20.0,
+        21.0
+      ],
       "balanced_rate_rps": 21.0,
       "systems": {
         "QUIET": {
@@ -459,15 +501,15 @@
               "session_misses": [
                 0
               ],
-              "mean_session_p50_us": 55291.4,
-              "mean_session_p99_us": 137731.0,
-              "min_session_p99_us": 137731.0,
-              "max_session_p99_us": 137731.0,
-              "mean_queue_p99_us": 594.007,
-              "mean_critical_goodput_rps": 14.9324,
-              "mean_background_goodput_rps": 1487.530212,
-              "mean_producer_us": 7475.99532,
-              "mean_consumer_us": 44651.42113,
+              "mean_session_p50_us": 55475.1,
+              "mean_session_p99_us": 134595.0,
+              "min_session_p99_us": 134595.0,
+              "max_session_p99_us": 134595.0,
+              "mean_queue_p99_us": 545.656,
+              "mean_critical_goodput_rps": 14.9317,
+              "mean_background_goodput_rps": 1479.045145,
+              "mean_producer_us": 7522.1046,
+              "mean_consumer_us": 44534.82343999999,
               "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
               "rate_rps": 15.0
             },
@@ -479,15 +521,15 @@
               "session_misses": [
                 0
               ],
-              "mean_session_p50_us": 54966.0,
-              "mean_session_p99_us": 136810.0,
-              "min_session_p99_us": 136810.0,
-              "max_session_p99_us": 136810.0,
-              "mean_queue_p99_us": 769.271,
-              "mean_critical_goodput_rps": 16.8692,
-              "mean_background_goodput_rps": 1443.405404,
-              "mean_producer_us": 7758.89201,
-              "mean_consumer_us": 44843.60207,
+              "mean_session_p50_us": 55040.6,
+              "mean_session_p99_us": 136684.0,
+              "min_session_p99_us": 136684.0,
+              "max_session_p99_us": 136684.0,
+              "mean_queue_p99_us": 792.167,
+              "mean_critical_goodput_rps": 16.8699,
+              "mean_background_goodput_rps": 1437.057221,
+              "mean_producer_us": 7733.22906,
+              "mean_consumer_us": 44679.59205,
               "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
               "rate_rps": 17.0
             },
@@ -499,15 +541,15 @@
               "session_misses": [
                 0
               ],
-              "mean_session_p50_us": 66367.9,
-              "mean_session_p99_us": 137346.0,
-              "min_session_p99_us": 137346.0,
-              "max_session_p99_us": 137346.0,
-              "mean_queue_p99_us": 810.535,
-              "mean_critical_goodput_rps": 18.7912,
-              "mean_background_goodput_rps": 1415.073376,
-              "mean_producer_us": 7992.68569,
-              "mean_consumer_us": 45284.61198,
+              "mean_session_p50_us": 65483.8,
+              "mean_session_p99_us": 137549.0,
+              "min_session_p99_us": 137549.0,
+              "max_session_p99_us": 137549.0,
+              "mean_queue_p99_us": 807.347,
+              "mean_critical_goodput_rps": 18.7981,
+              "mean_background_goodput_rps": 1400.851682,
+              "mean_producer_us": 7976.12537,
+              "mean_consumer_us": 44929.63097,
               "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
               "rate_rps": 19.0
             },
@@ -519,15 +561,15 @@
               "session_misses": [
                 0
               ],
-              "mean_session_p50_us": 66540.7,
-              "mean_session_p99_us": 137892.0,
-              "min_session_p99_us": 137892.0,
-              "max_session_p99_us": 137892.0,
-              "mean_queue_p99_us": 777.533,
-              "mean_critical_goodput_rps": 19.751,
-              "mean_background_goodput_rps": 1391.426066,
-              "mean_producer_us": 8033.10352,
-              "mean_consumer_us": 44902.693320000006,
+              "mean_session_p50_us": 66314.6,
+              "mean_session_p99_us": 140978.0,
+              "min_session_p99_us": 140978.0,
+              "max_session_p99_us": 140978.0,
+              "mean_queue_p99_us": 789.257,
+              "mean_critical_goodput_rps": 19.7486,
+              "mean_background_goodput_rps": 1390.120709,
+              "mean_producer_us": 8086.82261,
+              "mean_consumer_us": 45084.37324,
               "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
               "rate_rps": 20.0
             },
@@ -539,15 +581,15 @@
               "session_misses": [
                 0
               ],
-              "mean_session_p50_us": 70988.0,
-              "mean_session_p99_us": 141844.0,
-              "min_session_p99_us": 141844.0,
-              "max_session_p99_us": 141844.0,
-              "mean_queue_p99_us": 881.612,
-              "mean_critical_goodput_rps": 20.6995,
-              "mean_background_goodput_rps": 1369.632618,
-              "mean_producer_us": 8504.78466,
-              "mean_consumer_us": 45661.01062,
+              "mean_session_p50_us": 73629.3,
+              "mean_session_p99_us": 143382.0,
+              "min_session_p99_us": 143382.0,
+              "max_session_p99_us": 143382.0,
+              "mean_queue_p99_us": 1158.68,
+              "mean_critical_goodput_rps": 20.6973,
+              "mean_background_goodput_rps": 1357.734517,
+              "mean_producer_us": 8478.73127,
+              "mean_consumer_us": 45788.628540000005,
               "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
               "rate_rps": 21.0
             }
@@ -562,15 +604,15 @@
               0,
               0
             ],
-            "mean_session_p50_us": 71778.66666666667,
-            "mean_session_p99_us": 141922.33333333334,
-            "min_session_p99_us": 140836.0,
-            "max_session_p99_us": 142889.0,
-            "mean_queue_p99_us": 920.1983333333334,
-            "mean_critical_goodput_rps": 20.700633333333332,
-            "mean_background_goodput_rps": 1369.0383803333334,
-            "mean_producer_us": 8504.093646666666,
-            "mean_consumer_us": 45766.25045,
+            "mean_session_p50_us": 73805.86666666667,
+            "mean_session_p99_us": 142639.33333333334,
+            "min_session_p99_us": 141335.0,
+            "max_session_p99_us": 143657.0,
+            "mean_queue_p99_us": 1089.2713333333334,
+            "mean_critical_goodput_rps": 20.6918,
+            "mean_background_goodput_rps": 1344.8675176666666,
+            "mean_producer_us": 8585.693016666666,
+            "mean_consumer_us": 46113.501103333336,
             "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4"
           }
         },
@@ -585,15 +627,15 @@
               "session_misses": [
                 0
               ],
-              "mean_session_p50_us": 53665.7,
-              "mean_session_p99_us": 143870.0,
-              "min_session_p99_us": 143870.0,
-              "max_session_p99_us": 143870.0,
-              "mean_queue_p99_us": 514.023,
-              "mean_critical_goodput_rps": 14.9226,
-              "mean_background_goodput_rps": 1594.512963,
-              "mean_producer_us": 6276.92098,
-              "mean_consumer_us": 45677.95932,
+              "mean_session_p50_us": 53537.1,
+              "mean_session_p99_us": 143065.0,
+              "min_session_p99_us": 143065.0,
+              "max_session_p99_us": 143065.0,
+              "mean_queue_p99_us": 508.008,
+              "mean_critical_goodput_rps": 14.9292,
+              "mean_background_goodput_rps": 1591.475546,
+              "mean_producer_us": 6279.849080000001,
+              "mean_consumer_us": 45432.27664,
               "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
               "rate_rps": 15.0
             },
@@ -605,15 +647,15 @@
               "session_misses": [
                 0
               ],
-              "mean_session_p50_us": 55296.9,
-              "mean_session_p99_us": 144079.0,
-              "min_session_p99_us": 144079.0,
-              "max_session_p99_us": 144079.0,
-              "mean_queue_p99_us": 581.444,
-              "mean_critical_goodput_rps": 16.863,
-              "mean_background_goodput_rps": 1579.743049,
-              "mean_producer_us": 6704.04556,
-              "mean_consumer_us": 46408.99325,
+              "mean_session_p50_us": 56489.0,
+              "mean_session_p99_us": 143743.0,
+              "min_session_p99_us": 143743.0,
+              "max_session_p99_us": 143743.0,
+              "mean_queue_p99_us": 574.256,
+              "mean_critical_goodput_rps": 16.8617,
+              "mean_background_goodput_rps": 1578.421579,
+              "mean_producer_us": 6762.63083,
+              "mean_consumer_us": 46658.693609999995,
               "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
               "rate_rps": 17.0
             },
@@ -625,15 +667,15 @@
               "session_misses": [
                 0
               ],
-              "mean_session_p50_us": 69051.6,
-              "mean_session_p99_us": 149078.0,
-              "min_session_p99_us": 149078.0,
-              "max_session_p99_us": 149078.0,
-              "mean_queue_p99_us": 682.799,
-              "mean_critical_goodput_rps": 18.7864,
-              "mean_background_goodput_rps": 1565.526192,
-              "mean_producer_us": 7196.2986,
-              "mean_consumer_us": 47170.3351,
+              "mean_session_p50_us": 69493.9,
+              "mean_session_p99_us": 146591.0,
+              "min_session_p99_us": 146591.0,
+              "max_session_p99_us": 146591.0,
+              "mean_queue_p99_us": 657.396,
+              "mean_critical_goodput_rps": 18.7809,
+              "mean_background_goodput_rps": 1558.84884,
+              "mean_producer_us": 7137.1296600000005,
+              "mean_consumer_us": 47499.323820000005,
               "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
               "rate_rps": 19.0
             },
@@ -645,35 +687,35 @@
               "session_misses": [
                 0
               ],
-              "mean_session_p50_us": 88994.9,
-              "mean_session_p99_us": 166905.0,
-              "min_session_p99_us": 166905.0,
-              "max_session_p99_us": 166905.0,
-              "mean_queue_p99_us": 17430.2,
-              "mean_critical_goodput_rps": 19.7418,
-              "mean_background_goodput_rps": 1558.61746,
-              "mean_producer_us": 7906.89876,
-              "mean_consumer_us": 49264.75656,
+              "mean_session_p50_us": 84940.7,
+              "mean_session_p99_us": 159129.0,
+              "min_session_p99_us": 159129.0,
+              "max_session_p99_us": 159129.0,
+              "mean_queue_p99_us": 9589.95,
+              "mean_critical_goodput_rps": 19.7437,
+              "mean_background_goodput_rps": 1551.73936,
+              "mean_producer_us": 8014.78383,
+              "mean_consumer_us": 49239.29493,
               "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
               "rate_rps": 20.0
             },
             {
               "sessions": 1,
               "requests": 100,
-              "misses": 20,
-              "observed_dmr": 0.2,
+              "misses": 36,
+              "observed_dmr": 0.36,
               "session_misses": [
-                20
+                36
               ],
-              "mean_session_p50_us": 203090.0,
-              "mean_session_p99_us": 314094.0,
-              "min_session_p99_us": 314094.0,
-              "max_session_p99_us": 314094.0,
-              "mean_queue_p99_us": 159276.0,
-              "mean_critical_goodput_rps": 19.9237,
-              "mean_background_goodput_rps": 1555.620209,
-              "mean_producer_us": 8466.93786,
-              "mean_consumer_us": 49854.97455,
+              "mean_session_p50_us": 222156.0,
+              "mean_session_p99_us": 344187.0,
+              "min_session_p99_us": 344187.0,
+              "max_session_p99_us": 344187.0,
+              "mean_queue_p99_us": 189503.0,
+              "mean_critical_goodput_rps": 19.7816,
+              "mean_background_goodput_rps": 1549.004984,
+              "mean_producer_us": 8503.95233,
+              "mean_consumer_us": 50179.23641,
               "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
               "rate_rps": 21.0
             }
@@ -681,22 +723,22 @@
           "balanced": {
             "sessions": 3,
             "requests": 300,
-            "misses": 89,
-            "observed_dmr": 0.2966666666666667,
+            "misses": 119,
+            "observed_dmr": 0.39666666666666667,
             "session_misses": [
-              30,
-              26,
-              33
+              43,
+              42,
+              34
             ],
-            "mean_session_p50_us": 213148.33333333334,
-            "mean_session_p99_us": 330455.6666666667,
-            "min_session_p99_us": 321684.0,
-            "max_session_p99_us": 338511.0,
-            "mean_queue_p99_us": 175680.0,
-            "mean_critical_goodput_rps": 19.845033333333333,
-            "mean_background_goodput_rps": 1552.3896253333332,
-            "mean_producer_us": 8450.712323333333,
-            "mean_consumer_us": 50018.715553333335,
+            "mean_session_p50_us": 225343.33333333334,
+            "mean_session_p99_us": 354087.6666666667,
+            "min_session_p99_us": 340530.0,
+            "max_session_p99_us": 362163.0,
+            "mean_queue_p99_us": 199491.66666666666,
+            "mean_critical_goodput_rps": 19.739733333333334,
+            "mean_background_goodput_rps": 1531.099124333333,
+            "mean_producer_us": 8494.581643333333,
+            "mean_consumer_us": 50298.52869666667,
             "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4"
           }
         },
@@ -711,15 +753,15 @@
               "session_misses": [
                 0
               ],
-              "mean_session_p50_us": 56787.7,
-              "mean_session_p99_us": 137727.0,
-              "min_session_p99_us": 137727.0,
-              "max_session_p99_us": 137727.0,
-              "mean_queue_p99_us": 570.341,
-              "mean_critical_goodput_rps": 14.9305,
-              "mean_background_goodput_rps": 1482.591192,
-              "mean_producer_us": 9247.101130000001,
-              "mean_consumer_us": 44762.06935,
+              "mean_session_p50_us": 56455.7,
+              "mean_session_p99_us": 137932.0,
+              "min_session_p99_us": 137932.0,
+              "max_session_p99_us": 137932.0,
+              "mean_queue_p99_us": 573.482,
+              "mean_critical_goodput_rps": 14.9247,
+              "mean_background_goodput_rps": 1480.823063,
+              "mean_producer_us": 9250.2304,
+              "mean_consumer_us": 44892.3519,
               "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
               "rate_rps": 15.0
             },
@@ -731,15 +773,15 @@
               "session_misses": [
                 0
               ],
-              "mean_session_p50_us": 56754.1,
-              "mean_session_p99_us": 138974.0,
-              "min_session_p99_us": 138974.0,
-              "max_session_p99_us": 138974.0,
-              "mean_queue_p99_us": 548.455,
-              "mean_critical_goodput_rps": 16.8641,
-              "mean_background_goodput_rps": 1442.878194,
-              "mean_producer_us": 9562.51546,
-              "mean_consumer_us": 44899.30995,
+              "mean_session_p50_us": 56333.8,
+              "mean_session_p99_us": 138180.0,
+              "min_session_p99_us": 138180.0,
+              "max_session_p99_us": 138180.0,
+              "mean_queue_p99_us": 563.764,
+              "mean_critical_goodput_rps": 16.8644,
+              "mean_background_goodput_rps": 1438.476496,
+              "mean_producer_us": 9535.52795,
+              "mean_consumer_us": 44592.40975,
               "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
               "rate_rps": 17.0
             },
@@ -751,15 +793,15 @@
               "session_misses": [
                 0
               ],
-              "mean_session_p50_us": 65732.4,
-              "mean_session_p99_us": 138062.0,
-              "min_session_p99_us": 138062.0,
-              "max_session_p99_us": 138062.0,
-              "mean_queue_p99_us": 608.057,
+              "mean_session_p50_us": 66176.4,
+              "mean_session_p99_us": 137285.0,
+              "min_session_p99_us": 137285.0,
+              "max_session_p99_us": 137285.0,
+              "mean_queue_p99_us": 559.84,
               "mean_critical_goodput_rps": 18.7926,
-              "mean_background_goodput_rps": 1408.075177,
-              "mean_producer_us": 9938.25848,
-              "mean_consumer_us": 44741.80967,
+              "mean_background_goodput_rps": 1398.266417,
+              "mean_producer_us": 9923.92561,
+              "mean_consumer_us": 44843.01566,
               "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
               "rate_rps": 19.0
             },
@@ -771,15 +813,15 @@
               "session_misses": [
                 0
               ],
-              "mean_session_p50_us": 68328.5,
-              "mean_session_p99_us": 142193.0,
-              "min_session_p99_us": 142193.0,
-              "max_session_p99_us": 142193.0,
-              "mean_queue_p99_us": 633.744,
-              "mean_critical_goodput_rps": 19.7491,
-              "mean_background_goodput_rps": 1393.136317,
-              "mean_producer_us": 10051.23699,
-              "mean_consumer_us": 45163.909349999994,
+              "mean_session_p50_us": 68139.3,
+              "mean_session_p99_us": 138632.0,
+              "min_session_p99_us": 138632.0,
+              "max_session_p99_us": 138632.0,
+              "mean_queue_p99_us": 544.975,
+              "mean_critical_goodput_rps": 19.7418,
+              "mean_background_goodput_rps": 1386.291196,
+              "mean_producer_us": 10048.98567,
+              "mean_consumer_us": 45123.76819,
               "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
               "rate_rps": 20.0
             },
@@ -791,15 +833,15 @@
               "session_misses": [
                 0
               ],
-              "mean_session_p50_us": 72295.6,
-              "mean_session_p99_us": 142673.0,
-              "min_session_p99_us": 142673.0,
-              "max_session_p99_us": 142673.0,
-              "mean_queue_p99_us": 717.776,
-              "mean_critical_goodput_rps": 20.6959,
-              "mean_background_goodput_rps": 1365.758123,
-              "mean_producer_us": 10617.96009,
-              "mean_consumer_us": 45686.956940000004,
+              "mean_session_p50_us": 73789.4,
+              "mean_session_p99_us": 139842.0,
+              "min_session_p99_us": 139842.0,
+              "max_session_p99_us": 139842.0,
+              "mean_queue_p99_us": 734.782,
+              "mean_critical_goodput_rps": 20.6826,
+              "mean_background_goodput_rps": 1365.190856,
+              "mean_producer_us": 10665.84153,
+              "mean_consumer_us": 45776.94954,
               "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
               "rate_rps": 21.0
             }
@@ -814,15 +856,15 @@
               0,
               0
             ],
-            "mean_session_p50_us": 71847.43333333333,
-            "mean_session_p99_us": 140670.33333333334,
-            "min_session_p99_us": 140186.0,
-            "max_session_p99_us": 141367.0,
-            "mean_queue_p99_us": 738.531,
-            "mean_critical_goodput_rps": 20.69643333333333,
-            "mean_background_goodput_rps": 1360.31197,
-            "mean_producer_us": 10540.526306666667,
-            "mean_consumer_us": 45488.66836,
+            "mean_session_p50_us": 72701.76666666666,
+            "mean_session_p99_us": 143169.66666666666,
+            "min_session_p99_us": 142849.0,
+            "max_session_p99_us": 143670.0,
+            "mean_queue_p99_us": 916.6053333333333,
+            "mean_critical_goodput_rps": 20.691666666666666,
+            "mean_background_goodput_rps": 1341.0347763333332,
+            "mean_producer_us": 10691.286246666667,
+            "mean_consumer_us": 45803.752329999996,
             "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4"
           }
         }
@@ -830,34 +872,62 @@
       "sources": {
         "directional": {
           "summary": {
-            "path": "results/p9-whisper-edge-mix-campaign-r03-20260814/directional/speech-plus-vision/summary.json",
-            "sha256": "33844fe4e102ab751c8738e7760d59f8c869366b5a95d8748f358a221b59a3e7"
+            "path": "results/p9-whisper-mixed-regime-campaign-r01-20260814/directional/mig-placement-vision/summary.json",
+            "sha256": "6e203b9027b91bcd625d62ba2ccacc87aef96357aad877bd497300b74325ab0d"
           },
           "provenance": {
-            "path": "results/p9-whisper-edge-mix-campaign-r03-20260814/directional/speech-plus-vision/provenance.json",
-            "sha256": "e257c7ba8f706f37923598ffa9dd618b639a0ed49c0876de31f24ce354f80d4d"
+            "path": "results/p9-whisper-mixed-regime-campaign-r01-20260814/directional/mig-placement-vision/provenance.json",
+            "sha256": "7f81519962073605a9eea2b92d504d101e2182766efe08864915768cda3c9b04"
           }
         },
         "balanced": {
           "summary": {
-            "path": "results/p9-whisper-edge-mix-campaign-r03-20260814/balanced/speech-plus-vision/summary.json",
-            "sha256": "ec381e464992c2424ee7a05de4252b69466c49058e803b1a0ff3afcd11a8fa1c"
+            "path": "results/p9-whisper-mixed-regime-campaign-r01-20260814/balanced/mig-placement-vision/summary.json",
+            "sha256": "94aef900c5bc88edb02caffb8a7c4dedfa7163b3f324950fd0ed877889551b80"
           },
           "provenance": {
-            "path": "results/p9-whisper-edge-mix-campaign-r03-20260814/balanced/speech-plus-vision/provenance.json",
-            "sha256": "e257c7ba8f706f37923598ffa9dd618b639a0ed49c0876de31f24ce354f80d4d"
+            "path": "results/p9-whisper-mixed-regime-campaign-r01-20260814/balanced/mig-placement-vision/provenance.json",
+            "sha256": "7f81519962073605a9eea2b92d504d101e2182766efe08864915768cda3c9b04"
           }
         }
       }
     },
-    "speech-plus-speech": {
-      "label": "Speech + Speech",
-      "background_workers": 1,
+    "mps-interference-speech-20": {
+      "label": "MPS interference: 20 speech",
+      "short_label": "Speech20\nMPS@17",
+      "failure_target": "NVIDIA MPS",
+      "failure_class": "shared-instance-interference",
+      "background_workers": 20,
       "background_models": [
-        "whisper-tiny-encoder"
+        "speech-channel-01",
+        "speech-channel-02",
+        "speech-channel-03",
+        "speech-channel-04",
+        "speech-channel-05",
+        "speech-channel-06",
+        "speech-channel-07",
+        "speech-channel-08",
+        "speech-channel-09",
+        "speech-channel-10",
+        "speech-channel-11",
+        "speech-channel-12",
+        "speech-channel-13",
+        "speech-channel-14",
+        "speech-channel-15",
+        "speech-channel-16",
+        "speech-channel-17",
+        "speech-channel-18",
+        "speech-channel-19",
+        "speech-channel-20"
       ],
-      "deployment_scope": "multi-model-multi-channel-speech-gateway-stress",
-      "balanced_rate_rps": 21.0,
+      "deployment_scope": "twenty-channel-speech-gateway-stress",
+      "directional_rates_rps": [
+        15.0,
+        17.0,
+        18.0,
+        19.0
+      ],
+      "balanced_rate_rps": 17.0,
       "systems": {
         "QUIET": {
           "mode": "quiet",
@@ -870,15 +940,15 @@
               "session_misses": [
                 0
               ],
-              "mean_session_p50_us": 56338.0,
-              "mean_session_p99_us": 139308.0,
-              "min_session_p99_us": 139308.0,
-              "max_session_p99_us": 139308.0,
-              "mean_queue_p99_us": 578.155,
-              "mean_critical_goodput_rps": 14.9253,
-              "mean_background_goodput_rps": 587.3385358,
-              "mean_producer_us": 7948.24142,
-              "mean_consumer_us": 45558.50980000001,
+              "mean_session_p50_us": 78538.2,
+              "mean_session_p99_us": 172374.0,
+              "min_session_p99_us": 172374.0,
+              "max_session_p99_us": 172374.0,
+              "mean_queue_p99_us": 2498.19,
+              "mean_critical_goodput_rps": 14.8381,
+              "mean_background_goodput_rps": 529.80692001,
+              "mean_producer_us": 24363.22673,
+              "mean_consumer_us": 51025.638499999994,
               "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
               "rate_rps": 15.0
             },
@@ -890,15 +960,15 @@
               "session_misses": [
                 0
               ],
-              "mean_session_p50_us": 57009.6,
-              "mean_session_p99_us": 140530.0,
-              "min_session_p99_us": 140530.0,
-              "max_session_p99_us": 140530.0,
-              "mean_queue_p99_us": 792.866,
-              "mean_critical_goodput_rps": 16.8527,
-              "mean_background_goodput_rps": 573.6207511,
-              "mean_producer_us": 8347.613299999999,
-              "mean_consumer_us": 46197.1675,
+              "mean_session_p50_us": 84883.2,
+              "mean_session_p99_us": 174254.0,
+              "min_session_p99_us": 174254.0,
+              "max_session_p99_us": 174254.0,
+              "mean_queue_p99_us": 6082.86,
+              "mean_critical_goodput_rps": 16.7786,
+              "mean_background_goodput_rps": 525.2937483,
+              "mean_producer_us": 24589.083679999996,
+              "mean_consumer_us": 50503.29357,
               "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
               "rate_rps": 17.0
             },
@@ -910,57 +980,37 @@
               "session_misses": [
                 0
               ],
-              "mean_session_p50_us": 65302.8,
-              "mean_session_p99_us": 141155.0,
-              "min_session_p99_us": 141155.0,
-              "max_session_p99_us": 141155.0,
-              "mean_queue_p99_us": 829.998,
-              "mean_critical_goodput_rps": 18.7759,
-              "mean_background_goodput_rps": 560.0472099,
-              "mean_producer_us": 8469.97255,
-              "mean_consumer_us": 46253.68443,
+              "mean_session_p50_us": 89199.3,
+              "mean_session_p99_us": 177786.0,
+              "min_session_p99_us": 177786.0,
+              "max_session_p99_us": 177786.0,
+              "mean_queue_p99_us": 11983.3,
+              "mean_critical_goodput_rps": 17.7488,
+              "mean_background_goodput_rps": 523.79937128,
+              "mean_producer_us": 24263.947799999998,
+              "mean_consumer_us": 50762.28222,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 18.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 86785.8,
+              "mean_session_p99_us": 173282.0,
+              "min_session_p99_us": 173282.0,
+              "max_session_p99_us": 173282.0,
+              "mean_queue_p99_us": 16220.9,
+              "mean_critical_goodput_rps": 18.6508,
+              "mean_background_goodput_rps": 519.11519132,
+              "mean_producer_us": 24261.59046,
+              "mean_consumer_us": 50158.75238,
               "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
               "rate_rps": 19.0
-            },
-            {
-              "sessions": 1,
-              "requests": 100,
-              "misses": 0,
-              "observed_dmr": 0.0,
-              "session_misses": [
-                0
-              ],
-              "mean_session_p50_us": 70700.7,
-              "mean_session_p99_us": 143497.0,
-              "min_session_p99_us": 143497.0,
-              "max_session_p99_us": 143497.0,
-              "mean_queue_p99_us": 897.84,
-              "mean_critical_goodput_rps": 19.7195,
-              "mean_background_goodput_rps": 552.6661228,
-              "mean_producer_us": 8806.48312,
-              "mean_consumer_us": 46985.94421,
-              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
-              "rate_rps": 20.0
-            },
-            {
-              "sessions": 1,
-              "requests": 100,
-              "misses": 0,
-              "observed_dmr": 0.0,
-              "session_misses": [
-                0
-              ],
-              "mean_session_p50_us": 87838.9,
-              "mean_session_p99_us": 163825.0,
-              "min_session_p99_us": 163825.0,
-              "max_session_p99_us": 163825.0,
-              "mean_queue_p99_us": 21636.3,
-              "mean_critical_goodput_rps": 20.6731,
-              "mean_background_goodput_rps": 540.7413158,
-              "mean_producer_us": 9064.27389,
-              "mean_consumer_us": 47043.99914,
-              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
-              "rate_rps": 21.0
             }
           ],
           "balanced": {
@@ -973,15 +1023,15 @@
               0,
               0
             ],
-            "mean_session_p50_us": 92296.66666666667,
-            "mean_session_p99_us": 157377.33333333334,
-            "min_session_p99_us": 145117.0,
-            "max_session_p99_us": 181138.0,
-            "mean_queue_p99_us": 15040.683333333332,
-            "mean_critical_goodput_rps": 20.661733333333334,
-            "mean_background_goodput_rps": 542.2495796333333,
-            "mean_producer_us": 9017.573636666666,
-            "mean_consumer_us": 47178.813323333336,
+            "mean_session_p50_us": 83980.86666666667,
+            "mean_session_p99_us": 175607.0,
+            "min_session_p99_us": 173845.0,
+            "max_session_p99_us": 177636.0,
+            "mean_queue_p99_us": 5296.956666666666,
+            "mean_critical_goodput_rps": 16.753,
+            "mean_background_goodput_rps": 526.0094305399999,
+            "mean_producer_us": 24790.15708666667,
+            "mean_consumer_us": 50144.20469333333,
             "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4"
           }
         },
@@ -996,15 +1046,15 @@
               "session_misses": [
                 0
               ],
-              "mean_session_p50_us": 54796.1,
-              "mean_session_p99_us": 147037.0,
-              "min_session_p99_us": 147037.0,
-              "max_session_p99_us": 147037.0,
-              "mean_queue_p99_us": 514.8,
-              "mean_critical_goodput_rps": 14.916,
-              "mean_background_goodput_rps": 636.328009,
-              "mean_producer_us": 6598.72273,
-              "mean_consumer_us": 47063.31092,
+              "mean_session_p50_us": 60487.4,
+              "mean_session_p99_us": 160200.0,
+              "min_session_p99_us": 160200.0,
+              "max_session_p99_us": 160200.0,
+              "mean_queue_p99_us": 597.934,
+              "mean_critical_goodput_rps": 14.8857,
+              "mean_background_goodput_rps": 554.81497306,
+              "mean_producer_us": 7606.67632,
+              "mean_consumer_us": 51975.79038,
               "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
               "rate_rps": 15.0
             },
@@ -1016,15 +1066,293 @@
               "session_misses": [
                 0
               ],
-              "mean_session_p50_us": 69364.2,
-              "mean_session_p99_us": 147851.0,
-              "min_session_p99_us": 147851.0,
-              "max_session_p99_us": 147851.0,
-              "mean_queue_p99_us": 615.523,
-              "mean_critical_goodput_rps": 16.8494,
-              "mean_background_goodput_rps": 631.2704818,
-              "mean_producer_us": 7101.46448,
-              "mean_consumer_us": 48315.35252,
+              "mean_session_p50_us": 85438.3,
+              "mean_session_p99_us": 176645.0,
+              "min_session_p99_us": 176645.0,
+              "max_session_p99_us": 176645.0,
+              "mean_queue_p99_us": 2599.98,
+              "mean_critical_goodput_rps": 16.7996,
+              "mean_background_goodput_rps": 555.80704648,
+              "mean_producer_us": 8677.78294,
+              "mean_consumer_us": 55161.026509999996,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 17.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 5,
+              "observed_dmr": 0.05,
+              "session_misses": [
+                5
+              ],
+              "mean_session_p50_us": 180945.0,
+              "mean_session_p99_us": 264690.0,
+              "min_session_p99_us": 264690.0,
+              "max_session_p99_us": 264690.0,
+              "mean_queue_p99_us": 98057.9,
+              "mean_critical_goodput_rps": 17.4374,
+              "mean_background_goodput_rps": 554.05826956,
+              "mean_producer_us": 10083.52704,
+              "mean_consumer_us": 56860.279630000005,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 18.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 76,
+              "observed_dmr": 0.76,
+              "session_misses": [
+                76
+              ],
+              "mean_session_p50_us": 335147.0,
+              "mean_session_p99_us": 523802.0,
+              "min_session_p99_us": 523802.0,
+              "max_session_p99_us": 523802.0,
+              "mean_queue_p99_us": 338251.0,
+              "mean_critical_goodput_rps": 17.4394,
+              "mean_background_goodput_rps": 552.08396434,
+              "mean_producer_us": 10209.74069,
+              "mean_consumer_us": 56603.00861,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 19.0
+            }
+          ],
+          "balanced": {
+            "sessions": 3,
+            "requests": 300,
+            "misses": 0,
+            "observed_dmr": 0.0,
+            "session_misses": [
+              0,
+              0,
+              0
+            ],
+            "mean_session_p50_us": 78418.36666666667,
+            "mean_session_p99_us": 170421.0,
+            "min_session_p99_us": 162507.0,
+            "max_session_p99_us": 178070.0,
+            "mean_queue_p99_us": 2994.658,
+            "mean_critical_goodput_rps": 16.780966666666668,
+            "mean_background_goodput_rps": 558.2484518533333,
+            "mean_producer_us": 8094.249163333334,
+            "mean_consumer_us": 53797.77926,
+            "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4"
+          }
+        },
+        "NVIDIA MPS": {
+          "mode": "nvidia-mps-static-split",
+          "directional": [
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 105774.0,
+              "mean_session_p99_us": 204317.0,
+              "min_session_p99_us": 204317.0,
+              "max_session_p99_us": 204317.0,
+              "mean_queue_p99_us": 4919.58,
+              "mean_critical_goodput_rps": 14.7835,
+              "mean_background_goodput_rps": 525.46355204,
+              "mean_producer_us": 57290.67263,
+              "mean_consumer_us": 50046.34563,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 15.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 42,
+              "observed_dmr": 0.42,
+              "session_misses": [
+                42
+              ],
+              "mean_session_p50_us": 231035.0,
+              "mean_session_p99_us": 374030.0,
+              "min_session_p99_us": 374030.0,
+              "max_session_p99_us": 374030.0,
+              "mean_queue_p99_us": 201006.0,
+              "mean_critical_goodput_rps": 16.1383,
+              "mean_background_goodput_rps": 521.3362922,
+              "mean_producer_us": 58817.65538,
+              "mean_consumer_us": 51038.31427,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 17.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 78,
+              "observed_dmr": 0.78,
+              "session_misses": [
+                78
+              ],
+              "mean_session_p50_us": 397610.0,
+              "mean_session_p99_us": 731342.0,
+              "min_session_p99_us": 731342.0,
+              "max_session_p99_us": 731342.0,
+              "mean_queue_p99_us": 532300.0,
+              "mean_critical_goodput_rps": 16.0483,
+              "mean_background_goodput_rps": 519.65307316,
+              "mean_producer_us": 58908.27091,
+              "mean_consumer_us": 51186.988789999996,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 18.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 86,
+              "observed_dmr": 0.86,
+              "session_misses": [
+                86
+              ],
+              "mean_session_p50_us": 549920.0,
+              "mean_session_p99_us": 1023960.0,
+              "min_session_p99_us": 1023960.0,
+              "max_session_p99_us": 1023960.0,
+              "mean_queue_p99_us": 843329.0,
+              "mean_critical_goodput_rps": 16.0403,
+              "mean_background_goodput_rps": 520.41259512,
+              "mean_producer_us": 58923.863719999994,
+              "mean_consumer_us": 51287.39025999999,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 19.0
+            }
+          ],
+          "balanced": {
+            "sessions": 3,
+            "requests": 300,
+            "misses": 103,
+            "observed_dmr": 0.3433333333333333,
+            "session_misses": [
+              37,
+              31,
+              35
+            ],
+            "mean_session_p50_us": 222432.33333333334,
+            "mean_session_p99_us": 358851.0,
+            "min_session_p99_us": 350262.0,
+            "max_session_p99_us": 367608.0,
+            "mean_queue_p99_us": 183814.33333333334,
+            "mean_critical_goodput_rps": 16.188066666666668,
+            "mean_background_goodput_rps": 523.3327316166666,
+            "mean_producer_us": 58407.96143,
+            "mean_consumer_us": 50745.667596666666,
+            "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4"
+          }
+        }
+      },
+      "sources": {
+        "directional": {
+          "summary": {
+            "path": "results/p9-whisper-mixed-regime-campaign-r01-20260814/directional/mps-interference-speech-20/summary.json",
+            "sha256": "f065ee00f21977298c3af9d0674d387745c851832f8f92324fd1600d99e22154"
+          },
+          "provenance": {
+            "path": "results/p9-whisper-mixed-regime-campaign-r01-20260814/directional/mps-interference-speech-20/provenance.json",
+            "sha256": "0230f12ef76da354092ad70c859bdb5df20be8d9df3c3c8c960dc0faa227ca6f"
+          }
+        },
+        "balanced": {
+          "summary": {
+            "path": "results/p9-whisper-mixed-regime-campaign-r01-20260814/balanced/mps-interference-speech-20/summary.json",
+            "sha256": "0af6da6f76bc94f2735ed93e023f243cc4ae8dbef95e0d73a3a2b71c1f810459"
+          },
+          "provenance": {
+            "path": "results/p9-whisper-mixed-regime-campaign-r01-20260814/balanced/mps-interference-speech-20/provenance.json",
+            "sha256": "0230f12ef76da354092ad70c859bdb5df20be8d9df3c3c8c960dc0faa227ca6f"
+          }
+        }
+      }
+    },
+    "mps-interference-vision-24": {
+      "label": "MPS interference: 24 vision",
+      "short_label": "Vision24\nMPS@18",
+      "failure_target": "NVIDIA MPS",
+      "failure_class": "shared-instance-interference",
+      "background_workers": 24,
+      "background_models": [
+        "vision-stream-01",
+        "vision-stream-02",
+        "vision-stream-03",
+        "vision-stream-04",
+        "vision-stream-05",
+        "vision-stream-06",
+        "vision-stream-07",
+        "vision-stream-08",
+        "vision-stream-09",
+        "vision-stream-10",
+        "vision-stream-11",
+        "vision-stream-12",
+        "vision-stream-13",
+        "vision-stream-14",
+        "vision-stream-15",
+        "vision-stream-16",
+        "vision-stream-17",
+        "vision-stream-18",
+        "vision-stream-19",
+        "vision-stream-20",
+        "vision-stream-21",
+        "vision-stream-22",
+        "vision-stream-23",
+        "vision-stream-24"
+      ],
+      "deployment_scope": "twenty-four-stream-video-gateway-stress",
+      "directional_rates_rps": [
+        15.0,
+        17.0,
+        18.0,
+        19.0,
+        20.0
+      ],
+      "balanced_rate_rps": 18.0,
+      "systems": {
+        "QUIET": {
+          "mode": "quiet",
+          "directional": [
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 63923.6,
+              "mean_session_p99_us": 154528.0,
+              "min_session_p99_us": 154528.0,
+              "max_session_p99_us": 154528.0,
+              "mean_queue_p99_us": 1634.73,
+              "mean_critical_goodput_rps": 14.8841,
+              "mean_background_goodput_rps": 1374.21315398,
+              "mean_producer_us": 12651.50102,
+              "mean_consumer_us": 49151.40262,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 15.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 74105.8,
+              "mean_session_p99_us": 158906.0,
+              "min_session_p99_us": 158906.0,
+              "max_session_p99_us": 158906.0,
+              "mean_queue_p99_us": 1247.38,
+              "mean_critical_goodput_rps": 16.7853,
+              "mean_background_goodput_rps": 1358.85998826,
+              "mean_producer_us": 17019.69209,
+              "mean_consumer_us": 48892.19072,
               "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
               "rate_rps": 17.0
             },
@@ -1036,15 +1364,35 @@
               "session_misses": [
                 0
               ],
-              "mean_session_p50_us": 77005.9,
-              "mean_session_p99_us": 148987.0,
-              "min_session_p99_us": 148987.0,
-              "max_session_p99_us": 148987.0,
-              "mean_queue_p99_us": 676.931,
-              "mean_critical_goodput_rps": 18.768,
-              "mean_background_goodput_rps": 624.3214881,
-              "mean_producer_us": 7877.789989999999,
-              "mean_consumer_us": 49824.10344,
+              "mean_session_p50_us": 75246.2,
+              "mean_session_p99_us": 161897.0,
+              "min_session_p99_us": 161897.0,
+              "max_session_p99_us": 161897.0,
+              "mean_queue_p99_us": 1347.37,
+              "mean_critical_goodput_rps": 17.7899,
+              "mean_background_goodput_rps": 1356.66733163,
+              "mean_producer_us": 16095.13503,
+              "mean_consumer_us": 48847.81031,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 18.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 78376.5,
+              "mean_session_p99_us": 163131.0,
+              "min_session_p99_us": 163131.0,
+              "max_session_p99_us": 163131.0,
+              "mean_queue_p99_us": 6564.19,
+              "mean_critical_goodput_rps": 18.7244,
+              "mean_background_goodput_rps": 1345.85623401,
+              "mean_producer_us": 15684.55734,
+              "mean_consumer_us": 49110.748940000005,
               "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
               "rate_rps": 19.0
             },
@@ -1056,184 +1404,290 @@
               "session_misses": [
                 0
               ],
-              "mean_session_p50_us": 139940.0,
-              "mean_session_p99_us": 217388.0,
-              "min_session_p99_us": 217388.0,
-              "max_session_p99_us": 217388.0,
-              "mean_queue_p99_us": 59606.0,
-              "mean_critical_goodput_rps": 19.4238,
-              "mean_background_goodput_rps": 622.1694557,
-              "mean_producer_us": 8498.13339,
-              "mean_consumer_us": 51323.58885,
+              "mean_session_p50_us": 87369.1,
+              "mean_session_p99_us": 162895.0,
+              "min_session_p99_us": 162895.0,
+              "max_session_p99_us": 162895.0,
+              "mean_queue_p99_us": 13777.0,
+              "mean_critical_goodput_rps": 19.6471,
+              "mean_background_goodput_rps": 1339.05697617,
+              "mean_producer_us": 14482.113440000001,
+              "mean_consumer_us": 49255.62648,
               "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
               "rate_rps": 20.0
-            },
-            {
-              "sessions": 1,
-              "requests": 100,
-              "misses": 62,
-              "observed_dmr": 0.62,
-              "session_misses": [
-                62
-              ],
-              "mean_session_p50_us": 293158.0,
-              "mean_session_p99_us": 479109.0,
-              "min_session_p99_us": 479109.0,
-              "max_session_p99_us": 479109.0,
-              "mean_queue_p99_us": 314831.0,
-              "mean_critical_goodput_rps": 19.2559,
-              "mean_background_goodput_rps": 623.3905569,
-              "mean_producer_us": 8578.29704,
-              "mean_consumer_us": 51532.635480000004,
-              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
-              "rate_rps": 21.0
             }
           ],
           "balanced": {
             "sessions": 3,
             "requests": 300,
-            "misses": 186,
-            "observed_dmr": 0.62,
+            "misses": 0,
+            "observed_dmr": 0.0,
             "session_misses": [
-              60,
+              0,
+              0,
+              0
+            ],
+            "mean_session_p50_us": 73447.26666666666,
+            "mean_session_p99_us": 156945.33333333334,
+            "min_session_p99_us": 156029.0,
+            "max_session_p99_us": 157471.0,
+            "mean_queue_p99_us": 1418.7966666666664,
+            "mean_critical_goodput_rps": 17.773899999999998,
+            "mean_background_goodput_rps": 1349.5379145666666,
+            "mean_producer_us": 16253.630476666667,
+            "mean_consumer_us": 48574.05336666666,
+            "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4"
+          }
+        },
+        "NVIDIA MIG": {
+          "mode": "nvidia-mig",
+          "directional": [
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 56587.8,
+              "mean_session_p99_us": 153021.0,
+              "min_session_p99_us": 153021.0,
+              "max_session_p99_us": 153021.0,
+              "mean_queue_p99_us": 492.365,
+              "mean_critical_goodput_rps": 14.9025,
+              "mean_background_goodput_rps": 1440.99153113,
+              "mean_producer_us": 6843.06126,
+              "mean_consumer_us": 49179.74536,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 15.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 72954.4,
+              "mean_session_p99_us": 157240.0,
+              "min_session_p99_us": 157240.0,
+              "max_session_p99_us": 157240.0,
+              "mean_queue_p99_us": 610.233,
+              "mean_critical_goodput_rps": 16.8342,
+              "mean_background_goodput_rps": 1441.64743867,
+              "mean_producer_us": 7444.23107,
+              "mean_consumer_us": 50045.07328,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 17.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 86913.7,
+              "mean_session_p99_us": 166262.0,
+              "min_session_p99_us": 166262.0,
+              "max_session_p99_us": 166262.0,
+              "mean_queue_p99_us": 4685.19,
+              "mean_critical_goodput_rps": 17.7464,
+              "mean_background_goodput_rps": 1431.88020557,
+              "mean_producer_us": 8503.00289,
+              "mean_consumer_us": 53370.41407,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 18.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 2,
+              "observed_dmr": 0.02,
+              "session_misses": [
+                2
+              ],
+              "mean_session_p50_us": 171731.0,
+              "mean_session_p99_us": 259180.0,
+              "min_session_p99_us": 259180.0,
+              "max_session_p99_us": 259180.0,
+              "mean_queue_p99_us": 87965.3,
+              "mean_critical_goodput_rps": 18.3501,
+              "mean_background_goodput_rps": 1432.13482627,
+              "mean_producer_us": 9035.36422,
+              "mean_consumer_us": 54065.11335,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 19.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 74,
+              "observed_dmr": 0.74,
+              "session_misses": [
+                74
+              ],
+              "mean_session_p50_us": 337923.0,
+              "mean_session_p99_us": 543768.0,
+              "min_session_p99_us": 543768.0,
+              "max_session_p99_us": 543768.0,
+              "mean_queue_p99_us": 360492.0,
+              "mean_critical_goodput_rps": 18.203,
+              "mean_background_goodput_rps": 1435.96470216,
+              "mean_producer_us": 9225.96116,
+              "mean_consumer_us": 54405.48003,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 20.0
+            }
+          ],
+          "balanced": {
+            "sessions": 3,
+            "requests": 300,
+            "misses": 0,
+            "observed_dmr": 0.0,
+            "session_misses": [
+              0,
+              0,
+              0
+            ],
+            "mean_session_p50_us": 82825.86666666667,
+            "mean_session_p99_us": 168003.0,
+            "min_session_p99_us": 161946.0,
+            "max_session_p99_us": 175170.0,
+            "mean_queue_p99_us": 5278.108666666666,
+            "mean_critical_goodput_rps": 17.785033333333335,
+            "mean_background_goodput_rps": 1435.98745489,
+            "mean_producer_us": 8046.293623333334,
+            "mean_consumer_us": 52045.56658333333,
+            "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4"
+          }
+        },
+        "NVIDIA MPS": {
+          "mode": "nvidia-mps-static-split",
+          "directional": [
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 101469.0,
+              "mean_session_p99_us": 193595.0,
+              "min_session_p99_us": 193595.0,
+              "max_session_p99_us": 193595.0,
+              "mean_queue_p99_us": 637.084,
+              "mean_critical_goodput_rps": 14.8122,
+              "mean_background_goodput_rps": 1363.65658333,
+              "mean_producer_us": 54759.823650000006,
+              "mean_consumer_us": 48352.1452,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 15.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 119231.0,
+              "mean_session_p99_us": 201952.0,
+              "min_session_p99_us": 201952.0,
+              "max_session_p99_us": 201952.0,
+              "mean_queue_p99_us": 27905.7,
+              "mean_critical_goodput_rps": 16.6855,
+              "mean_background_goodput_rps": 1359.47978908,
+              "mean_producer_us": 56725.43182,
+              "mean_consumer_us": 49012.88005,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 17.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 64,
+              "observed_dmr": 0.64,
+              "session_misses": [
+                64
+              ],
+              "mean_session_p50_us": 294058.0,
+              "mean_session_p99_us": 508697.0,
+              "min_session_p99_us": 508697.0,
+              "max_session_p99_us": 508697.0,
+              "mean_queue_p99_us": 343115.0,
+              "mean_critical_goodput_rps": 16.6432,
+              "mean_background_goodput_rps": 1353.31940729,
+              "mean_producer_us": 56540.39557,
+              "mean_consumer_us": 49347.15381,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 18.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 81,
+              "observed_dmr": 0.81,
+              "session_misses": [
+                81
+              ],
+              "mean_session_p50_us": 440568.0,
+              "mean_session_p99_us": 771405.0,
+              "min_session_p99_us": 771405.0,
+              "max_session_p99_us": 771405.0,
+              "mean_queue_p99_us": 603085.0,
+              "mean_critical_goodput_rps": 16.7176,
+              "mean_background_goodput_rps": 1349.35028542,
+              "mean_producer_us": 56772.14322,
+              "mean_consumer_us": 49185.034170000006,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 19.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 86,
+              "observed_dmr": 0.86,
+              "session_misses": [
+                86
+              ],
+              "mean_session_p50_us": 577206.0,
+              "mean_session_p99_us": 1080820.0,
+              "min_session_p99_us": 1080820.0,
+              "max_session_p99_us": 1080820.0,
+              "mean_queue_p99_us": 869755.0,
+              "mean_critical_goodput_rps": 16.582,
+              "mean_background_goodput_rps": 1355.94761979,
+              "mean_producer_us": 56613.62383999999,
+              "mean_consumer_us": 49909.745520000004,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 20.0
+            }
+          ],
+          "balanced": {
+            "sessions": 3,
+            "requests": 300,
+            "misses": 192,
+            "observed_dmr": 0.64,
+            "session_misses": [
+              70,
               64,
-              62
+              58
             ],
-            "mean_session_p50_us": 291053.0,
-            "mean_session_p99_us": 474307.6666666667,
-            "min_session_p99_us": 470697.0,
-            "max_session_p99_us": 480952.0,
-            "mean_queue_p99_us": 307324.6666666667,
-            "mean_critical_goodput_rps": 19.2737,
-            "mean_background_goodput_rps": 623.0849935,
-            "mean_producer_us": 8622.36009,
-            "mean_consumer_us": 51526.886296666664,
-            "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4"
-          }
-        },
-        "NVIDIA MPS": {
-          "mode": "nvidia-mps-static-split",
-          "directional": [
-            {
-              "sessions": 1,
-              "requests": 100,
-              "misses": 0,
-              "observed_dmr": 0.0,
-              "session_misses": [
-                0
-              ],
-              "mean_session_p50_us": 58629.5,
-              "mean_session_p99_us": 141269.0,
-              "min_session_p99_us": 141269.0,
-              "max_session_p99_us": 141269.0,
-              "mean_queue_p99_us": 452.21,
-              "mean_critical_goodput_rps": 14.9184,
-              "mean_background_goodput_rps": 586.2715299,
-              "mean_producer_us": 9793.26893,
-              "mean_consumer_us": 45760.52443,
-              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
-              "rate_rps": 15.0
-            },
-            {
-              "sessions": 1,
-              "requests": 100,
-              "misses": 0,
-              "observed_dmr": 0.0,
-              "session_misses": [
-                0
-              ],
-              "mean_session_p50_us": 58638.1,
-              "mean_session_p99_us": 142494.0,
-              "min_session_p99_us": 142494.0,
-              "max_session_p99_us": 142494.0,
-              "mean_queue_p99_us": 596.183,
-              "mean_critical_goodput_rps": 16.8475,
-              "mean_background_goodput_rps": 571.2391765,
-              "mean_producer_us": 10099.69474,
-              "mean_consumer_us": 46127.72189,
-              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
-              "rate_rps": 17.0
-            },
-            {
-              "sessions": 1,
-              "requests": 100,
-              "misses": 0,
-              "observed_dmr": 0.0,
-              "session_misses": [
-                0
-              ],
-              "mean_session_p50_us": 69420.4,
-              "mean_session_p99_us": 143088.0,
-              "min_session_p99_us": 143088.0,
-              "max_session_p99_us": 143088.0,
-              "mean_queue_p99_us": 520.459,
-              "mean_critical_goodput_rps": 18.7681,
-              "mean_background_goodput_rps": 558.1263611,
-              "mean_producer_us": 10428.11164,
-              "mean_consumer_us": 46317.704060000004,
-              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
-              "rate_rps": 19.0
-            },
-            {
-              "sessions": 1,
-              "requests": 100,
-              "misses": 0,
-              "observed_dmr": 0.0,
-              "session_misses": [
-                0
-              ],
-              "mean_session_p50_us": 70551.1,
-              "mean_session_p99_us": 143367.0,
-              "min_session_p99_us": 143367.0,
-              "max_session_p99_us": 143367.0,
-              "mean_queue_p99_us": 609.865,
-              "mean_critical_goodput_rps": 19.7267,
-              "mean_background_goodput_rps": 547.2511586,
-              "mean_producer_us": 10729.299879999999,
-              "mean_consumer_us": 46377.69483,
-              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
-              "rate_rps": 20.0
-            },
-            {
-              "sessions": 1,
-              "requests": 100,
-              "misses": 0,
-              "observed_dmr": 0.0,
-              "session_misses": [
-                0
-              ],
-              "mean_session_p50_us": 79462.2,
-              "mean_session_p99_us": 146649.0,
-              "min_session_p99_us": 146649.0,
-              "max_session_p99_us": 146649.0,
-              "mean_queue_p99_us": 4289.47,
-              "mean_critical_goodput_rps": 20.6653,
-              "mean_background_goodput_rps": 538.554983,
-              "mean_producer_us": 11106.82531,
-              "mean_consumer_us": 46708.58597,
-              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
-              "rate_rps": 21.0
-            }
-          ],
-          "balanced": {
-            "sessions": 3,
-            "requests": 300,
-            "misses": 0,
-            "observed_dmr": 0.0,
-            "session_misses": [
-              0,
-              0,
-              0
-            ],
-            "mean_session_p50_us": 82403.13333333333,
-            "mean_session_p99_us": 150689.33333333334,
-            "min_session_p99_us": 147530.0,
-            "max_session_p99_us": 155128.0,
-            "mean_queue_p99_us": 8355.07,
-            "mean_critical_goodput_rps": 20.672366666666665,
-            "mean_background_goodput_rps": 538.9344918333333,
-            "mean_producer_us": 11145.733336666666,
-            "mean_consumer_us": 46884.64161666667,
+            "mean_session_p50_us": 294297.6666666667,
+            "mean_session_p99_us": 493180.0,
+            "min_session_p99_us": 460338.0,
+            "max_session_p99_us": 535578.0,
+            "mean_queue_p99_us": 323283.6666666667,
+            "mean_critical_goodput_rps": 16.686766666666667,
+            "mean_background_goodput_rps": 1346.57447601,
+            "mean_producer_us": 56843.66109,
+            "mean_consumer_us": 48901.65233333333,
             "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4"
           }
         }
@@ -1241,435 +1695,22 @@
       "sources": {
         "directional": {
           "summary": {
-            "path": "results/p9-whisper-edge-mix-campaign-r03-20260814/directional/speech-plus-speech/summary.json",
-            "sha256": "416f5967e4879ee23a4bf0d676d60ff67f133d1f336e10aa5cfbfcbc955ba23e"
+            "path": "results/p9-whisper-mixed-regime-campaign-r01-20260814/directional/mps-interference-vision-24/summary.json",
+            "sha256": "c15811c86b1e84f3cf4ced1a83d62ef8ba94f50c458aecdb46cc5601fc2f3e09"
           },
           "provenance": {
-            "path": "results/p9-whisper-edge-mix-campaign-r03-20260814/directional/speech-plus-speech/provenance.json",
-            "sha256": "9b6ff04aeac16c11409e0566897925e81ec04296adbec606cb6b31d17e65ab7c"
+            "path": "results/p9-whisper-mixed-regime-campaign-r01-20260814/directional/mps-interference-vision-24/provenance.json",
+            "sha256": "7f81519962073605a9eea2b92d504d101e2182766efe08864915768cda3c9b04"
           }
         },
         "balanced": {
           "summary": {
-            "path": "results/p9-whisper-edge-mix-campaign-r03-20260814/balanced/speech-plus-speech/summary.json",
-            "sha256": "2aa599dd68e80d4a3057e786f4adac5805d878a95a8899719a929dab393e6579"
+            "path": "results/p9-whisper-mixed-regime-campaign-r01-20260814/balanced/mps-interference-vision-24/summary.json",
+            "sha256": "307f54620db57cf501587b56710e3a92fd562b12fc09db7fdf477c21a2ccf658"
           },
           "provenance": {
-            "path": "results/p9-whisper-edge-mix-campaign-r03-20260814/balanced/speech-plus-speech/provenance.json",
-            "sha256": "9b6ff04aeac16c11409e0566897925e81ec04296adbec606cb6b31d17e65ab7c"
-          }
-        }
-      }
-    },
-    "speech-plus-multimodal": {
-      "label": "Speech + Multimodal",
-      "background_workers": 3,
-      "background_models": [
-        "distilbert-sst2",
-        "resnet10-detection",
-        "whisper-tiny-encoder"
-      ],
-      "deployment_scope": "multimodal-robot-or-edge-gateway-stress",
-      "balanced_rate_rps": 20.0,
-      "systems": {
-        "QUIET": {
-          "mode": "quiet",
-          "directional": [
-            {
-              "sessions": 1,
-              "requests": 100,
-              "misses": 0,
-              "observed_dmr": 0.0,
-              "session_misses": [
-                0
-              ],
-              "mean_session_p50_us": 59646.6,
-              "mean_session_p99_us": 146683.0,
-              "min_session_p99_us": 146683.0,
-              "max_session_p99_us": 146683.0,
-              "mean_queue_p99_us": 621.56,
-              "mean_critical_goodput_rps": 14.9078,
-              "mean_background_goodput_rps": 902.3495543,
-              "mean_producer_us": 9105.57345,
-              "mean_consumer_us": 47395.96557,
-              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
-              "rate_rps": 15.0
-            },
-            {
-              "sessions": 1,
-              "requests": 100,
-              "misses": 0,
-              "observed_dmr": 0.0,
-              "session_misses": [
-                0
-              ],
-              "mean_session_p50_us": 59957.1,
-              "mean_session_p99_us": 144816.0,
-              "min_session_p99_us": 144816.0,
-              "max_session_p99_us": 144816.0,
-              "mean_queue_p99_us": 598.471,
-              "mean_critical_goodput_rps": 16.8403,
-              "mean_background_goodput_rps": 873.0048711,
-              "mean_producer_us": 9441.708789999999,
-              "mean_consumer_us": 47302.19828,
-              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
-              "rate_rps": 17.0
-            },
-            {
-              "sessions": 1,
-              "requests": 100,
-              "misses": 0,
-              "observed_dmr": 0.0,
-              "session_misses": [
-                0
-              ],
-              "mean_session_p50_us": 70699.3,
-              "mean_session_p99_us": 149242.0,
-              "min_session_p99_us": 149242.0,
-              "max_session_p99_us": 149242.0,
-              "mean_queue_p99_us": 693.698,
-              "mean_critical_goodput_rps": 18.7598,
-              "mean_background_goodput_rps": 851.1152835,
-              "mean_producer_us": 9781.41987,
-              "mean_consumer_us": 47748.3291,
-              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
-              "rate_rps": 19.0
-            },
-            {
-              "sessions": 1,
-              "requests": 100,
-              "misses": 0,
-              "observed_dmr": 0.0,
-              "session_misses": [
-                0
-              ],
-              "mean_session_p50_us": 72374.4,
-              "mean_session_p99_us": 149221.0,
-              "min_session_p99_us": 149221.0,
-              "max_session_p99_us": 149221.0,
-              "mean_queue_p99_us": 709.591,
-              "mean_critical_goodput_rps": 19.7118,
-              "mean_background_goodput_rps": 833.8877019,
-              "mean_producer_us": 10304.42045,
-              "mean_consumer_us": 47793.495489999994,
-              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
-              "rate_rps": 20.0
-            },
-            {
-              "sessions": 1,
-              "requests": 100,
-              "misses": 0,
-              "observed_dmr": 0.0,
-              "session_misses": [
-                0
-              ],
-              "mean_session_p50_us": 112966.0,
-              "mean_session_p99_us": 179813.0,
-              "min_session_p99_us": 179813.0,
-              "max_session_p99_us": 179813.0,
-              "mean_queue_p99_us": 37566.5,
-              "mean_critical_goodput_rps": 20.6079,
-              "mean_background_goodput_rps": 821.012178,
-              "mean_producer_us": 10352.86366,
-              "mean_consumer_us": 48082.48947,
-              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
-              "rate_rps": 21.0
-            }
-          ],
-          "balanced": {
-            "sessions": 3,
-            "requests": 300,
-            "misses": 0,
-            "observed_dmr": 0.0,
-            "session_misses": [
-              0,
-              0,
-              0
-            ],
-            "mean_session_p50_us": 76255.7,
-            "mean_session_p99_us": 149197.0,
-            "min_session_p99_us": 148380.0,
-            "max_session_p99_us": 149986.0,
-            "mean_queue_p99_us": 833.6743333333334,
-            "mean_critical_goodput_rps": 19.700466666666667,
-            "mean_background_goodput_rps": 836.6918494333335,
-            "mean_producer_us": 10513.010686666667,
-            "mean_consumer_us": 48105.89227333333,
-            "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4"
-          }
-        },
-        "NVIDIA MIG": {
-          "mode": "nvidia-mig",
-          "directional": [
-            {
-              "sessions": 1,
-              "requests": 100,
-              "misses": 0,
-              "observed_dmr": 0.0,
-              "session_misses": [
-                0
-              ],
-              "mean_session_p50_us": 56374.1,
-              "mean_session_p99_us": 151881.0,
-              "min_session_p99_us": 151881.0,
-              "max_session_p99_us": 151881.0,
-              "mean_queue_p99_us": 473.817,
-              "mean_critical_goodput_rps": 14.9072,
-              "mean_background_goodput_rps": 976.7798652,
-              "mean_producer_us": 6963.07091,
-              "mean_consumer_us": 48607.67482,
-              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
-              "rate_rps": 15.0
-            },
-            {
-              "sessions": 1,
-              "requests": 100,
-              "misses": 0,
-              "observed_dmr": 0.0,
-              "session_misses": [
-                0
-              ],
-              "mean_session_p50_us": 72829.8,
-              "mean_session_p99_us": 156735.0,
-              "min_session_p99_us": 156735.0,
-              "max_session_p99_us": 156735.0,
-              "mean_queue_p99_us": 531.928,
-              "mean_critical_goodput_rps": 16.8297,
-              "mean_background_goodput_rps": 962.9521960000001,
-              "mean_producer_us": 7440.95651,
-              "mean_consumer_us": 50030.2586,
-              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
-              "rate_rps": 17.0
-            },
-            {
-              "sessions": 1,
-              "requests": 100,
-              "misses": 0,
-              "observed_dmr": 0.0,
-              "session_misses": [
-                0
-              ],
-              "mean_session_p50_us": 120952.0,
-              "mean_session_p99_us": 180959.0,
-              "min_session_p99_us": 180959.0,
-              "max_session_p99_us": 180959.0,
-              "mean_queue_p99_us": 23641.3,
-              "mean_critical_goodput_rps": 18.6672,
-              "mean_background_goodput_rps": 950.7213087,
-              "mean_producer_us": 8868.867680000001,
-              "mean_consumer_us": 53227.18633999999,
-              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
-              "rate_rps": 19.0
-            },
-            {
-              "sessions": 1,
-              "requests": 100,
-              "misses": 56,
-              "observed_dmr": 0.56,
-              "session_misses": [
-                56
-              ],
-              "mean_session_p50_us": 259985.0,
-              "mean_session_p99_us": 411638.0,
-              "min_session_p99_us": 411638.0,
-              "max_session_p99_us": 411638.0,
-              "mean_queue_p99_us": 249204.0,
-              "mean_critical_goodput_rps": 18.6517,
-              "mean_background_goodput_rps": 950.3860973,
-              "mean_producer_us": 9216.83209,
-              "mean_consumer_us": 53240.510930000004,
-              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
-              "rate_rps": 20.0
-            },
-            {
-              "sessions": 1,
-              "requests": 100,
-              "misses": 77,
-              "observed_dmr": 0.77,
-              "session_misses": [
-                77
-              ],
-              "mean_session_p50_us": 395092.0,
-              "mean_session_p99_us": 670282.0,
-              "min_session_p99_us": 670282.0,
-              "max_session_p99_us": 670282.0,
-              "mean_queue_p99_us": 481171.0,
-              "mean_critical_goodput_rps": 18.5722,
-              "mean_background_goodput_rps": 950.9901517000001,
-              "mean_producer_us": 9116.26086,
-              "mean_consumer_us": 53411.993899999994,
-              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
-              "rate_rps": 21.0
-            }
-          ],
-          "balanced": {
-            "sessions": 3,
-            "requests": 300,
-            "misses": 168,
-            "observed_dmr": 0.56,
-            "session_misses": [
-              59,
-              50,
-              59
-            ],
-            "mean_session_p50_us": 264304.6666666667,
-            "mean_session_p99_us": 422364.3333333333,
-            "min_session_p99_us": 402837.0,
-            "max_session_p99_us": 435655.0,
-            "mean_queue_p99_us": 256082.0,
-            "mean_critical_goodput_rps": 18.614533333333334,
-            "mean_background_goodput_rps": 950.0227342333333,
-            "mean_producer_us": 9130.522863333334,
-            "mean_consumer_us": 53334.81427666667,
-            "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4"
-          }
-        },
-        "NVIDIA MPS": {
-          "mode": "nvidia-mps-static-split",
-          "directional": [
-            {
-              "sessions": 1,
-              "requests": 100,
-              "misses": 0,
-              "observed_dmr": 0.0,
-              "session_misses": [
-                0
-              ],
-              "mean_session_p50_us": 62603.8,
-              "mean_session_p99_us": 148307.0,
-              "min_session_p99_us": 148307.0,
-              "max_session_p99_us": 148307.0,
-              "mean_queue_p99_us": 552.521,
-              "mean_critical_goodput_rps": 14.9045,
-              "mean_background_goodput_rps": 888.6177771,
-              "mean_producer_us": 13354.454010000001,
-              "mean_consumer_us": 46762.07387,
-              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
-              "rate_rps": 15.0
-            },
-            {
-              "sessions": 1,
-              "requests": 100,
-              "misses": 0,
-              "observed_dmr": 0.0,
-              "session_misses": [
-                0
-              ],
-              "mean_session_p50_us": 64366.7,
-              "mean_session_p99_us": 149038.0,
-              "min_session_p99_us": 149038.0,
-              "max_session_p99_us": 149038.0,
-              "mean_queue_p99_us": 459.765,
-              "mean_critical_goodput_rps": 16.8244,
-              "mean_background_goodput_rps": 869.0520902000001,
-              "mean_producer_us": 13826.41019,
-              "mean_consumer_us": 47545.86653,
-              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
-              "rate_rps": 17.0
-            },
-            {
-              "sessions": 1,
-              "requests": 100,
-              "misses": 0,
-              "observed_dmr": 0.0,
-              "session_misses": [
-                0
-              ],
-              "mean_session_p50_us": 75175.0,
-              "mean_session_p99_us": 153215.0,
-              "min_session_p99_us": 153215.0,
-              "max_session_p99_us": 153215.0,
-              "mean_queue_p99_us": 575.614,
-              "mean_critical_goodput_rps": 18.7375,
-              "mean_background_goodput_rps": 836.9906705999999,
-              "mean_producer_us": 14327.94579,
-              "mean_consumer_us": 47470.317149999995,
-              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
-              "rate_rps": 19.0
-            },
-            {
-              "sessions": 1,
-              "requests": 100,
-              "misses": 0,
-              "observed_dmr": 0.0,
-              "session_misses": [
-                0
-              ],
-              "mean_session_p50_us": 76970.9,
-              "mean_session_p99_us": 149752.0,
-              "min_session_p99_us": 149752.0,
-              "max_session_p99_us": 149752.0,
-              "mean_queue_p99_us": 804.754,
-              "mean_critical_goodput_rps": 19.6847,
-              "mean_background_goodput_rps": 827.5759611999999,
-              "mean_producer_us": 14856.155139999999,
-              "mean_consumer_us": 47530.741500000004,
-              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
-              "rate_rps": 20.0
-            },
-            {
-              "sessions": 1,
-              "requests": 100,
-              "misses": 0,
-              "observed_dmr": 0.0,
-              "session_misses": [
-                0
-              ],
-              "mean_session_p50_us": 97184.4,
-              "mean_session_p99_us": 166150.0,
-              "min_session_p99_us": 166150.0,
-              "max_session_p99_us": 166150.0,
-              "mean_queue_p99_us": 23789.8,
-              "mean_critical_goodput_rps": 20.6281,
-              "mean_background_goodput_rps": 808.0213668,
-              "mean_producer_us": 15366.18291,
-              "mean_consumer_us": 47976.67142,
-              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
-              "rate_rps": 21.0
-            }
-          ],
-          "balanced": {
-            "sessions": 3,
-            "requests": 300,
-            "misses": 0,
-            "observed_dmr": 0.0,
-            "session_misses": [
-              0,
-              0,
-              0
-            ],
-            "mean_session_p50_us": 78019.46666666667,
-            "mean_session_p99_us": 153710.66666666666,
-            "min_session_p99_us": 152239.0,
-            "max_session_p99_us": 155217.0,
-            "mean_queue_p99_us": 4254.91,
-            "mean_critical_goodput_rps": 19.6893,
-            "mean_background_goodput_rps": 825.8899015999999,
-            "mean_producer_us": 14900.438033333334,
-            "mean_consumer_us": 47902.981023333334,
-            "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4"
-          }
-        }
-      },
-      "sources": {
-        "directional": {
-          "summary": {
-            "path": "results/p9-whisper-edge-mix-campaign-r03-20260814/directional/speech-plus-multimodal/summary.json",
-            "sha256": "9187e8083c85e1d3989feb8990d467f2ab770b449e057dfdc5dc639a64cc4bbf"
-          },
-          "provenance": {
-            "path": "results/p9-whisper-edge-mix-campaign-r03-20260814/directional/speech-plus-multimodal/provenance.json",
-            "sha256": "5c531371c60381e3d5fcfd659d98dd0de6a86f2a0b5efe3a49b04a00ec933db9"
-          }
-        },
-        "balanced": {
-          "summary": {
-            "path": "results/p9-whisper-edge-mix-campaign-r03-20260814/balanced/speech-plus-multimodal/summary.json",
-            "sha256": "0e2c2770b2106722ebc43b28dd0b2de94df62aef0a4f4fbd06d8c3002b30df93"
-          },
-          "provenance": {
-            "path": "results/p9-whisper-edge-mix-campaign-r03-20260814/balanced/speech-plus-multimodal/provenance.json",
-            "sha256": "5c531371c60381e3d5fcfd659d98dd0de6a86f2a0b5efe3a49b04a00ec933db9"
+            "path": "results/p9-whisper-mixed-regime-campaign-r01-20260814/balanced/mps-interference-vision-24/provenance.json",
+            "sha256": "7f81519962073605a9eea2b92d504d101e2182766efe08864915768cda3c9b04"
           }
         }
       }
@@ -1681,11 +1722,24 @@
   },
   "balanced_totals": {
     "all_system_requests": 3600,
-    "quiet_plus_mps_misses": 0
+    "by_system": {
+      "QUIET": {
+        "requests": 1200,
+        "misses": 0
+      },
+      "NVIDIA MIG": {
+        "requests": 1200,
+        "misses": 315
+      },
+      "NVIDIA MPS": {
+        "requests": 1200,
+        "misses": 295
+      }
+    }
   },
   "campaign": {
-    "path": "results/p9-whisper-edge-mix-campaign-r03-20260814/campaign.json",
-    "sha256": "bc580248038935c9520274b8db30e63d4b40f9c822d06daa09308448dea5e378"
+    "path": "results/p9-whisper-mixed-regime-campaign-r01-20260814/campaign.json",
+    "sha256": "a837ed57a966572e043ef85c90c25907755b975b89d31f8e1c98b6c98595e49c"
   },
   "input_provenance": {
     "path": "results/p9-whisper-asr-crossover-inputs-102-20260814/provenance.json",
@@ -1701,22 +1755,22 @@
     "models/engines/mig-2g-q100/whisper-tiny-decoder-with-past-fp32.engine": "6a014c20daca49491ba69ce03b02feefa8536f00efc5d1569fc64ee099f0eee1",
     "models/engines/mig-1g-q100/distilbert-sst2.engine": "ed46a5cf2cecbd1bd2fdcaecdc93397e7774d4ec8ccd9c09cffe3ab4829cfd2c",
     "benchmarks/mig_whisper_asr.cpp": "f2e392f604f53b168a81a208fad8bdb3ab264d34f167156a5f8e28ab47c8f171",
-    "scripts/run_p9_whisper_asr_mig_crossover.py": "70130f5b026f254a043fbce15004347c570a3a6cd6bdcb4fdb496e11a3434823",
+    "scripts/run_p9_whisper_asr_mig_crossover.py": "afe8179e1038a804f0d53d3d968ea7e26ed375f7b2ccade4133dd33e64b47f13",
     "models/engines/mig-1g-q100/resnet10-detection.engine": "6fa09a785289b9868bf710cf4211e130a4b16bce43e02cd8175f69f9867514c1",
     "models/engines/mig-1g-q100/whisper-tiny-encoder.engine": "2bae7a38cd8bacca68429363f9055eba1ce82d45354612f05e6502395afed2ad"
   },
-  "claim_guard": "The model combinations and tenant topology are plausible Jetson deployments, but fixed-rate arrivals, saturated background queues, and cyclic input replay are stress conditions rather than a field trace. Both split modes have zero balanced misses, so this campaign motivates stage placement over pure MIG; it does not establish a protection-gate advantage over static MPS.",
+  "claim_guard": "Two low-fanout cases expose MIG placement loss; two high-fanout cases expose static-MPS producer interference. Fixed-rate arrivals, saturated queues, and cyclic input replay are controlled stress conditions rather than a field trace. This is nonthermal exploratory motivation, not a formal deployment or thermal claim.",
   "generator": {
     "path": "analysis/generate_p9_whisper_edge_mix_figures.py",
-    "sha256": "173d83fc4fe473ad0aada38d1a9300311c0aa1a74539e548c79a4b740a8d3303"
+    "sha256": "9fe99f0b72fea1b9425d7f6f0b9a2274a88774951edaddb2c0be38d99971f7e0"
   },
   "table_sha256": {
-    "paper/eurosys27/generated/p9-whisper-edge-mix-results.tex": "d11ac37942c25306afd0f77ff3fb03c661a71a4ed0d57151eeff3a92910a5cef"
+    "paper/eurosys27/generated/p9-whisper-edge-mix-results.tex": "6c867d7f50889b4f9a1840a76c6da187ab6738df89a311bbf2fd7da018829710"
   },
   "figure_sha256": {
-    "paper/eurosys27/figures/p9-whisper-edge-mix-frontier.pdf": "4fc382a9c8e3e7e40c471ed7b47939aeb907b2b01543302434a6f1154639767d",
-    "paper/eurosys27/figures/p9-whisper-edge-mix-frontier.png": "735fa308066369b72303ac6b845e1af69a10fb785b8b53bcc1b17e63337c748f",
-    "paper/eurosys27/figures/p9-whisper-edge-mix-balanced.pdf": "afacd42baa89533afeaa28a6c64f758a71ed321b47ec42963d34521897b25be2",
-    "paper/eurosys27/figures/p9-whisper-edge-mix-balanced.png": "c2af1d68cfe435c847ccadd10188e533e672c256ac5f454beb9a8d5b1f8a2937"
+    "paper/eurosys27/figures/p9-whisper-edge-mix-frontier.pdf": "b0a6588fb4b92bc7efd687df396aca9e923a6058839dff7b1648c91c3edbac7e",
+    "paper/eurosys27/figures/p9-whisper-edge-mix-frontier.png": "baca5b7a92a7200c4dbb965c0425a977e986d1faf866fb462d6d1fa11792908a",
+    "paper/eurosys27/figures/p9-whisper-edge-mix-balanced.pdf": "aaa6150c1bef9998e116df00f2bc7a5e7a2ce54b759da7bdac686e2a01ffa94b",
+    "paper/eurosys27/figures/p9-whisper-edge-mix-balanced.png": "b0772b62274bdda05ddd08ae1b40e507f5ddd63e7a3414863244b507d0acf866"
   }
 }
