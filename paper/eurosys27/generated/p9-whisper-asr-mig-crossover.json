@@ -1,0 +1,136 @@
+{
+  "schema_version": 1,
+  "kind": "p9-whisper-asr-mig-crossover-compact",
+  "evidence_class": "exploratory-nonthermal-motivation",
+  "system_order": [
+    "QUIET",
+    "NVIDIA MIG",
+    "NVIDIA MPS"
+  ],
+  "workload": "Whisper-Tiny encoder-decoder on labelled LibriSpeech windows",
+  "input_policy": "12-real-window cyclic performance replay; not accuracy expansion",
+  "offered_rps": 19.0,
+  "deadline_us": 250000.0,
+  "pipeline_slots": 3,
+  "background": "saturated DistilBERT-SST2 on Thor 1g",
+  "treatment_order": [
+    [
+      "NVIDIA MIG",
+      "NVIDIA MPS",
+      "QUIET"
+    ],
+    [
+      "NVIDIA MPS",
+      "QUIET",
+      "NVIDIA MIG"
+    ],
+    [
+      "QUIET",
+      "NVIDIA MIG",
+      "NVIDIA MPS"
+    ]
+  ],
+  "systems": {
+    "QUIET": {
+      "system": "QUIET",
+      "mode": "quiet",
+      "sessions": 3,
+      "requests": 300,
+      "misses": 0,
+      "observed_dmr": 0.0,
+      "session_misses": [
+        0,
+        0,
+        0
+      ],
+      "mean_session_p50_us": 75011.90000000001,
+      "mean_session_p99_us": 155581.0,
+      "min_session_p99_us": 154971.0,
+      "max_session_p99_us": 156122.0,
+      "mean_queue_p99_us": 903.4766666666666,
+      "mean_critical_goodput_rps": 18.7315,
+      "mean_background_goodput_rps": 843.6452966333333,
+      "min_background_goodput_rps": 842.2955225,
+      "max_background_goodput_rps": 844.3943723,
+      "mean_producer_us": 8583.87,
+      "mean_consumer_us": 49906.10405,
+      "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+      "mean_gate_hold_p99_us": 10009.993333333334
+    },
+    "NVIDIA MIG": {
+      "system": "NVIDIA MIG",
+      "mode": "nvidia-mig",
+      "sessions": 3,
+      "requests": 300,
+      "misses": 167,
+      "observed_dmr": 0.5566666666666666,
+      "session_misses": [
+        59,
+        57,
+        51
+      ],
+      "mean_session_p50_us": 260521.33333333334,
+      "mean_session_p99_us": 412059.6666666667,
+      "min_session_p99_us": 395372.0,
+      "max_session_p99_us": 429134.0,
+      "mean_queue_p99_us": 241104.0,
+      "mean_critical_goodput_rps": 17.790633333333332,
+      "mean_background_goodput_rps": 924.0729008333334,
+      "min_background_goodput_rps": 923.6748315,
+      "max_background_goodput_rps": 924.5127988,
+      "mean_producer_us": 9799.20501,
+      "mean_consumer_us": 55815.87317333333,
+      "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4"
+    },
+    "NVIDIA MPS": {
+      "system": "NVIDIA MPS",
+      "mode": "nvidia-mps-static-split",
+      "sessions": 3,
+      "requests": 300,
+      "misses": 64,
+      "observed_dmr": 0.21333333333333335,
+      "session_misses": [
+        0,
+        0,
+        64
+      ],
+      "mean_session_p50_us": 147521.73333333334,
+      "mean_session_p99_us": 266168.0,
+      "min_session_p99_us": 152111.0,
+      "max_session_p99_us": 493434.0,
+      "mean_queue_p99_us": 100937.76366666668,
+      "mean_critical_goodput_rps": 18.328599999999998,
+      "mean_background_goodput_rps": 847.7539171666667,
+      "min_background_goodput_rps": 842.3909363,
+      "max_background_goodput_rps": 857.5542565,
+      "mean_producer_us": 9531.790386666667,
+      "mean_consumer_us": 52143.10527333333,
+      "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4"
+    }
+  },
+  "output_contract": "byte-identical across all nine runs",
+  "source_summary": {
+    "path": "results/p9-whisper-asr-mig-crossover-balanced-r01-20260814/summary.json",
+    "sha256": "0fb199829e669fc5474f3a806d120399a594aa29b2066d6f0d551dc6ee54c835"
+  },
+  "artifact_sha256": {
+    "build-r39/jdg-mig-whisper-asr": "a1079d57f15725a533b3e261ba9cf473f0164ba05bb69b4565df04b4649d59e3",
+    "build-r39/jdg-trt-bench": "c8da37265f93b0ad6a6e8f0a040225959df8e9144fe31c33b753da06b028f963",
+    "results/p9-whisper-asr-crossover-inputs-102-20260814/inputs.bin": "1cc20e21f65e05efd35e44a94b72dd0e210c5f35c51c6f80f9f9b0d259573a19",
+    "models/engines/mig-1g-q100/whisper-tiny-encoder-fp32.engine": "b060eda89641bcd3090549283995a94cafa68d3769878e06d0d270d6131f36ed",
+    "models/engines/mig-2g-q100/whisper-tiny-encoder-fp32.engine": "b2628138239a436204bcbc82670341a564c0e987c8b8a166329da951dfec8112",
+    "models/engines/mig-2g-q100/whisper-tiny-decoder-initial-4-fp32.engine": "048ae3d2db80f20f4860c6c5430541d9061c53c8d35755d4ac308eb4924c7827",
+    "models/engines/mig-2g-q100/whisper-tiny-decoder-with-past-fp32.engine": "6a014c20daca49491ba69ce03b02feefa8536f00efc5d1569fc64ee099f0eee1",
+    "models/engines/mig-1g-q100/distilbert-sst2.engine": "ed46a5cf2cecbd1bd2fdcaecdc93397e7774d4ec8ccd9c09cffe3ab4829cfd2c",
+    "benchmarks/mig_whisper_asr.cpp": "f2e392f604f53b168a81a208fad8bdb3ab264d34f167156a5f8e28ab47c8f171",
+    "scripts/run_p9_whisper_asr_mig_crossover.py": "bac9c3b9e944a70930db010cdf60db8dfb906a9c8f6e4bd69dc383f4f535facf",
+    "results/p9-whisper-asr-crossover-inputs-102-20260814/provenance.json": "a98c8e21bfdfd6001f33103dd040c865e3ebad2c3b2debb36ef2bedb7032af92",
+    "scripts/repeat_jdgint_trace.py": "e0fc7341c209a49064d46dec61a3dd9191e64abddeb038be39caa2798f366694",
+    "analysis/generate_p9_whisper_asr_crossover_figure.py": "e9a3efe0665677b0524da7eb8733a2ac9f78b0115b199cbd9b459962831959ef"
+  },
+  "claim_guard": "This is a three-session nonthermal motivation result, not a formal deployment trace or universal ASR SLO. The inputs are real and outputs are byte-identical, but twelve labelled windows are replayed cyclically at a synthetic fixed rate.",
+  "figure_sha256": {
+    "paper/eurosys27/figures/p9-whisper-asr-mig-crossover.pdf": "f88800726088a232658063a2c6fca452485863a5e9f4aa53166b5418fd7bcaa8",
+    "paper/eurosys27/figures/p9-whisper-asr-mig-crossover.png": "900e938be44f9296ffb54601eff118b97f4ed265aa9278528c57983b5b4cd602"
+  }
+}

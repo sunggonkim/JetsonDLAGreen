@@ -279,6 +279,26 @@ if(BUILD_TESTING)
             -v)
   add_test(NAME mig-trt-pipeline-cli COMMAND jdg-mig-trt-pipeline --help)
   add_test(NAME mig-whisper-asr-cli COMMAND jdg-mig-whisper-asr --help)
+  add_test(
+    NAME mig-whisper-asr-contract-unit
+    COMMAND "${Python3_EXECUTABLE}"
+            "${PROJECT_SOURCE_DIR}/tests/test_mig_whisper_asr_contract.py"
+            -v)
+  add_test(
+    NAME repeat-jdgint-trace-unit
+    COMMAND "${Python3_EXECUTABLE}"
+            "${PROJECT_SOURCE_DIR}/tests/test_repeat_jdgint_trace.py"
+            -v)
+  add_test(
+    NAME p9-whisper-asr-mig-crossover-unit
+    COMMAND "${Python3_EXECUTABLE}"
+            "${PROJECT_SOURCE_DIR}/tests/test_p9_whisper_asr_mig_crossover.py"
+            -v)
+  add_test(
+    NAME generate-p9-whisper-asr-crossover-figure-unit
+    COMMAND "${Python3_EXECUTABLE}"
+            "${PROJECT_SOURCE_DIR}/tests/test_generate_p9_whisper_asr_crossover_figure.py"
+            -v)
   add_test(NAME read-application-output-trace-unit
            COMMAND "${Python3_EXECUTABLE}"
                    "${PROJECT_SOURCE_DIR}/tests/test_read_application_output_trace.py"
