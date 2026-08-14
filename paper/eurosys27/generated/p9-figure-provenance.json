@@ -11,7 +11,7 @@
     },
     "comparators": {
       "path": "docs/p9-comparator-manifest.json",
-      "sha256": "f52b63e64851f30893990de6d63618989229419f980974ae9a57f2326aaeb949"
+      "sha256": "189193a14aa59943ac6d7c9bfa5bc10c55c4638d278c7b216793d5c269b04a17"
     },
     "deadline": {
       "path": "results/p9-resnet50-imagenette-calibration-current-r06-20260811/deadline-lock.json",
@@ -35,7 +35,7 @@
     },
     "pantheon": {
       "path": "results/p9-pantheon-resnet50-imagenette-gate100-r01-20260811/verification.json",
-      "sha256": "da6462a7955a8f8f407908d6aa1d703796f405284642a97f43127af1d2eaf3bd"
+      "sha256": "42f2714968f4df887b3ffb4dc2103750346574aceaeb93efafc0e9bc91ac4e05"
     },
     "parva_dependent": {
       "path": "results/p9-parvagpu-dependent-whisper-current-lock-20260810/allocation.json",
@@ -48,6 +48,10 @@
     "quiet_causal": {
       "path": "results/p9-real-resnet-head-causal-current-wall-replay-20260811/quiet-causal-repeat-summary.json",
       "sha256": "f743fda05930e38037d8d2ab94821195687dbecb7173172f4d03d520b490719f"
+    },
+    "six_system": {
+      "path": "paper/eurosys27/generated/p9-six-system-imagenette-gate.json",
+      "sha256": "fdd908e951d82c5de712fa1c1f5e233ebfb9219b9ea9ad299fd650f021f16383"
     },
     "structural": {
       "path": "results/p9-structural-limit-evidence-20260809/summary.json",
@@ -68,19 +72,19 @@
   },
   "kind": "p9-current-paper-figure-provenance",
   "outputs": {
-    "paper/eurosys27/figures/p9-causal-pairs.pdf": "483126489c4159de4dda3e15e717af8c931c73eed7e7e335f2be73b442fcf490",
+    "paper/eurosys27/figures/p9-causal-pairs.pdf": "69d3cd1f011876868754ed81858c4c9e4fb730a6df6f3e7ae3e41494765b51c9",
     "paper/eurosys27/figures/p9-causal-pairs.png": "39f946a57e101fbe2ba669150b2de43d4eed8a752d0c4c5bbce7edb35ed356fb",
-    "paper/eurosys27/figures/p9-latency-cdf.pdf": "b871d3998392925976d5b5a132616b1d6b3467ca21cffc4e2d736d99e5260ea2",
+    "paper/eurosys27/figures/p9-latency-cdf.pdf": "ec508135fcb1ef68b620e17a122f8144f807251e63ee6cfae3ff5681f36616f5",
     "paper/eurosys27/figures/p9-latency-cdf.png": "9e32d92a4d3677b8a41726ff9a4ef125548687650fd1720c467efb4175e9d6c0",
-    "paper/eurosys27/figures/p9-load-frontier.pdf": "24a069b8ed5186dc2b0406fe47f979ada054ef8a9fa583c87c73d18b97b33640",
+    "paper/eurosys27/figures/p9-load-frontier.pdf": "5e116cf7e24c261a31bcbc8df0e46956cb406e873d78f3a74f078b197778b664",
     "paper/eurosys27/figures/p9-load-frontier.png": "ee2c312ff844ce5bd46de0c74f576c283d15d34736de705728858eebc3b42f29",
-    "paper/eurosys27/figures/p9-quiet-overview.pdf": "6d57cceb503660ef58c8cffd4bb0412640e4c5ccd49f7ed48ff71425b08912a0",
+    "paper/eurosys27/figures/p9-quiet-overview.pdf": "bb99c19fa269666b75269e61fc1521f6cac6400a71fe614f4d755b2bd40af8c9",
     "paper/eurosys27/figures/p9-quiet-overview.png": "c6e7f0b9b54217d8c1de68c91a53914f6cc18e05e46aafd913a18792c8a39967",
-    "paper/eurosys27/figures/p9-session-stability.pdf": "cfe8727f4f8fed5d4c4091e306e1e79d4236cd56b389000c7fc901a1325feb0a",
+    "paper/eurosys27/figures/p9-session-stability.pdf": "931e6bd373496581a2730f00cda6ff55169cab73ca1f9cd4d62324c9f1491e53",
     "paper/eurosys27/figures/p9-session-stability.png": "15f35f748473fdf0120784ccc3f3c22d8c2cce0dd1299d93ad1dc322b731d784",
-    "paper/eurosys27/figures/p9-stage-timeline.pdf": "13cf5d4bee7bdf55bd075dd2d25a4274436cc0ac27e64ec42c32f39943790a8a",
+    "paper/eurosys27/figures/p9-stage-timeline.pdf": "34703ffe461a3e0dc9ec1388f823f8796fedf54004f5468b0fdf04817c35e48a",
     "paper/eurosys27/figures/p9-stage-timeline.png": "e8583ff9cd9631f90ffe7e30afd764d90013bc9467980366e4b3c64c783ade89",
-    "paper/eurosys27/generated/p9-current-results.tex": "17a6b598a8ce0767f79be5b76801f94739e75310a6de9b9494a795bca836c47f"
+    "paper/eurosys27/generated/p9-current-results.tex": "f4184f45f7c821b5113e1bbca13da8f8bc8d16437b41bc86c401ea9847263839"
   },
   "schema_version": 1
 }

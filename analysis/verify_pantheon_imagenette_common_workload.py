@@ -132,6 +132,7 @@ def _adapter(path: Path) -> dict[str, Any]:
 
 def _common(path: Path, operational_arrival: Path) -> dict[str, Any]:
     value = _load_json(path, "common workload")
+    request_count = value.get("request_count")
     if (
         value.get("schema_version") != 1
         or value.get("workload_id") != "resnet50-classification"
@@ -139,7 +140,9 @@ def _common(path: Path, operational_arrival: Path) -> dict[str, Any]:
         or value.get("placement") != "fixed-1g-producer-2g-consumer"
         or value.get("input_tensor") != "gpu_0/res4_5_branch2c_bn_2"
         or value.get("payload_bytes") != 802816
-        or value.get("request_count") != 90
+        or not isinstance(request_count, int)
+        or isinstance(request_count, bool)
+        or request_count <= 0
     ):
         raise ValueError("Pantheon common workload contract differs")
     for key in ("arrival_trace_path", "dataset_manifest_path"):
@@ -354,6 +357,7 @@ def verify(
         "workload": "resnet50-classification",
         "common_workload": common,
         "deadline_us": deadline,
+        "deadline_lock": _file(deadline_lock, None, "deadline lock"),
         "effective_pantheon_deadline_us": effective_deadline,
         "deadline_quantization": {
             "interface": "Pantheon protobuf integer microseconds",

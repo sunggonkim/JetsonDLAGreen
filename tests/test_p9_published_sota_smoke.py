@@ -54,7 +54,7 @@ class PublishedSotaSmokeTest(unittest.TestCase):
         self.assertFalse(result["rows"][4]["numeric_comparison_allowed"])
         self.assertEqual(
             result["rows"][4]["comparison_status"],
-            "historical-port-not-current-native-gate:faithful-native-runtime-common-workload-gate-passed-slo-infeasible",
+            "historical-port-not-current-native-gate:formal-native-runtime-passed-slo-infeasible",
         )
         self.assertEqual(len(result["comparator_manifest"]["sha256"]), 64)
 

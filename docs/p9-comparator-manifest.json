@@ -15,12 +15,12 @@
     "Pantheon"
   ],
   "headline_order": [
+    "QUIET",
     "NVIDIA MIG",
     "NVIDIA MPS",
-    "Orion",
     "XSched",
-    "Pantheon",
-    "QUIET"
+    "Orion",
+    "Pantheon"
   ],
   "latest_fast_causal_smoke": {
     "path": "results/p9-fast-dev-smoke-20260810-r08/",
@@ -224,14 +224,24 @@
   },
   "paper_table_policy": {
     "proposed_system": "QUIET",
-    "executed_result_order": [
+    "fixed_numeric_roster": [
       "QUIET",
+      "NVIDIA MIG",
       "NVIDIA MPS",
       "XSched",
-      "Pantheon",
       "Orion",
-      "BLESS",
+      "Pantheon"
+    ],
+    "executed_result_order": [
+      "QUIET",
       "NVIDIA MIG",
+      "NVIDIA MPS",
+      "XSched",
+      "Orion",
+      "Pantheon"
+    ],
+    "partial_evidence_order": [
+      "BLESS",
       "GSLICE",
       "gpulet",
       "BOER",
@@ -239,11 +249,11 @@
       "DeepPlan"
     ],
     "direct_ranking_order": ["QUIET", "NVIDIA MPS", "XSched"],
-    "visibility_rule": "Every comparison implementation executed on Thor appears in the primary result ledger; evidence class controls rankability, not visibility.",
+    "visibility_rule": "Every end-to-end common-gate row repeats fixed_numeric_roster in order; executed partial artifacts remain visible in a separate table, and systems with no current end-to-end row appear only in the reason table.",
     "numeric_frontier_order": ["NVIDIA MPS", "QUIET"],
-    "functional_only": ["NVIDIA MIG", "Orion", "XSched", "Pantheon"],
+    "formal_not_enrolled": ["NVIDIA MIG", "Orion", "Pantheon"],
     "structural_only": ["gpulet", "BOER", "ParvaGPU", "BLESS", "EdgeIso", "EdgeServing", "GCAPS"],
-    "rule": "Only direct_ranking_order shares the current formal campaign; numeric_frontier_order remains the historical exact-lock analysis order.",
+    "rule": "The six-system common gate reports measured coverage without formal ranking. Only direct_ranking_order shares the current thermal campaign; numeric_frontier_order remains the historical exact-lock analysis order.",
     "formal_required_gates": [
       "production_wall_arrival_to_completion",
       "production_wall_contract_v2_completion_before_validation",
@@ -267,13 +277,71 @@
       "class": "vendor-baseline",
       "topology": "fixed-2g+1g-physical-isolation",
       "numeric_comparison_allowed": false,
-      "status": "capacity-control-no-best-effort-slice"
+      "numeric_measurement_available": true,
+      "status": "common-gate-capacity-endpoint-no-best-effort-slice",
+      "thor_topology_constraint": {
+        "maximum_simultaneous_instances": 2,
+        "three_way_1g_supported": false,
+        "reason": "all 1g profiles have the sole placement {2}:1 while all 2g profiles occupy {0}:2",
+        "possible_placements": "results/p9-mig-colocated-imagenette-gate90-20260814-r06/mig-possible-placements.txt",
+        "possible_placements_sha256": "f9d92d6b60e4aeed95fe24771cd2dba658905dc78520cc265772a3cfc3f66859",
+        "active_instances": "results/p9-mig-colocated-imagenette-gate90-20260814-r06/active-mig-instances.txt",
+        "active_instances_sha256": "463833352e8d049ef1d25830a5d686fec0dcf74a90ec872e0ffa9e7bc057ea18"
+      },
+      "latest_real_imagenette_application_gate": {
+        "verification": "results/p9-resnet50-imagenette-six-system-gate90-20260814/nvidia-mig/summary.json",
+        "verification_sha256": "c2558ab5165b493a68eef2e548f4e1b9fa22a612790cc6dff679175ffed66203",
+        "accuracy_gate": "results/p9-resnet50-imagenette-six-system-gate90-20260814/nvidia-mig/application-accuracy/accuracy-gate.json",
+        "accuracy_gate_sha256": "a16619bdcb6174a153696c3159eaf1a54973afc4d932acaa1d0e9d18cc9675b6",
+        "workload": "resnet50-classification",
+        "requests": 90,
+        "reference_accuracy": 0.8333333333333334,
+        "candidate_accuracy": 0.8333333333333334,
+        "accuracy_delta": 0.0,
+        "deadline_us": 2224.4481160000005,
+        "p99_us": 1652.86092,
+        "deadline_misses": 0,
+        "dmr": 0.0,
+        "background_goodput_rps": 0.0,
+        "background_goodput_applicable": false,
+        "background_goodput_display": "N/A",
+        "formal_claim_allowed": false,
+        "claim_status": "same-labelled-common-gate-capacity-endpoint-no-best-effort-slice"
+      },
+      "partial_topology_variant": {
+        "status": "passed-directional-partial-gate",
+        "verification": "results/p9-mig-colocated-imagenette-gate90-20260814-r06/summary.json",
+        "verification_sha256": "f3360064081e7c1549730621abd17e239a4d5a4a16ac41525fb289be33646eb6",
+        "accuracy_gate": "results/p9-mig-colocated-imagenette-gate90-20260814-r06/application-accuracy/accuracy-gate.json",
+        "accuracy_gate_sha256": "6c898fe232fd8dcb1dbf57ab379a68e65af3b873e1232474f33497ef3482cc28",
+        "topology": "colocated-2g-critical-dag-with-isolated-1g-best-effort",
+        "producer_engine_sha256": "8140d548d6fd1d611c52e893723d605587ad76d55928dbdadea2fd41f2c0dc57",
+        "pipeline_binary_sha256": "14427ce54231891c25477c14a42aeba1b38d7c222e9c562dd678250ecc9ea869",
+        "workload": "resnet50-classification",
+        "requests": 90,
+        "reference_accuracy": 0.8333333333333334,
+        "candidate_accuracy": 0.8444444444444444,
+        "accuracy_delta": 0.011111111111111072,
+        "accuracy_tolerance": 0.02,
+        "deadline_us": 2224.4481160000005,
+        "p99_us": 1514.2526599999999,
+        "deadline_misses": 0,
+        "dmr": 0.0,
+        "background_goodput_rps": 249.3194987,
+        "background_goodput_applicable": true,
+        "same_contract_dimensions": ["labelled_inputs", "operational_arrival_trace", "deadline"],
+        "changed_dimensions": ["stage_placement", "profile_specific_producer_plan"],
+        "formal_claim_allowed": false,
+        "ranking_allowed": false,
+        "claim_status": "partial-topology-variant-same-input-arrival-deadline"
+      }
     },
     "NVIDIA MPS": {
       "class": "vendor-baseline",
       "topology": "1g-shared-MPS-with-2g-reserved",
       "numeric_comparison_allowed": true,
-      "status": "executable-baseline-v2-smoke-only"
+      "numeric_measurement_available": true,
+      "status": "formal-thermal-campaign-and-common-gate-passed"
     },
     "Orion": {
       "class": "published-competitor",
@@ -290,6 +358,7 @@
       "reference_trace_provenance"
       ],
       "numeric_comparison_allowed": false,
+      "numeric_measurement_available": true,
       "status": "faithful-port-pending-differential-gate",
       "latest_exploratory_evidence": {
         "path": "results/p9-fast-dev-smoke-20260810-r06-orion/verification.json",
@@ -301,19 +370,20 @@
         "formal": false
       },
       "latest_real_imagenette_application_gate": {
-        "verification": "results/p9-orion-resnet50-imagenette-gate100-r01-20260811/verification.json",
-        "verification_sha256": "cb4b4b035aa443638d370f05d228fe25033237ee4e845e0c9601da79247c60da",
-        "accuracy_gate": "results/p9-orion-resnet50-imagenette-gate100-r01-20260811/accuracy-gate.json",
-        "accuracy_gate_sha256": "6b3cc410121d80ce8690fa9ef7f5d9fb65fb00ede3eca7fceaabed8c5bffcf11",
+        "verification": "results/p9-resnet50-imagenette-six-system-gate90-20260814/orion-r02/verification.json",
+        "verification_sha256": "adb536b816c8ba4c65f538280e2d4c70787c7a7025c2fc27e0c19472b3213b5d",
+        "accuracy_gate": "results/p9-resnet50-imagenette-six-system-gate90-20260814/orion-r02/accuracy-gate.json",
+        "accuracy_gate_sha256": "2c5fce26abb886ca978f6d111a8cddfd46dad958766a028248362f4632b85b67",
         "workload": "resnet50-classification",
         "requests": 90,
         "reference_accuracy": 0.8333333333333334,
         "candidate_accuracy": 0.8333333333333334,
         "accuracy_delta": 0.0,
-        "deadline_us": 5722.576134,
-        "p99_us": 5537.08993,
-        "deadline_misses": 0,
-        "dmr": 0.0,
+        "deadline_us": 2224.4481160000005,
+        "p99_us": 5573.20532,
+        "deadline_misses": 90,
+        "dmr": 1.0,
+        "background_goodput_rps": 166.26748459350335,
         "formal_claim_allowed": false,
         "claim_status": "same-labelled-workload-accuracy-passed-but-differential-gate-open"
       }
@@ -324,12 +394,11 @@
       "upstream_commit": "bd494cb7a72958cd11900243a0798df00d856c6e",
       "topology": "fixed-2g+1g-native-xqueue-port",
       "numeric_comparison_allowed": true,
-      "status": "faithful-native-runtime-common-workload-gate-passed-slo-infeasible",
+      "numeric_measurement_available": true,
+      "status": "formal-native-runtime-passed-slo-infeasible",
       "numeric_candidate": true,
       "pending_gates": [
-        "feasible_deadline_point",
-        "thermal_normalization",
-        "session_level_statistics"
+        "feasible_deadline_point"
       ],
       "latest_exploratory_evidence": {
         "repeat_aggregate": "results/p9-common-production-wall-frontier-repeats-commonlock-4x-20260810.json",
@@ -401,6 +470,7 @@
         "port_trace_sha256"
       ],
       "numeric_comparison_allowed": true,
+      "numeric_measurement_available": true,
       "status": "faithful-native-runtime-common-workload-gate-passed",
       "functional_positive_control": {
         "path": "results/p9-pantheon-native-positive-20260810T020937Z/verification.json",
@@ -416,7 +486,7 @@
       },
       "latest_real_imagenette_application_gate": {
         "verification": "results/p9-pantheon-resnet50-imagenette-gate100-r01-20260811/verification.json",
-        "verification_sha256": "da6462a7955a8f8f407908d6aa1d703796f405284642a97f43127af1d2eaf3bd",
+        "verification_sha256": "42f2714968f4df887b3ffb4dc2103750346574aceaeb93efafc0e9bc91ac4e05",
         "workload": "resnet50-classification",
         "requests": 90,
         "reference_accuracy": 0.8333333333333334,
@@ -441,7 +511,8 @@
       "class": "proposed-system",
       "topology": "fixed-2g+1g-dependent-dag-quiescence",
       "numeric_comparison_allowed": true,
-      "status": "proposed-system-v2-smoke-only",
+      "numeric_measurement_available": true,
+      "status": "confidence-qualified-formal-thermal-campaign",
       "latest_exploratory_evidence": {
         "session_frontier": "results/p9-dev-wall-resnet-common-placement-quota-frontier-20260810/frontier.json",
         "points": 6,

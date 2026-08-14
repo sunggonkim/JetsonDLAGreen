@@ -9,32 +9,30 @@ baselines or QUIET ablations. They must not be presented as separate systems.
 
 ## Current reporting rule
 
-The public result ledger and the paper's executed-comparator table include
-**every comparison system whose vendor control, published runtime, port,
-reimplementation, or planner actually ran on Thor**. The ledger contains
-QUIET, NVIDIA MPS, XSched, Pantheon, Orion, BLESS, NVIDIA MIG, GSLICE, gpulet,
-BOER, ParvaGPU, and DeepPlan. An executed system is not hidden merely because
-its workload, deadline, fidelity gate, or mechanism boundary prevents a direct
-rank.
+Current reporting separates comparability from partial artifact evidence:
 
-Execution visibility and statistical comparability are separate decisions:
+1. **Fixed common gate:** QUIET, NVIDIA MIG, NVIDIA MPS, XSched, Orion, and
+   Pantheon repeat in this exact order in every end-to-end table and graph.
+   Each row uses the same 90 labelled ImageNette inputs, operational arrival
+   trace, artifacts, and 2,224.448-us deadline. This directional gate exposes
+   measured SLO feasibility and is not a formal rank.
+2. **Formal thermal subset:** QUIET, NVIDIA MPS, and native XSched share the
+   six-session campaign. The other three roster names remain visible with
+   dashes and an explicit promotion blocker.
+3. **Executed partial evidence:** BLESS, GSLICE, gpulet, BOER, ParvaGPU, and
+   DeepPlan report their successful positive control, selected plan, historical
+   diagnostic, or measured incompatibility in a separate table.
+4. **Reason-only literature scope:** systems without a current end-to-end row
+   appear in the first README table with the precise blocker; no synthetic
+   number is assigned.
 
-1. **A -- formal common contract:** QUIET, NVIDIA MPS, and XSched share the
-   six-session ImageNette contract and may be ranked directly.
-2. **B -- separate numeric contract:** Pantheon and Orion retain their measured
-   application results under their own deadline or fidelity scope.
-3. **C -- historical numeric contract:** the earlier Whisper measurements for
-   QUIET, NVIDIA MPS, Orion, NVIDIA MIG, GSLICE, and gpulet remain visible with
-   their historical workload label.
-4. **D -- executed mechanism boundary:** BLESS, gpulet, BOER, ParvaGPU, and
-   DeepPlan report the successful positive control, selected plan, measured
-   failure, or data-plane result that their original mechanism produced.
-
-The distinction is machine-readable in `docs/p9-comparator-manifest.json`:
-`executed_result_order` controls visibility, `direct_ranking_order` identifies
-the current formal comparison, and the older `numeric_frontier_order` remains
-for historical exact-lock analysis scripts. The current public ledger is the
-first table in `README.md`; the generated paper counterpart is Table 4 in
+The distinction is machine-readable in `docs/p9-comparator-manifest.json`.
+`fixed_numeric_roster` and `executed_result_order` freeze the six-system order,
+`partial_evidence_order` freezes the separate artifact table,
+`direct_ranking_order` identifies the formal subset, and the older
+`numeric_frontier_order` remains for historical exact-lock analysis scripts.
+The generated counterparts are
+`paper/eurosys27/generated/p9-six-system-imagenette-gate.json` and
 `paper/eurosys27/generated/p9-current-results.tex`.
 
 Systems for which the published implementation never ran, or whose design
@@ -117,7 +115,7 @@ systems evaluated on other hardware and runtimes.
 | [REEF](https://www.usenix.org/conference/osdi22/presentation/han) | OSDI 2022 | Kernel preemption/padding | GPU runtime support; mostly idempotent kernels | Much finer preemption. Not directly portable to the closed Jetson stack. |
 | [Miriam](https://doi.org/10.1145/3625687.3625789) | SenSys 2023 | Elastic CUDA kernels | Source transformation and custom runtime | Strong edge baseline, but cannot accept an opaque TensorRT plan. |
 | [HaX-CoNN](https://doi.org/10.1145/3627535.3638502) | PPoPP 2024 | Per-layer accelerator mapping | Heterogeneous GPU/DLA/NPU-style SoC | Explicitly models shared memory; Thor and Orin Nano paths here have no usable DLA. |
-| [Pantheon](https://doi.org/10.1145/3643832.3661878) | MobiSys 2024 | Processed DNN scheduling and preemption | Offline DNN processing and online runtime | The native 90-input ImageNette gate passes accuracy and reports its measured latency/DMR under a separate integer-deadline class-B contract. |
+| [Pantheon](https://doi.org/10.1145/3643832.3661878) | MobiSys 2024 | Processed DNN scheduling and preemption | Offline DNN processing and online runtime | The pinned native runtime is in the fixed 90-input common gate; its protobuf API floors the shared 2,224.448-us deadline to 2,224 integer microseconds, and it is not yet in the thermal campaign. |
 | [EdgeIso](https://doi.org/10.1109/IPDPS47924.2020.00039) | IPDPS 2020 | Dynamic CPU/GPU contention isolation on Jetson | User-level monitoring, DVFS, and incremental core allocation | Direct edge-SoC comparison for shared-memory contention. It is not relabeled as a GPU command scheduler and is evaluated on a separate CPU/EMC stress axis. |
 | [DARIS](https://arxiv.org/abs/2504.08795) | 2025 preprint | MPS, streams, synchronized stages | Modified LibTorch path and segmented DNN stages | Closest concept. QUIET uses whole synchronous TensorRT processes; no direct cross-platform win is claimed. |
 | [EdgeServing](https://arxiv.org/abs/2605.05527) | 2026 preprint | Deadline-aware time division and early exit | Model changes, batching, and edge scheduler | Direct edge scheduling context; not a drop-in comparator because QUIET preserves opaque TensorRT engines and does not alter model exits. |

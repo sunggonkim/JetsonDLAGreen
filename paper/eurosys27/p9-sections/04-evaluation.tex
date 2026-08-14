@@ -65,19 +65,22 @@ request-level CSV files.
 
 \PnineApplicationTable
 
-Table~\ref{tab:application-gates} reports the two application gates.
-ImageNette uses 100 labelled inputs, with ten warmup and 90 measured requests.
-The unsplit reference and cross-partition candidate both reach 0.8333
-classification accuracy, above the frozen 0.80 threshold, with zero accuracy
-delta.  The gate binds each image digest to the external label and records
-independent reference and candidate output containers.
+Table~\ref{tab:application-gates} reports the fixed-roster application gate.
+Its rows are \sys, NVIDIA MIG, NVIDIA MPS, XSched, Orion, and Pantheon.
+ImageNette uses
+100 labelled inputs, with ten warmup and 90 measured requests.  Every row
+reaches the 0.8333 unsplit-reference accuracy, above the frozen 0.80 threshold,
+with zero accuracy delta.  Each gate binds the image digest to the external
+label and records request/input and post-completion output evidence.  Thus, a
+row cannot improve timing by dropping difficult inputs or weakening the
+oracle.
 
-Whisper uses twelve LibriSpeech dev-clean utterances, with two warmup and ten
-measured requests.  Reference and candidate both reach 0.9000 utterance
-exact-match accuracy and 0.1127 WER, below the frozen 0.20 maximum.  Their
-complete output containers have the same SHA-256 digest, not merely the same
-aggregate score.  Thus, the 2.304-MB activation edge preserves the decoder's
-observable transcript for every recorded input.
+The separate \sys Whisper gate uses twelve LibriSpeech dev-clean utterances,
+with two warmup and ten measured requests.  Reference and candidate both reach
+0.9000 utterance exact-match accuracy and 0.1127 WER, below the frozen 0.20
+maximum.  Their complete output containers have the same SHA-256 digest, not
+merely the same aggregate score.  Thus, the 2.304-MB activation edge preserves
+the decoder's observable transcript for every recorded input.
 
 The thermal campaign repeats a fixed ImageNette trace at greater scale.  All
 three systems attain 0.8345 accuracy with zero candidate/reference delta in
@@ -147,7 +150,11 @@ profiles the joint tail selected by Equation~\ref{eq:joint-tail}.
 \end{figure*}
 
 Table~\ref{tab:formal-campaign} and Figure~\ref{fig:latency-cdf} give the
-formal result.  \sys completes all 6,600 requests before the deadline.  Its
+formal result.  The table retains the same six-name roster used by every
+end-to-end result; dashes for MIG, Orion, and Pantheon mean that those systems
+were not enrolled in this separate repeated-session thermal campaign, not that
+their common-gate executions are missing.  \sys completes all 6,600 requests
+before the deadline.  Its
 p50, p99, and p99.9 are $863.886$, $1{,}902.987$, and
 $2{,}025.643~\mu$s.  The zero-miss CP95 bound is 0.0454\%, which qualifies
 for the 0.05\% target.
@@ -234,48 +241,100 @@ campaign's \sys star is the only statistically qualified point because it has
 three-session 250-request/s point with that anchor because their session and
 thermal contracts differ.
 
-\subsection{Executed Comparator Coverage}
+\subsection{Fixed Comparator Coverage}
 
 \PnineComparatorTable
 
-Table~\ref{tab:native-comparators} includes every comparison implementation
-that executed locally.  Evidence class A is the directly ranked formal
-campaign: XSched's native path participates in that campaign and is infeasible
-at the frozen deadline.  Pantheon is class B: its pinned online scheduler,
-priority tiers, and model chunks preserve 0.8333 accuracy on the 90-request
-ImageNette gate, with two misses and a $4{,}133~\mu$s p99.  Its protobuf
-interface floors a distinct $2{,}224.448~\mu$s deadline to integer
-microseconds, so its number remains visible but is not pooled with
-Table~\ref{tab:formal-campaign}.
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=\textwidth]{figures/p9-six-system-imagenette-gate.pdf}
+  \caption{Fixed-roster directional ImageNette gate.  Every panel repeats
+  \sys, NVIDIA MIG, NVIDIA MPS, XSched, Orion, and Pantheon in the same order.
+  All rows consume the same 90 labelled inputs, operational arrivals, and
+  $2{,}224.448~\mu$s deadline.  This one-session coverage gate is not a formal
+  rank; MIG assigns both instances to the critical DAG, so its best-effort
+  entry is N/A because no background tenant is admitted.}
+  \Description{Three vertically stacked bar charts repeat the same six systems
+  for p99 latency, observed deadline-miss ratio, and background goodput.}
+  \label{fig:six-system-gate}
+\end{figure*}
 
-Orion is also shown rather than omitted.  Its ImageNette port preserves 0.8333
-accuracy.  Under its separate diagnostic contract
-($D=5{,}722.576~\mu\mathrm{s}$), it records zero misses and reaches a
-$5{,}537.090~\mu$s p99.  The earlier balanced Whisper campaign additionally
-records zero misses over 9,000 requests, a
-$1{,}569.738~\mu$s p99, and 153.571 background requests/s.  These are scoped
-numeric results, not a formal rank, because the upstream differential
-scheduler trace is incomplete and the older campaign is nonthermal.
+Table~\ref{tab:native-comparators} and Figure~\ref{fig:six-system-gate} keep one
+public order and one common contract.  \sys, MIG, and MPS observe zero misses,
+with p99s of $1{,}933.446$, $1{,}652.861$, and
+$1{,}749.850~\mu$s.  MIG's best-effort entry is N/A rather than zero measured
+goodput: the producer and consumer occupy the two physical instances, and this
+layout never admits a background tenant.  It is therefore informative for
+latency but cannot optimize the joint DMR--goodput objective.
 
-The remaining rows expose measured mechanism boundaries.  NVIDIA MIG, GSLICE,
-and gpulet retain their raw-replayed historical numbers.  BLESS executes its
-affinity scheduler and q25 switch boundary but cannot deserialize the exact
-q100 plan in the required restricted context.  BOER and ParvaGPU pass numeric
-independent-service controls before rejecting or failing the dependent
-contract.  DeepPlan selects direct host access from the measured transport
-profile.  Thus, a failed common-contract gate changes the evidence class; it
-does not erase an experiment that ran.
+Native XSched and the Orion Thor port miss all 90 deadlines, with p99s of
+$3{,}893.452$ and $5{,}573.205~\mu$s and background rates of 211.756 and
+166.267 requests/s.  Orion remains explicitly scoped because its upstream
+differential-scheduler fidelity gate is open.  Pantheon's pinned native
+runtime records two misses, a $4{,}133~\mu$s p99, and 249.785 background
+requests/s; its protobuf interface floors the common deadline to 2,224 integer
+microseconds.  Every system still preserves 0.8333 accuracy.  With only 90
+requests, even a zero-miss row has a 3.2738\% CP95 bound, so these measurements
+establish coverage and observed SLO feasibility rather than formal ranking.
+
+\PnineMigTopologyTable
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=\textwidth]{figures/p9-mig-topology-partial.pdf}
+  \caption{Directional MIG topology comparison under the common ImageNette
+  inputs, operational arrivals, and frozen deadline.  Thor cannot form three
+  simultaneous 1g instances.  The split layout assigns one critical stage to
+  each instance and has no BE entry; the colocated layout runs both critical
+  stages on 2g and admits BE on the isolated 1g instance.  Because stage
+  placement and the profile-specific producer plan change, this is partial
+  evidence rather than a fixed-roster ranking.}
+  \Description{Three side-by-side bar charts compare two Thor MIG layouts for
+  p99 latency, deadline misses, and background goodput.  Both layouts have no
+  observed misses; only the colocated layout admits a background tenant.}
+  \label{fig:mig-topology-partial}
+\end{figure*}
+
+Table~\ref{tab:mig-topology-partial} and
+Figure~\ref{fig:mig-topology-partial} answer why the fixed MIG row has no BE
+value.  Thor exposes at most two simultaneous instances; a 1g producer, 1g
+consumer, and third 1g background partition is not a supported placement.  We
+therefore evaluate the valid alternative: producer and consumer share 2g while
+BE runs on 1g.  It replays the same 90 inputs, arrival trace, and
+$2{,}224.448~\mu$s deadline, observes zero misses, records a
+$1{,}514.253~\mu$s p99, and completes 249.319 background requests/s.  TensorRT
+plans are profile-specific, so we rebuilt the FP16 producer plan for 2g from
+the same ONNX model.  One of 90 predictions changes in the favourable
+direction, raising accuracy from 0.8333 to 0.8444 and remaining within the
+configured 0.02 exploratory tolerance.  The changed placement and engine
+tactics preclude a same-placement ranking claim.
+
+\PninePartialEvidenceTable
+
+Table~\ref{tab:partial-comparators} separately preserves artifacts that
+executed without producing a current end-to-end row.  BLESS reaches its q25
+switch boundary but fails the exact q100 plan in the required 2-SM context.
+GSLICE and gpulet retain their labelled historical diagnostics; gpulet's
+native planner finds no feasible dependent placement.  BOER and ParvaGPU pass
+independent-service controls before rejecting the dependent contract.
+DeepPlan selects direct host access from the measured transport profile.
+Separating these outcomes prevents unlike workloads or mechanism-only controls
+from silently entering the six-system graph.
 
 \subsection{Limitations}
 
 Our strongest claim is deliberately narrow: one Thor device, a fixed 1g+2g
 placement, one thermal envelope, and a two-stage ImageNette chain.  The
+colocated 2g-DAG+1g-BE result is a directional topology variant, not part of
+that formal campaign; Thor provides no valid three-instance layout.  The
 production path is low-inflight; the validated three-slot ring has not yet
 carried the formal TensorRT workload.  The ASR gate establishes application
 semantics on ten measured utterances but is not a thermal SLO campaign.  The
 causal, transport, and load-sweep results remain exploratory or descriptive as
-marked.  Every locally executed comparator appears in
-Table~\ref{tab:native-comparators}, while only its class-A rows support direct
+marked.  Every current end-to-end row appears in
+Table~\ref{tab:native-comparators}; executed partial artifacts remain visible
+in Table~\ref{tab:partial-comparators}.  Only the enrolled rows of
+Table~\ref{tab:formal-campaign} support repeated-session, thermally normalized
 same-condition ranking.
 
 \sys also depends on coherent integrated memory and cooperative pause

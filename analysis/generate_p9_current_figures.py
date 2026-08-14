@@ -28,6 +28,7 @@ DEFAULT_VISION = ROOT / "results/p9-resnet50-imagenette-gate100-20260811/accurac
 DEFAULT_WHISPER = ROOT / "results/p9-real-whisper-asr-lex12-20260811/accuracy-gate.json"
 DEFAULT_PANTHEON = ROOT / "results/p9-pantheon-resnet50-imagenette-gate100-r01-20260811/verification.json"
 DEFAULT_COMPARATORS = ROOT / "docs/p9-comparator-manifest.json"
+DEFAULT_SIX_SYSTEM = ROOT / "paper/eurosys27/generated/p9-six-system-imagenette-gate.json"
 DEFAULT_HISTORICAL = ROOT / "results/p9-six-system-williams-6x1500-500rps-performance-20260809-v1/aggregate.json"
 DEFAULT_STRUCTURAL = ROOT / "results/p9-structural-limit-evidence-20260809/summary.json"
 DEFAULT_BLESS = ROOT / "results/p9-bless-resnet-compatibility-v3-20260810/summary.json"
@@ -136,7 +137,7 @@ def configure_style() -> None:
 
 def save_figure(fig: plt.Figure, stem: Path) -> list[Path]:
     outputs = [stem.with_suffix(".pdf"), stem.with_suffix(".png")]
-    fig.savefig(outputs[0])
+    fig.savefig(outputs[0], metadata={"CreationDate": None, "ModDate": None})
     fig.savefig(outputs[1], dpi=240)
     plt.close(fig)
     return outputs
@@ -515,6 +516,7 @@ def generate_tables(
     whisper: dict[str, Any],
     pantheon: dict[str, Any],
     comparators: dict[str, Any],
+    six_system: dict[str, Any],
     historical: dict[str, Any],
     structural: dict[str, Any],
     bless: dict[str, Any],
@@ -527,28 +529,54 @@ def generate_tables(
     require(whisper["status"] == "passed" and whisper["numeric_comparison_allowed"] is True, "Whisper accuracy gate failed")
     require(pantheon["status"] == "passed" and pantheon["numeric_comparison_allowed"] is True, "Pantheon fidelity gate failed")
     require(comparators["proposed_system"] == "QUIET", "unexpected comparator manifest")
+    fixed_roster = [
+        "QUIET", "NVIDIA MIG", "NVIDIA MPS", "XSched", "Orion", "Pantheon",
+    ]
     require(
-        comparators["paper_table_policy"]["executed_result_order"]
-        == [
-            "QUIET",
-            "NVIDIA MPS",
-            "XSched",
-            "Pantheon",
-            "Orion",
-            "BLESS",
-            "NVIDIA MIG",
-            "GSLICE",
-            "gpulet",
-            "BOER",
-            "ParvaGPU",
-            "DeepPlan",
-        ],
-        "executed comparator ledger is incomplete or reordered",
+        comparators["headline_order"] == fixed_roster
+        and comparators["paper_table_policy"]["fixed_numeric_roster"] == fixed_roster
+        and comparators["paper_table_policy"]["executed_result_order"] == fixed_roster,
+        "fixed six-system comparator roster is incomplete or reordered",
+    )
+    require(
+        comparators["paper_table_policy"]["partial_evidence_order"]
+        == ["BLESS", "GSLICE", "gpulet", "BOER", "ParvaGPU", "DeepPlan"],
+        "partial-evidence roster is incomplete or reordered",
     )
     require(
         comparators["paper_table_policy"]["direct_ranking_order"]
         == ["QUIET", "NVIDIA MPS", "XSched"],
         "unexpected formal ranking contract",
+    )
+    require(
+        six_system.get("kind") == "p9-six-system-imagenette-common-gate"
+        and six_system.get("formal") is False
+        and six_system.get("ranking_allowed") is False
+        and six_system.get("system_order") == fixed_roster
+        and list(six_system.get("systems", {})) == fixed_roster
+        and six_system.get("requests_per_system") == 90,
+        "six-system common gate is missing, rankable, or reordered",
+    )
+    mig_constraints = six_system.get("mig_topology_constraints", {})
+    require(
+        mig_constraints.get("maximum_simultaneous_instances") == 2
+        and mig_constraints.get("three_way_1g_supported") is False,
+        "Thor MIG topology constraint is missing or permits an invalid three-way split",
+    )
+    mig_partial = six_system.get("partial_topology_comparisons", {}).get(
+        "NVIDIA MIG (2g DAG + 1g BE)"
+    )
+    require(
+        isinstance(mig_partial, dict)
+        and mig_partial.get("requests") == 90
+        and mig_partial.get("misses") == 0
+        and mig_partial.get("background_goodput_applicable") is True
+        and mig_partial.get("evidence_scope")
+        == "partial-topology-variant-same-input-arrival-deadline"
+        and float(mig_partial.get("candidate_accuracy", 0.0))
+        >= float(mig_partial.get("reference_accuracy", 1.0))
+        and abs(float(mig_partial.get("accuracy_delta", math.inf))) <= 0.02,
+        "validated 2g-DAG + 1g-BE MIG partial comparison is missing",
     )
     require(historical["kind"] == "p9-numeric-sota-williams-aggregate", "unexpected historical aggregate")
     require(structural["kind"] == "p9-structural-limit-evidence", "unexpected structural evidence")
@@ -557,8 +585,8 @@ def generate_tables(
     require(boer_dependent["status"] == "no-feasible-configuration", "BOER dependent search unexpectedly feasible")
     require(parva_dependent["feasible"] is False, "ParvaGPU dependent allocation unexpectedly feasible")
     systems = thermal["systems"]
+    common_systems = six_system["systems"]
     historical_systems = historical["systems"]
-    orion = comparators["rows"]["Orion"]["latest_real_imagenette_application_gate"]
     structural_findings = {row["system"]: row for row in structural["findings"]}
     boer = structural_findings["BOER"]
     parva = structural_findings["ParvaGPU"]
@@ -575,35 +603,52 @@ def generate_tables(
         r"\begin{table}[t]",
         r"\centering",
         r"\small",
-        r"\caption{Application-semantic gates. Accuracy is utterance exact-match for ASR; WER is reported separately. Every candidate consumes the recorded inputs and emits a post-completion output trace.}",
+        r"\caption{Application-semantic gate for the fixed six-system ImageNette roster. Every row consumes the same 90 labelled inputs and passes request/input and post-completion output binding.}",
         r"\label{tab:application-gates}",
         r"\resizebox{\columnwidth}{!}{%",
-        r"\begin{tabular}{lrrrr}",
+        r"\begin{tabular}{lrrrrc}",
         r"\toprule",
-        r"Workload & Measured & Reference & QUIET & Delta \\",
-        r"\midrule",
-        f"ImageNette ResNet-50 & {vision['requests']} & {vision['reference_accuracy']:.4f} acc. & {vision['candidate_accuracy']:.4f} acc. & {vision['accuracy_delta']:+.4f} \\\\",
-        f"LibriSpeech Whisper-Tiny & {whisper['requests']} & {whisper['reference_accuracy']:.4f} acc. & {whisper['candidate_accuracy']:.4f} acc. & {whisper['accuracy_delta']:+.4f} \\\\",
-        f"\\quad WER & {whisper['requests']} & {whisper['reference_wer']:.4f} & {whisper['candidate_wer']:.4f} & {whisper['wer_delta']:+.4f} \\\\",
-        r"\bottomrule",
-        r"\end{tabular}%",
-        r"}",
-        r"\end{table}",
-        r"}",
-        "",
-        r"\newcommand{\PnineFormalTable}{%",
-        r"\begin{table}[t]",
-        r"\centering",
-        r"\small",
-        r"\caption{Thermal-normalized ImageNette campaign at the frozen $2{,}255.483~\mu$s production-wall deadline. CP95 is the exact one-sided 95\% upper bound on deadline-miss ratio; the target is 0.05\%.}",
-        r"\label{tab:formal-campaign}",
-        r"\resizebox{\columnwidth}{!}{%",
-        r"\begin{tabular}{lrrrrr}",
-        r"\toprule",
-        r"System & Requests & Misses & CP95 DMR & p99 ($\mu$s) & BE rps \\",
+        r"System & Measured & Reference & Candidate & Delta & Binding \\",
         r"\midrule",
     ]
-    for name in ("QUIET", "NVIDIA MPS", "XSched"):
+    for name in fixed_roster:
+        row = common_systems[name]
+        require(
+            row["requests"] == 90
+            and math.isclose(float(row["reference_accuracy"]), float(row["candidate_accuracy"]), abs_tol=1e-12)
+            and math.isclose(float(row["accuracy_delta"]), 0.0, abs_tol=1e-12),
+            f"{name}: common application gate differs",
+        )
+        display = r"\textbf{QUIET}" if name == "QUIET" else name
+        lines.append(
+            f"{display} & {row['requests']} & {row['reference_accuracy']:.4f} & "
+            f"{row['candidate_accuracy']:.4f} & {row['accuracy_delta']:+.4f} & pass \\\\"
+        )
+    lines.extend(
+        [
+            r"\bottomrule",
+            r"\end{tabular}%",
+            r"}",
+            r"\end{table}",
+            r"}",
+            "",
+            r"\newcommand{\PnineFormalTable}{%",
+            r"\begin{table}[t]",
+            r"\centering",
+            r"\small",
+            r"\caption{Thermal-normalized ImageNette campaign at the frozen $2{,}255.483~\mu$s production-wall deadline. All six roster names remain visible; dashes identify systems not enrolled in this separate six-session campaign.}",
+            r"\label{tab:formal-campaign}",
+            r"\resizebox{\columnwidth}{!}{%",
+            r"\begin{tabular}{lrrrrr}",
+            r"\toprule",
+            r"System & Requests & Misses & CP95 DMR & p99 ($\mu$s) & BE rps \\",
+            r"\midrule",
+        ]
+    )
+    for name in fixed_roster:
+        if name not in systems:
+            lines.append(f"{name} & -- & -- & -- & -- & -- \\\\")
+            continue
         row = systems[name]
         display = r"\textbf{QUIET}" if name == "QUIET" else ("XSched (native)" if name == "XSched" else name)
         cp95 = float(row["dmr_cp95_upper"]) * 100.0
@@ -622,25 +667,83 @@ def generate_tables(
             r"\begin{table*}[t]",
             r"\centering",
             r"\footnotesize",
-            r"\caption{All locally executed comparison systems.  Every runtime, port, reimplementation, or planner that ran on Thor is shown.  A rows share the formal contract and may be ranked directly; B--D rows retain their measured numbers but have the stated application, historical, or mechanism scope.}",
+            r"\caption{Fixed six-system directional ImageNette gate. Every row uses the same 90 labelled inputs, arrival trace, and $2{,}224.448~\mu$s deadline. CP95 is not formal at this sample count. MIG's BE entry is N/A because both physical instances serve the critical DAG and no BE tenant is admitted.}",
             r"\label{tab:native-comparators}",
-            r"\setlength{\tabcolsep}{4pt}",
-            r"\begin{tabular}{@{}p{0.12\textwidth}p{0.25\textwidth}p{0.45\textwidth}p{0.13\textwidth}@{}}",
+            r"\setlength{\tabcolsep}{3.5pt}",
+            r"\resizebox{\textwidth}{!}{%",
+            r"\begin{tabular}{lrrrrrrl}",
             r"\toprule",
-            r"System & Executed evidence & Recorded result & Use \\",
+            r"System & Requests & Misses & CP95 DMR & p99 ($\mu$s) & BE rps & Accuracy & Evidence scope \\",
             r"\midrule",
-            f"\\textbf{{QUIET}} & ImageNette, six sessions & {systems['QUIET']['misses']:,}/{systems['QUIET']['requests']:,} misses; p99 {systems['QUIET']['tail']['p99_us']:,.2f} $\\mu$s; BE {systems['QUIET']['background_goodput_rps']['mean']:.2f} rps & \\textbf{{A: formal}} \\\\",
-            f"NVIDIA MPS & ImageNette, six sessions & {systems['NVIDIA MPS']['misses']:,}/{systems['NVIDIA MPS']['requests']:,} misses; p99 {systems['NVIDIA MPS']['tail']['p99_us']:,.2f} $\\mu$s; BE {systems['NVIDIA MPS']['background_goodput_rps']['mean']:.2f} rps & \\textbf{{A: formal}} \\\\",
-            f"XSched & Native XQueue, ImageNette, six sessions & {systems['XSched']['misses']:,}/{systems['XSched']['requests']:,} misses; p99 {systems['XSched']['tail']['p99_us']:,.2f} $\\mu$s; BE {systems['XSched']['background_goodput_rps']['mean']:.2f} rps & \\textbf{{A: formal}} \\\\",
-            f"Pantheon & Native runtime, ImageNette, {pantheon['requests']} requests & Accuracy {pantheon['pantheon_accuracy']:.4f}; {pantheon['deadline_misses']}/{pantheon['requests']} misses; p99 {pantheon['p99_us']:,.0f} $\\mu$s; BE {pantheon['background_goodput_rps']:.2f} rps & B: separate native \\\\",
-            f"Orion & Thor port, ImageNette, {orion['requests']} requests; earlier Whisper campaign & Current: accuracy {orion['candidate_accuracy']:.4f}, {orion['deadline_misses']}/{orion['requests']} misses at $D={orion['deadline_us']:,.3f}~\\mu\\mathrm{{s}}$, p99 {orion['p99_us']:,.2f} $\\mu$s; earlier: {historical_systems['Orion (TensorRT managed-client port)']['misses']:,}/{historical_systems['Orion (TensorRT managed-client port)']['requests']:,} misses, p99 {historical_systems['Orion (TensorRT managed-client port)']['pooled_p99_us']:,.2f} $\\mu$s, BE {historical_systems['Orion (TensorRT managed-client port)']['background_goodput_rps_mean']:.2f} rps & B + C \\\\",
-            f"BLESS & Scheduler, affinity replicas, and exact-plan gate & q25: {bless['executable_q25_replica_plan']['held_out_physical_launches']} physical + {bless['executable_q25_replica_plan']['held_out_shadow_launches']} shadow launches and exact output; q100 fails in required 2--SM context & D: compatibility \\\\",
-            f"NVIDIA MIG & Earlier Whisper isolation campaign & {historical_systems['NVIDIA MIG']['misses']:,}/{historical_systems['NVIDIA MIG']['requests']:,} misses; p99 {historical_systems['NVIDIA MIG']['pooled_p99_us']:,.2f} $\\mu$s; BE {historical_systems['NVIDIA MIG']['background_goodput_rps_mean']:.2f} rps & C: historical \\\\",
-            f"GSLICE & Earlier Whisper quota-policy port & {historical_systems['GSLICE']['misses']:,}/{historical_systems['GSLICE']['requests']:,} misses; p99 {historical_systems['GSLICE']['pooled_p99_us']:,.2f} $\\mu$s; BE {historical_systems['GSLICE']['background_goodput_rps_mean']:.2f} rps & C: historical \\\\",
-            f"gpulet & Native planner plus earlier diagnostic & No feasible dependent plan; diagnostic {historical_systems['gpulet']['misses']:,}/{historical_systems['gpulet']['requests']:,} misses, p99 {historical_systems['gpulet']['pooled_p99_us']:,.2f} $\\mu$s, BE {historical_systems['gpulet']['background_goodput_rps_mean']:.2f} rps & C + D \\\\",
-            f"BOER & Pinned independent and dependent searches & Independent p99 {boer['independent_positive_control']['worst_p99_ms']:.3f} ms at {boer['independent_positive_control']['served_rps'][0]:.2f}/{boer['independent_positive_control']['served_rps'][1]:.2f} rps; dependent best {boer_best_p99_ms:.3f} ms with 100\\% DMR, no feasible point & D: structural \\\\",
-            f"ParvaGPU & Pinned independent execution and dependent allocation & Independent p99 {parva['independent_positive_control']['services'][0]['p99_ms']:.3f}/{parva['independent_positive_control']['services'][1]['p99_ms']:.3f} ms at {parva['independent_positive_control']['services'][0]['served_rps']:.2f}/{parva['independent_positive_control']['services'][1]['served_rps']:.2f} rps; dependent producer rejected & D: structural \\\\",
-            f"DeepPlan & Pinned planner on 2.304-MB edge profile & Dynamic plan selects direct host: {deepplan['plans']['dynamic']['predicted_runtime_us']:.2f} $\\mu$s versus {deepplan['plans']['naive']['predicted_runtime_us']:.2f} $\\mu$s load/copy & D: data plane \\\\",
+        ]
+    )
+    scope = {
+        "QUIET": "proposed common gate",
+        "NVIDIA MIG": "capacity endpoint; no BE slice",
+        "NVIDIA MPS": "vendor common gate",
+        "XSched": "native XQueue runtime",
+        "Orion": "Thor port; differential gate open",
+        "Pantheon": "native runtime; integer deadline",
+    }
+    for name in fixed_roster:
+        row = common_systems[name]
+        display = r"\textbf{QUIET}" if name == "QUIET" else name
+        cp95 = 100.0 * float(row["dmr_cp95_upper"])
+        be_goodput = (
+            f"{row['background_goodput_rps']:.2f}"
+            if row.get("background_goodput_applicable", True)
+            else "N/A"
+        )
+        lines.append(
+            f"{display} & {row['requests']} & {row['misses']} & {cp95:.4f}\\% & "
+            f"{row['p99_us']:,.2f} & {be_goodput} & "
+            f"{row['candidate_accuracy']:.4f} & {scope[name]} \\\\"
+        )
+    lines.extend(
+        [
+            r"\bottomrule",
+            r"\end{tabular}%",
+            r"}",
+            r"\end{table*}",
+            r"}",
+            "",
+            r"\newcommand{\PnineMigTopologyTable}{%",
+            r"\begin{table*}[t]",
+            r"\centering",
+            r"\footnotesize",
+            r"\caption{Directional MIG topology comparison. Both rows replay the same 90 labelled inputs, operational arrival trace, and $2{,}224.448~\mu$s deadline. Thor cannot form three simultaneous 1g instances. The colocated row changes stage placement and rebuilds the producer plan for 2g, so it is partial evidence rather than a fixed-roster ranking point.}",
+            r"\label{tab:mig-topology-partial}",
+            r"\setlength{\tabcolsep}{3.5pt}",
+            r"\resizebox{\textwidth}{!}{%",
+            r"\begin{tabular}{llllrrrrr}",
+            r"\toprule",
+            r"Layout & Producer & Consumer & BE tenant & Requests & Misses & p99 ($\mu$s) & BE rps & Accuracy \\",
+            r"\midrule",
+            f"Split critical stages & 1g & 2g & not admitted & {common_systems['NVIDIA MIG']['requests']} & {common_systems['NVIDIA MIG']['misses']} & {common_systems['NVIDIA MIG']['p99_us']:,.2f} & N/A & {common_systems['NVIDIA MIG']['candidate_accuracy']:.4f} " + r"\\",
+            f"Colocated critical DAG & 2g & same 2g & isolated 1g & {mig_partial['requests']} & {mig_partial['misses']} & {mig_partial['p99_us']:,.2f} & {mig_partial['background_goodput_rps']:.2f} & {mig_partial['candidate_accuracy']:.4f} " + r"\\",
+            r"\bottomrule",
+            r"\end{tabular}%",
+            r"}",
+            r"\end{table*}",
+            r"}",
+            "",
+            r"\newcommand{\PninePartialEvidenceTable}{%",
+            r"\begin{table*}[t]",
+            r"\centering",
+            r"\footnotesize",
+            r"\caption{Executed partial evidence for systems excluded from the fixed end-to-end numeric roster. These rows report the artifact's positive control or measured incompatibility; they are not mixed with the common-gate graph.}",
+            r"\label{tab:partial-comparators}",
+            r"\setlength{\tabcolsep}{4pt}",
+            r"\begin{tabular}{@{}p{0.12\textwidth}p{0.27\textwidth}p{0.56\textwidth}@{}}",
+            r"\toprule",
+            r"System & Executed evidence & Recorded outcome \\",
+            r"\midrule",
+            f"BLESS & Scheduler, affinity replicas, and exact-plan gate & q25: {bless['executable_q25_replica_plan']['held_out_physical_launches']} physical + {bless['executable_q25_replica_plan']['held_out_shadow_launches']} shadow launches and exact output; q100 fails in the required 2--SM context \\\\",
+            f"GSLICE & Historical Whisper quota-policy port & {historical_systems['GSLICE']['misses']:,}/{historical_systems['GSLICE']['requests']:,} misses; p99 {historical_systems['GSLICE']['pooled_p99_us']:,.2f} $\\mu$s; BE {historical_systems['GSLICE']['background_goodput_rps_mean']:.2f} rps \\\\",
+            f"gpulet & Native planner plus historical diagnostic & No feasible dependent plan; diagnostic {historical_systems['gpulet']['misses']:,}/{historical_systems['gpulet']['requests']:,} misses, p99 {historical_systems['gpulet']['pooled_p99_us']:,.2f} $\\mu$s, BE {historical_systems['gpulet']['background_goodput_rps_mean']:.2f} rps \\\\",
+            f"BOER & Pinned independent and dependent searches & Independent p99 {boer['independent_positive_control']['worst_p99_ms']:.3f} ms at {boer['independent_positive_control']['served_rps'][0]:.2f}/{boer['independent_positive_control']['served_rps'][1]:.2f} rps; dependent best {boer_best_p99_ms:.3f} ms with 100\\% DMR and no feasible point \\\\",
+            f"ParvaGPU & Pinned independent execution and dependent allocation & Independent p99 {parva['independent_positive_control']['services'][0]['p99_ms']:.3f}/{parva['independent_positive_control']['services'][1]['p99_ms']:.3f} ms at {parva['independent_positive_control']['services'][0]['served_rps']:.2f}/{parva['independent_positive_control']['services'][1]['served_rps']:.2f} rps; dependent producer rejected \\\\",
+            f"DeepPlan & Pinned planner on the 2.304-MB edge profile & Dynamic plan selects direct host: {deepplan['plans']['dynamic']['predicted_runtime_us']:.2f} $\\mu$s versus {deepplan['plans']['naive']['predicted_runtime_us']:.2f} $\\mu$s load/copy \\\\",
             r"\bottomrule",
             r"\end{tabular}%",
             r"\end{table*}",
@@ -660,6 +763,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--whisper", type=Path, default=DEFAULT_WHISPER)
     parser.add_argument("--pantheon", type=Path, default=DEFAULT_PANTHEON)
     parser.add_argument("--comparators", type=Path, default=DEFAULT_COMPARATORS)
+    parser.add_argument("--six-system", type=Path, default=DEFAULT_SIX_SYSTEM)
     parser.add_argument("--historical", type=Path, default=DEFAULT_HISTORICAL)
     parser.add_argument("--structural", type=Path, default=DEFAULT_STRUCTURAL)
     parser.add_argument("--bless", type=Path, default=DEFAULT_BLESS)
@@ -688,6 +792,7 @@ def main() -> None:
         "whisper": args.whisper,
         "pantheon": args.pantheon,
         "comparators": args.comparators,
+        "six_system": args.six_system,
         "historical": args.historical,
         "structural": args.structural,
         "bless": args.bless,
@@ -722,6 +827,7 @@ def main() -> None:
             documents["whisper"],
             documents["pantheon"],
             documents["comparators"],
+            documents["six_system"],
             documents["historical"],
             documents["structural"],
             documents["bless"],

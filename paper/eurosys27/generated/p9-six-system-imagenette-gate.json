@@ -1,0 +1,234 @@
+{
+  "schema_version": 1,
+  "kind": "p9-six-system-imagenette-common-gate",
+  "proposed_system": "QUIET",
+  "system_order": [
+    "QUIET",
+    "NVIDIA MIG",
+    "NVIDIA MPS",
+    "XSched",
+    "Orion",
+    "Pantheon"
+  ],
+  "workload": "resnet50-classification",
+  "scope": "single-directional-common-input-arrival-deadline-gate",
+  "formal": false,
+  "ranking_allowed": false,
+  "requests_per_system": 90,
+  "deadline_us": 2224.4481160000005,
+  "dmr_target": 0.0005,
+  "common_workload": {
+    "path": "results/p9-resnet50-imagenette-gate100-20260811/common-workload.json",
+    "sha256": "20962e2f3b0585161e47868ce13c330a97f5ce5d423db166c372eb96acdffe8f"
+  },
+  "deadline_lock": {
+    "path": "results/p9-resnet50-imagenette-calibration-current-r03-20260811/deadline-lock.json",
+    "sha256": "6bb288350b1ffd07dce3cb4dd3b84737ad1263cb60f824d865a41380f6691589"
+  },
+  "contract_hashes": {
+    "arrival_trace_sha256": "786993e76fd145c53267b43aa20a98fe59821afca4f239a45bd471aee9290179",
+    "operational_arrival_trace_sha256": "decdeeb05ec1adb09b665d42aa62c1c83d995bd76e0b9460af79b07928cbe999",
+    "producer_input_trace_sha256": "c66900dc7cb7cc1a8e922dcdb4fd0021945b10a685b242af997154e440ead30d",
+    "dataset_manifest_sha256": "2951a9f93f6b7aa91bb8d9b9cc15b7ea0a6e7a8f06663ff6983c51eb32666b2b"
+  },
+  "systems": {
+    "QUIET": {
+      "system": "QUIET",
+      "requests": 90,
+      "misses": 0,
+      "observed_dmr": 0.0,
+      "dmr_cp95_upper": 0.03273803383353457,
+      "p99_us": 1933.44637,
+      "background_goodput_rps": 249.5998606,
+      "background_goodput_applicable": true,
+      "reference_accuracy": 0.8333333333333334,
+      "candidate_accuracy": 0.8333333333333334,
+      "accuracy_delta": 0.0,
+      "topology": "fixed-2g+1g-dependent-dag-quiescence",
+      "evidence_scope": "proposed-system-common-gate",
+      "timing_scope": "arrival-to-consumer-completion",
+      "observed_slo_feasible": true,
+      "confidence_qualified": false,
+      "source": {
+        "path": "results/p9-active-resnet50-imagenette-frontier-r07-20260811/sequence-0/03-quiet/summary.json",
+        "sha256": "ec8e9ea89c096b040af77d5668b64c536b5fbc6f8f78844ab577de52b8e5e3ac"
+      },
+      "accuracy_gate": {
+        "path": "results/p9-active-resnet50-imagenette-frontier-r07-20260811/sequence-0/03-quiet/application-accuracy/accuracy-gate.json",
+        "sha256": "1b3ef5839c1ae476adc45ce6c048fae4043f950188285a3a4d6dc7f2ae0e9293"
+      }
+    },
+    "NVIDIA MIG": {
+      "system": "NVIDIA MIG",
+      "requests": 90,
+      "misses": 0,
+      "observed_dmr": 0.0,
+      "dmr_cp95_upper": 0.03273803383353457,
+      "p99_us": 1652.86092,
+      "background_goodput_rps": 0.0,
+      "background_goodput_applicable": false,
+      "reference_accuracy": 0.8333333333333334,
+      "candidate_accuracy": 0.8333333333333334,
+      "accuracy_delta": 0.0,
+      "topology": "fixed-2g+1g-physical-isolation",
+      "evidence_scope": "capacity-endpoint-no-best-effort-slice",
+      "timing_scope": "arrival-to-consumer-completion",
+      "observed_slo_feasible": true,
+      "confidence_qualified": false,
+      "source": {
+        "path": "results/p9-resnet50-imagenette-six-system-gate90-20260814/nvidia-mig/summary.json",
+        "sha256": "c2558ab5165b493a68eef2e548f4e1b9fa22a612790cc6dff679175ffed66203"
+      },
+      "accuracy_gate": {
+        "path": "results/p9-resnet50-imagenette-six-system-gate90-20260814/nvidia-mig/application-accuracy/accuracy-gate.json",
+        "sha256": "a16619bdcb6174a153696c3159eaf1a54973afc4d932acaa1d0e9d18cc9675b6"
+      }
+    },
+    "NVIDIA MPS": {
+      "system": "NVIDIA MPS",
+      "requests": 90,
+      "misses": 0,
+      "observed_dmr": 0.0,
+      "dmr_cp95_upper": 0.03273803383353457,
+      "p99_us": 1749.84952,
+      "background_goodput_rps": 249.1611529,
+      "background_goodput_applicable": true,
+      "reference_accuracy": 0.8333333333333334,
+      "candidate_accuracy": 0.8333333333333334,
+      "accuracy_delta": 0.0,
+      "topology": "1g-shared-MPS-with-2g-reserved",
+      "evidence_scope": "vendor-baseline-common-gate",
+      "timing_scope": "arrival-to-consumer-completion",
+      "observed_slo_feasible": true,
+      "confidence_qualified": false,
+      "source": {
+        "path": "results/p9-active-resnet50-imagenette-frontier-r07-20260811/sequence-0/01-nvidia-mps/summary.json",
+        "sha256": "702d8e46cead1afb2a77cdacc3411751a8e3f8904747e5bf1c618d014f1d9f5c"
+      },
+      "accuracy_gate": {
+        "path": "results/p9-active-resnet50-imagenette-frontier-r07-20260811/sequence-0/01-nvidia-mps/application-accuracy/accuracy-gate.json",
+        "sha256": "c62e498d56c6c339fd695e3bbe6bc3601b7346512adb10893d127fa53c66a7e6"
+      }
+    },
+    "XSched": {
+      "system": "XSched",
+      "requests": 90,
+      "misses": 90,
+      "observed_dmr": 1.0,
+      "dmr_cp95_upper": 1.0,
+      "p99_us": 3893.4520399999997,
+      "background_goodput_rps": 211.75648133928885,
+      "background_goodput_applicable": true,
+      "reference_accuracy": 0.8333333333333334,
+      "candidate_accuracy": 0.8333333333333334,
+      "accuracy_delta": 0.0,
+      "topology": "fixed-2g+1g-native-xqueue-port",
+      "evidence_scope": "published-native-runtime-common-gate",
+      "timing_scope": "arrival-to-consumer-completion",
+      "observed_slo_feasible": false,
+      "confidence_qualified": false,
+      "source": {
+        "path": "results/p9-active-resnet50-imagenette-frontier-r07-20260811/sequence-0/02-xsched/verification.json",
+        "sha256": "a3acda8e1557a7b2f366c85a6f11a6fb9edaf27e7eb64ff4f43370f557a9bbda"
+      },
+      "accuracy_gate": {
+        "path": "results/p9-active-resnet50-imagenette-frontier-r07-20260811/sequence-0/02-xsched/application-accuracy/accuracy-gate.json",
+        "sha256": "d2b5103b740c0f11d485aebe2326b06ef5a89eeef697cc8b74f62eefe5cfcbcd"
+      }
+    },
+    "Orion": {
+      "system": "Orion",
+      "requests": 90,
+      "misses": 90,
+      "observed_dmr": 1.0,
+      "dmr_cp95_upper": 1.0,
+      "p99_us": 5573.20532,
+      "background_goodput_rps": 166.26748459350335,
+      "background_goodput_applicable": true,
+      "reference_accuracy": 0.8333333333333334,
+      "candidate_accuracy": 0.8333333333333334,
+      "accuracy_delta": 0.0,
+      "topology": "fixed-2g+1g-native-interposition-port",
+      "evidence_scope": "published-port-common-gate-differential-fidelity-open",
+      "timing_scope": "arrival-to-consumer-completion",
+      "observed_slo_feasible": false,
+      "confidence_qualified": false,
+      "source": {
+        "path": "results/p9-resnet50-imagenette-six-system-gate90-20260814/orion-r02/verification.json",
+        "sha256": "adb536b816c8ba4c65f538280e2d4c70787c7a7025c2fc27e0c19472b3213b5d"
+      },
+      "accuracy_gate": {
+        "path": "results/p9-resnet50-imagenette-six-system-gate90-20260814/orion-r02/accuracy-gate.json",
+        "sha256": "2c5fce26abb886ca978f6d111a8cddfd46dad958766a028248362f4632b85b67"
+      }
+    },
+    "Pantheon": {
+      "system": "Pantheon",
+      "requests": 90,
+      "misses": 2,
+      "observed_dmr": 0.022222222222222223,
+      "dmr_cp95_upper": 0.06830234138898506,
+      "p99_us": 4133.0,
+      "background_goodput_rps": 249.7853816,
+      "background_goodput_applicable": true,
+      "reference_accuracy": 0.8333333333333334,
+      "candidate_accuracy": 0.8333333333333334,
+      "accuracy_delta": 0.0,
+      "topology": "fixed-2g+1g-native-block-exit-port",
+      "evidence_scope": "published-native-runtime-common-gate",
+      "timing_scope": "actual-release-to-native-exit-completion-integer-deadline",
+      "observed_slo_feasible": false,
+      "confidence_qualified": false,
+      "source": {
+        "path": "results/p9-pantheon-resnet50-imagenette-gate100-r01-20260811/verification.json",
+        "sha256": "42f2714968f4df887b3ffb4dc2103750346574aceaeb93efafc0e9bc91ac4e05"
+      },
+      "accuracy_gate": {
+        "path": "results/p9-pantheon-resnet50-imagenette-gate100-r01-20260811/verification.json",
+        "sha256": "42f2714968f4df887b3ffb4dc2103750346574aceaeb93efafc0e9bc91ac4e05"
+      }
+    }
+  },
+  "partial_topology_comparisons": {
+    "NVIDIA MIG (2g DAG + 1g BE)": {
+      "system": "NVIDIA MIG (2g DAG + 1g BE)",
+      "requests": 90,
+      "misses": 0,
+      "observed_dmr": 0.0,
+      "dmr_cp95_upper": 0.03273803383353457,
+      "p99_us": 1514.2526599999999,
+      "background_goodput_rps": 249.3194987,
+      "background_goodput_applicable": true,
+      "reference_accuracy": 0.8333333333333334,
+      "candidate_accuracy": 0.8444444444444444,
+      "accuracy_delta": 0.011111111111111072,
+      "topology": "colocated-2g-critical-dag-with-isolated-1g-best-effort",
+      "evidence_scope": "partial-topology-variant-same-input-arrival-deadline",
+      "timing_scope": "arrival-to-consumer-completion",
+      "observed_slo_feasible": true,
+      "confidence_qualified": false,
+      "source": {
+        "path": "results/p9-mig-colocated-imagenette-gate90-20260814-r06/summary.json",
+        "sha256": "f3360064081e7c1549730621abd17e239a4d5a4a16ac41525fb289be33646eb6"
+      },
+      "accuracy_gate": {
+        "path": "results/p9-mig-colocated-imagenette-gate90-20260814-r06/application-accuracy/accuracy-gate.json",
+        "sha256": "6c898fe232fd8dcb1dbf57ab379a68e65af3b873e1232474f33497ef3482cc28"
+      }
+    }
+  },
+  "mig_topology_constraints": {
+    "maximum_simultaneous_instances": 2,
+    "three_way_1g_supported": false,
+    "reason": "all 1g profiles have the sole placement {2}:1 while all 2g profiles occupy {0}:2",
+    "possible_placements": {
+      "path": "results/p9-mig-colocated-imagenette-gate90-20260814-r06/mig-possible-placements.txt",
+      "sha256": "f9d92d6b60e4aeed95fe24771cd2dba658905dc78520cc265772a3cfc3f66859"
+    },
+    "active_instances": {
+      "path": "results/p9-mig-colocated-imagenette-gate90-20260814-r06/active-mig-instances.txt",
+      "sha256": "463833352e8d049ef1d25830a5d686fec0dcf74a90ec872e0ffa9e7bc057ea18"
+    }
+  },
+  "claim_guard": "Every row is measured on the same labelled 90-input contract and frozen deadline. The fixed figure reports coverage and SLO feasibility, not a formal ranking: the fixed-stage MIG row reserves both slices and its BE metric is not applicable. The separate colocated-MIG control admits BE by changing stage placement and therefore remains partial evidence. Orion's differential fidelity gate remains open, Pantheon floors its integer-microsecond deadline, and no row has session/thermal power."
+}

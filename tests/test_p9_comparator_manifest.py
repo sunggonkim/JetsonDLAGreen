@@ -15,7 +15,10 @@ class ComparatorManifestTest(unittest.TestCase):
     def test_headline_contract_has_one_proposed_system(self) -> None:
         value = json.loads((ROOT / "docs/p9-comparator-manifest.json").read_text())
         order = value["headline_order"]
-        self.assertEqual(order, ["NVIDIA MIG", "NVIDIA MPS", "Orion", "XSched", "Pantheon", "QUIET"])
+        fixed_roster = [
+            "QUIET", "NVIDIA MIG", "NVIDIA MPS", "XSched", "Orion", "Pantheon",
+        ]
+        self.assertEqual(order, fixed_roster)
         rows = value["rows"]
         self.assertEqual(sum(item["class"] == "proposed-system" for item in rows.values()), 1)
         self.assertEqual(value["proposed_system"], "QUIET")
@@ -48,18 +51,33 @@ class ComparatorManifestTest(unittest.TestCase):
         policy = value["paper_table_policy"]
         self.assertIn("post_completion_application_output_trace", policy["formal_required_gates"])
         self.assertEqual(policy["proposed_system"], "QUIET")
+        self.assertEqual(policy["fixed_numeric_roster"], fixed_roster)
+        self.assertEqual(policy["executed_result_order"], fixed_roster)
         self.assertEqual(
-            policy["executed_result_order"],
-            [
-                "QUIET", "NVIDIA MPS", "XSched", "Pantheon", "Orion",
-                "BLESS", "NVIDIA MIG", "GSLICE", "gpulet", "BOER",
-                "ParvaGPU", "DeepPlan",
-            ],
+            policy["partial_evidence_order"],
+            ["BLESS", "GSLICE", "gpulet", "BOER", "ParvaGPU", "DeepPlan"],
         )
         self.assertEqual(policy["direct_ranking_order"], ["QUIET", "NVIDIA MPS", "XSched"])
+        self.assertEqual(policy["formal_not_enrolled"], ["NVIDIA MIG", "Orion", "Pantheon"])
         self.assertEqual(policy["numeric_frontier_order"], ["NVIDIA MPS", "QUIET"])
         self.assertNotIn("Orion", policy["numeric_frontier_order"])
         self.assertNotIn("Pantheon", policy["numeric_frontier_order"])
+        for system in fixed_roster:
+            self.assertTrue(rows[system]["numeric_measurement_available"])
+
+        for system in ("NVIDIA MIG", "Orion", "XSched", "Pantheon"):
+            gate = rows[system].get("latest_real_imagenette_application_gate")
+            if gate is None:
+                gate = rows[system]["latest_exploratory_evidence"][
+                    "latest_real_imagenette_application_gate"
+                ]
+            verification = ROOT / gate["verification"]
+            self.assertEqual(
+                hashlib.sha256(verification.read_bytes()).hexdigest(),
+                gate["verification_sha256"],
+            )
+            self.assertEqual(gate["requests"], 90)
+            self.assertAlmostEqual(gate["deadline_us"], 2224.4481160000005)
         evidence = rows["QUIET"]["latest_exploratory_evidence"]
         self.assertEqual(evidence["points"], 6)
         self.assertEqual(evidence["sessions_per_point"], 3)

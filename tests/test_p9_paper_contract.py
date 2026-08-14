@@ -25,50 +25,90 @@ class P9PaperContractTest(unittest.TestCase):
         self.assertIn("pinned artifact's scheduler and runtime execute", normalized)
         self.assertNotIn("managed-client port", implementation)
 
-    def test_all_locally_executed_systems_are_visible(self):
+    def test_numeric_roster_is_fixed_and_partial_evidence_is_separate(self):
         systems = (
-            "QUIET",
-            "NVIDIA MPS",
-            "XSched",
-            "Pantheon",
-            "Orion",
-            "BLESS",
-            "NVIDIA MIG",
-            "GSLICE",
-            "gpulet",
-            "BOER",
-            "ParvaGPU",
-            "DeepPlan",
+            "QUIET", "NVIDIA MIG", "NVIDIA MPS", "XSched", "Orion", "Pantheon",
         )
+        partial = ("BLESS", "GSLICE", "gpulet", "BOER", "ParvaGPU", "DeepPlan")
         table = (PAPER / "generated/p9-current-results.tex").read_text(encoding="utf-8")
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
-        matrix = (ROOT / "docs/sota-matrix.md").read_text(encoding="utf-8")
-        reselection = (ROOT / "docs/p9-sota-reselection.md").read_text(encoding="utf-8")
         manifest = json.loads((ROOT / "docs/p9-comparator-manifest.json").read_text(encoding="utf-8"))
-        executed_readme = readme.split("### All locally executed comparison systems", 1)[1].split(
-            "### Directly comparable formal campaign", 1
-        )[0]
-        current_matrix = matrix.split("## Current reporting rule", 1)[1].split(
-            "## Historical design-space context", 1
-        )[0]
-        current_reselection = reselection.split("## Current paper contract", 1)[1].split(
-            "## Superseded pre-thermal decision record", 1
-        )[0]
-        for system in systems:
-            self.assertIn(system, table)
-            self.assertIn(system, executed_readme)
-            self.assertIn(system, current_matrix)
-            self.assertIn(system, current_reselection)
-        self.assertEqual(tuple(manifest["paper_table_policy"]["executed_result_order"]), systems)
+        compact = json.loads(
+            (PAPER / "generated/p9-six-system-imagenette-gate.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        readme_sections = (
+            readme.split("## Fixed measured comparison roster", 1)[1].split(
+                "## Formal promotion ledger", 1
+            )[0],
+            readme.split("## Formal promotion ledger", 1)[1].split(
+                "## Application semantics", 1
+            )[0],
+            readme.split("## Application semantics", 1)[1].split(
+                "## Partial artifact evidence", 1
+            )[0],
+        )
+        generated_sections = (
+            table.split(r"\newcommand{\PnineApplicationTable}", 1)[1].split(
+                r"\newcommand{\PnineFormalTable}", 1
+            )[0],
+            table.split(r"\newcommand{\PnineFormalTable}", 1)[1].split(
+                r"\newcommand{\PnineComparatorTable}", 1
+            )[0],
+            table.split(r"\newcommand{\PnineComparatorTable}", 1)[1].split(
+                r"\newcommand{\PninePartialEvidenceTable}", 1
+            )[0],
+        )
+        for section in (*readme_sections, *generated_sections):
+            positions = [section.index(system) for system in systems]
+            self.assertEqual(positions, sorted(positions))
+
+        policy = manifest["paper_table_policy"]
+        self.assertEqual(tuple(manifest["headline_order"]), systems)
+        self.assertEqual(tuple(policy["fixed_numeric_roster"]), systems)
+        self.assertEqual(tuple(policy["executed_result_order"]), systems)
+        self.assertEqual(tuple(compact["system_order"]), systems)
+        self.assertEqual(tuple(compact["systems"]), systems)
+        self.assertFalse(
+            compact["systems"]["NVIDIA MIG"]["background_goodput_applicable"]
+        )
         self.assertEqual(
-            manifest["paper_table_policy"]["direct_ranking_order"],
+            compact["mig_topology_constraints"]["maximum_simultaneous_instances"],
+            2,
+        )
+        self.assertFalse(
+            compact["mig_topology_constraints"]["three_way_1g_supported"]
+        )
+        mig_partial = compact["partial_topology_comparisons"][
+            "NVIDIA MIG (2g DAG + 1g BE)"
+        ]
+        self.assertEqual(mig_partial["requests"], 90)
+        self.assertEqual(mig_partial["misses"], 0)
+        self.assertTrue(mig_partial["background_goodput_applicable"])
+        self.assertFalse(
+            manifest["rows"]["NVIDIA MIG"]["partial_topology_variant"][
+                "ranking_allowed"
+            ]
+        )
+        self.assertIn(r"\newcommand{\PnineMigTopologyTable}", table)
+        self.assertIn("MIG's BE entry is N/A", table)
+        self.assertEqual(tuple(policy["partial_evidence_order"]), partial)
+        self.assertEqual(
+            policy["direct_ranking_order"],
             ["QUIET", "NVIDIA MPS", "XSched"],
         )
-        self.assertIn("A rows share the formal contract", table)
-        self.assertIn("A different workload, deadline, or fidelity", executed_readme)
-        self.assertIn("Execution visibility and statistical comparability", current_matrix)
-        self.assertIn("Visibility:", current_reselection)
-        self.assertIn("Ranking:", current_reselection)
+        reason_table = readme.split("## Why a system is not in the numeric graph", 1)[1].split(
+            "## Fixed measured comparison roster", 1
+        )[0]
+        partial_table = readme.split("## Partial artifact evidence", 1)[1].split(
+            "## QUIET mechanism validation", 1
+        )[0]
+        generated_partial = table.split(r"\newcommand{\PninePartialEvidenceTable}", 1)[1]
+        for system in partial:
+            self.assertIn(system, reason_table)
+            self.assertIn(system, partial_table)
+            self.assertIn(system, generated_partial)
 
 
 if __name__ == "__main__":
