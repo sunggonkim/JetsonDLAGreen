@@ -14,6 +14,61 @@ modify TensorRT engines, CUDA kernels, or the NVIDIA driver.
   <img src="paper/eurosys27/figures/p9-quiet-overview.png" width="100%" alt="QUIET profiles and locks the workload, places the stages and coherent activation edge, executes according to publication state, and promotes only replay-verified evidence.">
 </p>
 
+## Motivation evaluation — when MIG works and when it fails
+
+MIG is not inherently a bad choice on Thor.  It works when the critical DAG
+fits inside the 2g instance or when the offered rate remains below that
+placement's service capacity.  The 90-request ImageNette comparison below is
+one such case: placing both highly unbalanced critical stages on 2g and the BE
+tenant on 1g yields zero misses.  The missing case is a pipelined workload in
+which putting both critical stages on 2g removes useful overlap.
+
+The new motivation uses a real Whisper-Tiny encoder--decoder foreground and
+four queued edge-tenant combinations.  The single-worker backgrounds are
+DistilBERT-SST2, ResNet10 detection, or another Whisper encoder.  The fourth
+combines all three workers.  These categories match the multi-service,
+multi-sensor use of Thor described by NVIDIA's
+[Jetson Thor overview](https://developer.nvidia.com/blog/introducing-nvidia-jetson-thor-the-ultimate-platform-for-physical-ai/),
+[containerized Jetson AI services](https://docs.nvidia.com/moj/inference-services/overview.html),
+and [multi-stream video stack](https://docs.nvidia.com/moj/vst/VST_Overview.html).
+NVIDIA also supports streaming and multiple deployed ASR models on Jetson
+Thor through [Riva](https://docs.nvidia.com/deeplearning/riva/user-guide/docs/public/asr/asr-overview.html).
+
+Every point below uses the same FP32 Whisper plans, 2,304,000-byte activation,
+three activation slots, 250-ms arrival-to-completion deadline, 100 foreground
+requests, and output oracle.  Every panel repeats the fixed order
+**QUIET → NVIDIA MIG → NVIDIA MPS**.  At 15 and 17 requests/s all four
+combinations have zero misses under all three systems.  The dotted line marks
+the first measured rate at which pure MIG misses while both split-stage modes
+remain at zero.
+
+<p align="center">
+  <img src="paper/eurosys27/figures/p9-whisper-edge-mix-frontier.png" width="100%" alt="Eight panels show deadline misses and production-wall p99 over five offered rates for four edge workload combinations. Every panel repeats QUIET, NVIDIA MIG, and NVIDIA MPS. MIG crosses first at 19 requests per second for speech plus NLP, 21 for speech plus vision and speech plus speech, and 20 for the multimodal stack.">
+</p>
+
+| Foreground + queued BE tenant(s) | BE workers | First MIG-only failure | QUIET misses | NVIDIA MIG misses | NVIDIA MPS misses |
+|---|---:|---:|---:|---:|---:|
+| Whisper ASR + DistilBERT NLP | 1 | 19 requests/s | **0/100** | 57/100 | **0/100** |
+| Whisper ASR + ResNet10 vision | 1 | 21 requests/s | **0/100** | 20/100 | **0/100** |
+| Whisper ASR + Whisper encoder | 1 | 21 requests/s | **0/100** | 62/100 | **0/100** |
+| Whisper ASR + NLP + vision + speech | 3 | 20 requests/s | **0/100** | 56/100 | **0/100** |
+
+The failure is a queueing crossover, not a MIG crash.  In the pure-MIG row,
+the encoder and decoder share 2g while the BE worker or workers are isolated
+on 1g.  Once the offered rate exceeds the colocated critical path's service
+rate, queueing dominates the 250-ms budget.  The split rows place the encoder
+on 1g and decoder on 2g, so request *i+1* can overlap request *i*.  This also
+sets an honest upper bound: in Speech+NLP at 21 requests/s, MIG, MPS, and
+QUIET all miss deadlines, so QUIET does not claim to admit an infeasible load.
+
+The deployment structure is plausible, but the exact pressure is not a field
+trace.  The foreground cyclically replays 12 labelled LibriSpeech windows,
+the BE workers consume deterministic engine-shaped inputs, and their queues
+remain saturated.  The defensible scope is a multi-channel speech gateway,
+multi-sensor robot, or queued edge service under sustained pressure—not a
+single-user assistant or a claim that every Jetson deployment reaches this
+rate.  No thermal data or thermal argument is used in this motivation.
+
 ## Why a system is not in the numeric graph
 
 The first table is intentionally reason-only. A system is absent from the
@@ -46,6 +101,49 @@ reported under a published system's name.
 
 The measured partial evidence for the first six rows is retained below; the
 reason-only table does not imply that those artifacts were ignored.
+
+## New experiments — repeated edge-mix crossovers
+
+The directional sweep above locates a regime boundary; it is not the final
+comparison.  We therefore reran each selected crossover in three independent
+100-request sessions and rotated treatment order across sessions.  Every
+scenario repeats **QUIET → NVIDIA MIG → NVIDIA MPS** without dropping a row.
+The table reports all 3,600 foreground requests rather than selecting the best
+session.
+
+| Foreground + queued BE tenant(s) | System | Requests | Misses | DMR | p99 (ms) | Queue p99 (ms) | Critical requests/s | BE requests/s |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| Speech + NLP @ 19 requests/s | **QUIET** | 300 | **0** | **0.000%** | **153.563** | **0.890** | **18.732** | 839.354 |
+| Speech + NLP @ 19 requests/s | NVIDIA MIG | 300 | 137 | 45.667% | 379.680 | 208.883 | 17.902 | **922.004** |
+| Speech + NLP @ 19 requests/s | NVIDIA MPS | 300 | **0** | **0.000%** | 153.555 | 0.660 | 18.728 | 846.001 |
+| Speech + vision @ 21 requests/s | **QUIET** | 300 | **0** | **0.000%** | 141.922 | 0.920 | **20.701** | 1,369.038 |
+| Speech + vision @ 21 requests/s | NVIDIA MIG | 300 | 89 | 29.667% | 330.456 | 175.680 | 19.845 | **1,552.390** |
+| Speech + vision @ 21 requests/s | NVIDIA MPS | 300 | **0** | **0.000%** | **140.670** | **0.739** | 20.696 | 1,360.312 |
+| Speech + speech @ 21 requests/s | **QUIET** | 300 | **0** | **0.000%** | 157.377 | 15.041 | 20.662 | 542.250 |
+| Speech + speech @ 21 requests/s | NVIDIA MIG | 300 | 186 | 62.000% | 474.308 | 307.325 | 19.274 | **623.085** |
+| Speech + speech @ 21 requests/s | NVIDIA MPS | 300 | **0** | **0.000%** | **150.689** | **8.355** | **20.672** | 538.934 |
+| Speech + NLP + vision + speech @ 20 requests/s | **QUIET** | 300 | **0** | **0.000%** | **149.197** | **0.834** | **19.700** | 836.692 |
+| Speech + NLP + vision + speech @ 20 requests/s | NVIDIA MIG | 300 | 168 | 56.000% | 422.364 | 256.082 | 18.615 | **950.023** |
+| Speech + NLP + vision + speech @ 20 requests/s | NVIDIA MPS | 300 | **0** | **0.000%** | 153.711 | 4.255 | 19.689 | 825.890 |
+
+<p align="center">
+  <img src="paper/eurosys27/figures/p9-whisper-edge-mix-balanced.png" width="100%" alt="Three balanced panels compare deadline misses, p99 latency, and background goodput for speech plus NLP, vision, speech, and multimodal workloads. Every workload repeats QUIET, NVIDIA MIG, and NVIDIA MPS in that order.">
+</p>
+
+Across the four selected conditions, colocated MIG misses 580/1,200 critical
+requests (48.333%), while QUIET and static split-stage MPS each miss 0/1,200.
+MIG simultaneously preserves 9.8--14.9% more BE goodput than QUIET, exposing
+the actual tradeoff: isolation helps the background tenant, but placing the
+dependent foreground stages together can destroy pipeline service capacity.
+
+This campaign establishes the need for dependency-aware **placement** over a
+pure-isolation rule.  It does not establish that QUIET's publication-scoped
+gate beats static MPS in these four conditions: both split-stage modes have
+zero misses, and their tails are close.  Gate value must therefore come from a
+separate contention regime or the prior larger formal evidence, not from
+overclaiming this crossover.  The compact evidence, source/input/output
+hashes, raw-summary hashes, and figure hashes are checked into
+[`p9-whisper-edge-mix-regimes.json`](paper/eurosys27/generated/p9-whisper-edge-mix-regimes.json).
 
 ## Fixed measured comparison roster
 
@@ -109,60 +207,11 @@ the MIG value repeated in the primary six-system table and all three graph
 panels. It remains a one-session directional result rather than a formal
 repeated-session ranking point.
 
-### Where isolated MIG stops being enough — nonthermal ASR motivation
+## Formal promotion ledger — prior evidence outside the new nonthermal motivation
 
-The ImageNette stages above are highly unbalanced, so colocating them on 2g is
-the correct choice. A real Whisper-Tiny encoder–decoder pipeline exposes the
-opposite regime: with three requests in flight, encoder request *i+1* can run
-on 1g while decoder request *i* runs on 2g. The comparison below keeps the
-same FP32 model, 2,304,000-byte activation, 19-request/s release schedule,
-250-ms deadline, saturated DistilBERT BE tenant, and output oracle. Only
-placement and producer protection differ. The encoder plan is rebuilt and
-hash-bound for each MIG profile, as TensorRT requires; precision, model,
-decoder plans, inputs, and outputs remain fixed.
-
-| System | Placement and protection | Requests | Session misses | Observed DMR | Mean session p99 (ms) | Queue p99 (ms) | Critical requests/s | BE requests/s |
-|---|---|---:|---:|---:|---:|---:|---:|---:|
-| **QUIET** | P:1g with BE, C:2g; pause BE only through producer publication | 300 | **0 / 0 / 0** | **0.000%** | **155.581** | **0.903** | **18.732** | 843.645 |
-| NVIDIA MIG | P+C:2g; BE isolated on 1g | 300 | 59 / 57 / 51 | 55.667% | 412.060 | 241.104 | 17.791 | **924.073** |
-| NVIDIA MPS | Static P:1g with BE, C:2g; no request gate | 300 | 0 / 0 / 64 | 21.333% | 266.168 | 100.938 | 18.329 | 847.754 |
-
-<p align="center">
-  <img src="paper/eurosys27/figures/p9-whisper-asr-mig-crossover.png" width="100%" alt="Three panels repeat QUIET, NVIDIA MIG, and NVIDIA MPS in that order. QUIET has zero deadline misses and the lowest p99; MIG preserves the most background goodput but misses 167 of 300 requests; static MPS lies between them and is unstable in one session.">
-</p>
-
-This is the missing MIG crossover. At 19 requests/s, colocating both critical
-stages on 2g leaves the critical path below the offered rate even though the
-BE tenant is isolated: queue p99 grows to 241.104 ms and MIG misses 167 of 300
-deadlines. Static splitting recovers pipeline parallelism but remains at the
-contention boundary. QUIET's publication-scoped gate makes all three sessions
-stable, reduces mean session p99 by 62.2% relative to MIG, and raises critical
-goodput by 5.3%. Relative to static MPS, it reduces p99 by 41.5% while changing
-BE goodput by -0.5%. All nine application output traces have the same SHA-256.
-
-The realism boundary is explicit. NVIDIA documents Thor MIG as hardware-level
-isolation for concurrent tenants, but also documents that the Thor iGPU uses
-CPU-shared unified system memory and exposes only the 1g+2g geometry used
-here ([Jetson MIG guide](https://docs.nvidia.com/jetson/archives/r39.2/DeveloperGuide/SD/MiG.html),
-[Thor profiles](https://docs.nvidia.com/datacenter/tesla/mig-user-guide/supported-mig-profiles.html)).
-Whisper itself is an encoder–decoder model over 30-second audio windows
-([original paper](https://cdn.openai.com/papers/whisper.pdf)), and pipelined
-streaming adaptations are demonstrated research workloads
-([Whisper-Streaming](https://arxiv.org/abs/2307.14743)). Thus the dependency,
-stage overlap, multi-tenant placement, and data are realistic. The exact load
-is not yet a field trace: it cyclically replays 12 labelled LibriSpeech windows
-and the 250-ms value is an internal inference budget, not a universal
-end-user ASR SLO. The defensible scope is a multi-channel edge ASR gateway or
-queued transcription service under saturation—not a single-user assistant.
-This result is therefore a nonthermal motivation experiment, not a promoted
-formal ranking or an accuracy-coverage expansion.
-
-The checked-in compact evidence is
-[`p9-whisper-asr-mig-crossover.json`](paper/eurosys27/generated/p9-whisper-asr-mig-crossover.json).
-
-## Formal promotion ledger — same fixed roster
-
-The thermal formal campaign is a separate contract: six counterbalanced
+This retained ImageNette campaign is prior evidence, not part of the new
+edge-mix experiment above; no new thermal measurement or thermal claim was
+used to select the MIG crossovers.  Its contract uses six counterbalanced
 sessions, 1,100 measured requests per enrolled system per session, and a
 2,255.483-us deadline. The six names remain in the same order; an unenrolled
 row is marked explicitly rather than silently disappearing.
@@ -338,6 +387,7 @@ paper is [`paper/eurosys27/p9-main.pdf`](paper/eurosys27/p9-main.pdf).
 ```bash
 python3 analysis/generate_p9_six_system_figure.py
 python3 analysis/generate_p9_current_figures.py
+python3 analysis/generate_p9_whisper_edge_mix_figures.py
 
 cd paper/eurosys27
 pdflatex -interaction=nonstopmode -halt-on-error p9-main.tex
@@ -346,7 +396,7 @@ pdflatex -interaction=nonstopmode -halt-on-error p9-main.tex
 pdflatex -interaction=nonstopmode -halt-on-error p9-main.tex
 ```
 
-Both generators fail closed on input SHA-256, request count, deadline,
+All generators fail closed on input SHA-256, request count, deadline,
 accuracy/output binding, and replayed metric mismatches.
 
 ## Evidence policy and scope
@@ -361,8 +411,11 @@ accuracy/output binding, and replayed metric mismatches.
   or runtime executes the measured request. Local approximations retain their
   own control or diagnostic labels.
 
-The formal claim is limited to one Jetson AGX Thor, one fixed 1g+2g placement,
-one thermal envelope, and a low-inflight two-stage ImageNette path. The
-validated external-process ring and larger-DAG planner schema are not yet the
-production TensorRT data path, and the current result does not imply a general
+The new edge-mix claim is limited to one Jetson AGX Thor, the fixed 1g+2g
+geometry, four predeclared model-category combinations, cyclic performance
+replay, and saturated queued background workers; it is nonthermal motivation,
+not a field-trace SLO.  The separate formal claim remains limited to one
+thermal envelope and a low-inflight two-stage ImageNette path.  The validated
+external-process ring and larger-DAG planner schema are not yet the production
+TensorRT data path, and the current result does not imply a general
 multi-inflight or arbitrary-DAG performance guarantee.

@@ -1,0 +1,1722 @@
+{
+  "schema_version": 1,
+  "kind": "p9-whisper-edge-mix-regimes-compact",
+  "evidence_class": "exploratory-nonthermal-motivation",
+  "thermal_campaign": false,
+  "system_order": [
+    "QUIET",
+    "NVIDIA MIG",
+    "NVIDIA MPS"
+  ],
+  "scenario_order": [
+    "speech-plus-nlp",
+    "speech-plus-vision",
+    "speech-plus-speech",
+    "speech-plus-multimodal"
+  ],
+  "directional_rates_rps": [
+    15.0,
+    17.0,
+    19.0,
+    20.0,
+    21.0
+  ],
+  "deadline_us": 250000.0,
+  "pipeline_slots": 3,
+  "foreground": "Whisper-Tiny encoder-decoder on labelled LibriSpeech windows",
+  "input_policy": "12 labelled windows cyclically replayed to 102 records; performance only, not an accuracy expansion",
+  "background_policy": "saturated queued TensorRT workers using real DistilBERT-SST2, ResNet10-detection, and Whisper-Tiny encoder plans",
+  "balanced_rate_policy": "first-directional-rate-with-MIG-misses-and-both-split-modes-zero",
+  "scenarios": {
+    "speech-plus-nlp": {
+      "label": "Speech + NLP",
+      "background_workers": 1,
+      "background_models": [
+        "distilbert-sst2"
+      ],
+      "deployment_scope": "multi-channel-robot-or-edge-gateway-stress",
+      "balanced_rate_rps": 19.0,
+      "systems": {
+        "QUIET": {
+          "mode": "quiet",
+          "directional": [
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 60509.0,
+              "mean_session_p99_us": 148992.0,
+              "min_session_p99_us": 148992.0,
+              "max_session_p99_us": 148992.0,
+              "mean_queue_p99_us": 778.67,
+              "mean_critical_goodput_rps": 14.8956,
+              "mean_background_goodput_rps": 897.4305667,
+              "mean_producer_us": 7792.79401,
+              "mean_consumer_us": 49419.46107,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 15.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 68444.0,
+              "mean_session_p99_us": 150046.0,
+              "min_session_p99_us": 150046.0,
+              "max_session_p99_us": 150046.0,
+              "mean_queue_p99_us": 814.715,
+              "mean_critical_goodput_rps": 16.8159,
+              "mean_background_goodput_rps": 871.8978584,
+              "mean_producer_us": 8112.59038,
+              "mean_consumer_us": 49836.432740000004,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 17.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 73756.2,
+              "mean_session_p99_us": 150694.0,
+              "min_session_p99_us": 150694.0,
+              "max_session_p99_us": 150694.0,
+              "mean_queue_p99_us": 837.854,
+              "mean_critical_goodput_rps": 18.7356,
+              "mean_background_goodput_rps": 840.8676919,
+              "mean_producer_us": 8454.30688,
+              "mean_consumer_us": 49551.813449999994,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 19.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 98306.4,
+              "mean_session_p99_us": 171494.0,
+              "min_session_p99_us": 171494.0,
+              "max_session_p99_us": 171494.0,
+              "mean_queue_p99_us": 22146.2,
+              "mean_critical_goodput_rps": 19.6703,
+              "mean_background_goodput_rps": 828.4814166,
+              "mean_producer_us": 8880.56346,
+              "mean_consumer_us": 50382.9989,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 20.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 39,
+              "observed_dmr": 0.39,
+              "session_misses": [
+                39
+              ],
+              "mean_session_p50_us": 227435.0,
+              "mean_session_p99_us": 363384.0,
+              "min_session_p99_us": 363384.0,
+              "max_session_p99_us": 363384.0,
+              "mean_queue_p99_us": 204008.0,
+              "mean_critical_goodput_rps": 19.6947,
+              "mean_background_goodput_rps": 824.2739813,
+              "mean_producer_us": 8985.4064,
+              "mean_consumer_us": 50332.76352,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 21.0
+            }
+          ],
+          "balanced": {
+            "sessions": 3,
+            "requests": 300,
+            "misses": 0,
+            "observed_dmr": 0.0,
+            "session_misses": [
+              0,
+              0,
+              0
+            ],
+            "mean_session_p50_us": 74150.46666666667,
+            "mean_session_p99_us": 153562.66666666666,
+            "min_session_p99_us": 151554.0,
+            "max_session_p99_us": 155077.0,
+            "mean_queue_p99_us": 889.8633333333333,
+            "mean_critical_goodput_rps": 18.731799999999996,
+            "mean_background_goodput_rps": 839.3542867333334,
+            "mean_producer_us": 8546.2739,
+            "mean_consumer_us": 49784.59963333333,
+            "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4"
+          }
+        },
+        "NVIDIA MIG": {
+          "mode": "nvidia-mig",
+          "directional": [
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 59522.2,
+              "mean_session_p99_us": 159308.0,
+              "min_session_p99_us": 159308.0,
+              "max_session_p99_us": 159308.0,
+              "mean_queue_p99_us": 533.625,
+              "mean_critical_goodput_rps": 14.8869,
+              "mean_background_goodput_rps": 951.1202997,
+              "mean_producer_us": 7340.4865500000005,
+              "mean_consumer_us": 51315.73323,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 15.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 76992.7,
+              "mean_session_p99_us": 165306.0,
+              "min_session_p99_us": 165306.0,
+              "max_session_p99_us": 165306.0,
+              "mean_queue_p99_us": 699.075,
+              "mean_critical_goodput_rps": 16.8046,
+              "mean_background_goodput_rps": 934.7083423,
+              "mean_producer_us": 8057.515380000001,
+              "mean_consumer_us": 52784.32673,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 17.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 57,
+              "observed_dmr": 0.57,
+              "session_misses": [
+                57
+              ],
+              "mean_session_p50_us": 265580.0,
+              "mean_session_p99_us": 421234.0,
+              "min_session_p99_us": 421234.0,
+              "max_session_p99_us": 421234.0,
+              "mean_queue_p99_us": 248801.0,
+              "mean_critical_goodput_rps": 17.7571,
+              "mean_background_goodput_rps": 925.7193334,
+              "mean_producer_us": 10112.31244,
+              "mean_consumer_us": 55950.59621,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 19.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 78,
+              "observed_dmr": 0.78,
+              "session_misses": [
+                78
+              ],
+              "mean_session_p50_us": 396297.0,
+              "mean_session_p99_us": 670770.0,
+              "min_session_p99_us": 670770.0,
+              "max_session_p99_us": 670770.0,
+              "mean_queue_p99_us": 475142.0,
+              "mean_critical_goodput_rps": 17.7917,
+              "mean_background_goodput_rps": 923.3380444,
+              "mean_producer_us": 9755.53047,
+              "mean_consumer_us": 55785.403569999995,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 20.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 86,
+              "observed_dmr": 0.86,
+              "session_misses": [
+                86
+              ],
+              "mean_session_p50_us": 512463.0,
+              "mean_session_p99_us": 907511.0,
+              "min_session_p99_us": 907511.0,
+              "max_session_p99_us": 907511.0,
+              "mean_queue_p99_us": 695678.0,
+              "mean_critical_goodput_rps": 17.7884,
+              "mean_background_goodput_rps": 924.8134961,
+              "mean_producer_us": 9715.25014,
+              "mean_consumer_us": 55751.23727,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 21.0
+            }
+          ],
+          "balanced": {
+            "sessions": 3,
+            "requests": 300,
+            "misses": 137,
+            "observed_dmr": 0.45666666666666667,
+            "session_misses": [
+              52,
+              38,
+              47
+            ],
+            "mean_session_p50_us": 240118.33333333334,
+            "mean_session_p99_us": 379680.0,
+            "min_session_p99_us": 360664.0,
+            "max_session_p99_us": 403485.0,
+            "mean_queue_p99_us": 208883.0,
+            "mean_critical_goodput_rps": 17.9016,
+            "mean_background_goodput_rps": 922.0042087333333,
+            "mean_producer_us": 9497.571859999998,
+            "mean_consumer_us": 55480.476859999995,
+            "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4"
+          }
+        },
+        "NVIDIA MPS": {
+          "mode": "nvidia-mps-static-split",
+          "directional": [
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 60945.0,
+              "mean_session_p99_us": 149116.0,
+              "min_session_p99_us": 149116.0,
+              "max_session_p99_us": 149116.0,
+              "mean_queue_p99_us": 265.306,
+              "mean_critical_goodput_rps": 14.8952,
+              "mean_background_goodput_rps": 896.8805394,
+              "mean_producer_us": 8630.4439,
+              "mean_consumer_us": 49226.86336,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 15.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 66090.7,
+              "mean_session_p99_us": 148643.0,
+              "min_session_p99_us": 148643.0,
+              "max_session_p99_us": 148643.0,
+              "mean_queue_p99_us": 449.616,
+              "mean_critical_goodput_rps": 16.8222,
+              "mean_background_goodput_rps": 873.2789523,
+              "mean_producer_us": 8942.30033,
+              "mean_consumer_us": 49268.163140000004,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 17.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 74001.7,
+              "mean_session_p99_us": 154159.0,
+              "min_session_p99_us": 154159.0,
+              "max_session_p99_us": 154159.0,
+              "mean_queue_p99_us": 653.15,
+              "mean_critical_goodput_rps": 18.728,
+              "mean_background_goodput_rps": 843.5250611,
+              "mean_producer_us": 9431.93577,
+              "mean_consumer_us": 49764.16113,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 19.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 89358.0,
+              "mean_session_p99_us": 162248.0,
+              "min_session_p99_us": 162248.0,
+              "max_session_p99_us": 162248.0,
+              "mean_queue_p99_us": 12777.0,
+              "mean_critical_goodput_rps": 19.6768,
+              "mean_background_goodput_rps": 827.932779,
+              "mean_producer_us": 9692.27144,
+              "mean_consumer_us": 49765.11125,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 20.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 26,
+              "observed_dmr": 0.26,
+              "session_misses": [
+                26
+              ],
+              "mean_session_p50_us": 209393.0,
+              "mean_session_p99_us": 331854.0,
+              "min_session_p99_us": 331854.0,
+              "max_session_p99_us": 331854.0,
+              "mean_queue_p99_us": 172106.0,
+              "mean_critical_goodput_rps": 19.8177,
+              "mean_background_goodput_rps": 829.4536817,
+              "mean_producer_us": 9909.07126,
+              "mean_consumer_us": 50113.13876,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 21.0
+            }
+          ],
+          "balanced": {
+            "sessions": 3,
+            "requests": 300,
+            "misses": 0,
+            "observed_dmr": 0.0,
+            "session_misses": [
+              0,
+              0,
+              0
+            ],
+            "mean_session_p50_us": 74018.46666666666,
+            "mean_session_p99_us": 153555.0,
+            "min_session_p99_us": 152270.0,
+            "max_session_p99_us": 155223.0,
+            "mean_queue_p99_us": 660.0426666666667,
+            "mean_critical_goodput_rps": 18.728233333333332,
+            "mean_background_goodput_rps": 846.0012953666668,
+            "mean_producer_us": 9423.383243333334,
+            "mean_consumer_us": 49758.057713333335,
+            "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4"
+          }
+        }
+      },
+      "sources": {
+        "directional": {
+          "summary": {
+            "path": "results/p9-whisper-edge-mix-campaign-r03-20260814/directional/speech-plus-nlp/summary.json",
+            "sha256": "79cf11857d29038293bcbd152a53b7d5591fc61486ab8a4c8dad682edbad4ec1"
+          },
+          "provenance": {
+            "path": "results/p9-whisper-edge-mix-campaign-r03-20260814/directional/speech-plus-nlp/provenance.json",
+            "sha256": "90875774eccba80ad113cdde69749f66acb64d4d2b1796a8f5af8638db209f0f"
+          }
+        },
+        "balanced": {
+          "summary": {
+            "path": "results/p9-whisper-edge-mix-campaign-r03-20260814/balanced/speech-plus-nlp/summary.json",
+            "sha256": "d36fdd961f0a5346df88082dd667243e9d0d3c2a9e941300d18c3b124e6a63be"
+          },
+          "provenance": {
+            "path": "results/p9-whisper-edge-mix-campaign-r03-20260814/balanced/speech-plus-nlp/provenance.json",
+            "sha256": "90875774eccba80ad113cdde69749f66acb64d4d2b1796a8f5af8638db209f0f"
+          }
+        }
+      }
+    },
+    "speech-plus-vision": {
+      "label": "Speech + Vision",
+      "background_workers": 1,
+      "background_models": [
+        "resnet10-detection"
+      ],
+      "deployment_scope": "multi-sensor-robot-or-video-gateway-stress",
+      "balanced_rate_rps": 21.0,
+      "systems": {
+        "QUIET": {
+          "mode": "quiet",
+          "directional": [
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 55291.4,
+              "mean_session_p99_us": 137731.0,
+              "min_session_p99_us": 137731.0,
+              "max_session_p99_us": 137731.0,
+              "mean_queue_p99_us": 594.007,
+              "mean_critical_goodput_rps": 14.9324,
+              "mean_background_goodput_rps": 1487.530212,
+              "mean_producer_us": 7475.99532,
+              "mean_consumer_us": 44651.42113,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 15.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 54966.0,
+              "mean_session_p99_us": 136810.0,
+              "min_session_p99_us": 136810.0,
+              "max_session_p99_us": 136810.0,
+              "mean_queue_p99_us": 769.271,
+              "mean_critical_goodput_rps": 16.8692,
+              "mean_background_goodput_rps": 1443.405404,
+              "mean_producer_us": 7758.89201,
+              "mean_consumer_us": 44843.60207,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 17.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 66367.9,
+              "mean_session_p99_us": 137346.0,
+              "min_session_p99_us": 137346.0,
+              "max_session_p99_us": 137346.0,
+              "mean_queue_p99_us": 810.535,
+              "mean_critical_goodput_rps": 18.7912,
+              "mean_background_goodput_rps": 1415.073376,
+              "mean_producer_us": 7992.68569,
+              "mean_consumer_us": 45284.61198,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 19.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 66540.7,
+              "mean_session_p99_us": 137892.0,
+              "min_session_p99_us": 137892.0,
+              "max_session_p99_us": 137892.0,
+              "mean_queue_p99_us": 777.533,
+              "mean_critical_goodput_rps": 19.751,
+              "mean_background_goodput_rps": 1391.426066,
+              "mean_producer_us": 8033.10352,
+              "mean_consumer_us": 44902.693320000006,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 20.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 70988.0,
+              "mean_session_p99_us": 141844.0,
+              "min_session_p99_us": 141844.0,
+              "max_session_p99_us": 141844.0,
+              "mean_queue_p99_us": 881.612,
+              "mean_critical_goodput_rps": 20.6995,
+              "mean_background_goodput_rps": 1369.632618,
+              "mean_producer_us": 8504.78466,
+              "mean_consumer_us": 45661.01062,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 21.0
+            }
+          ],
+          "balanced": {
+            "sessions": 3,
+            "requests": 300,
+            "misses": 0,
+            "observed_dmr": 0.0,
+            "session_misses": [
+              0,
+              0,
+              0
+            ],
+            "mean_session_p50_us": 71778.66666666667,
+            "mean_session_p99_us": 141922.33333333334,
+            "min_session_p99_us": 140836.0,
+            "max_session_p99_us": 142889.0,
+            "mean_queue_p99_us": 920.1983333333334,
+            "mean_critical_goodput_rps": 20.700633333333332,
+            "mean_background_goodput_rps": 1369.0383803333334,
+            "mean_producer_us": 8504.093646666666,
+            "mean_consumer_us": 45766.25045,
+            "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4"
+          }
+        },
+        "NVIDIA MIG": {
+          "mode": "nvidia-mig",
+          "directional": [
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 53665.7,
+              "mean_session_p99_us": 143870.0,
+              "min_session_p99_us": 143870.0,
+              "max_session_p99_us": 143870.0,
+              "mean_queue_p99_us": 514.023,
+              "mean_critical_goodput_rps": 14.9226,
+              "mean_background_goodput_rps": 1594.512963,
+              "mean_producer_us": 6276.92098,
+              "mean_consumer_us": 45677.95932,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 15.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 55296.9,
+              "mean_session_p99_us": 144079.0,
+              "min_session_p99_us": 144079.0,
+              "max_session_p99_us": 144079.0,
+              "mean_queue_p99_us": 581.444,
+              "mean_critical_goodput_rps": 16.863,
+              "mean_background_goodput_rps": 1579.743049,
+              "mean_producer_us": 6704.04556,
+              "mean_consumer_us": 46408.99325,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 17.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 69051.6,
+              "mean_session_p99_us": 149078.0,
+              "min_session_p99_us": 149078.0,
+              "max_session_p99_us": 149078.0,
+              "mean_queue_p99_us": 682.799,
+              "mean_critical_goodput_rps": 18.7864,
+              "mean_background_goodput_rps": 1565.526192,
+              "mean_producer_us": 7196.2986,
+              "mean_consumer_us": 47170.3351,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 19.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 88994.9,
+              "mean_session_p99_us": 166905.0,
+              "min_session_p99_us": 166905.0,
+              "max_session_p99_us": 166905.0,
+              "mean_queue_p99_us": 17430.2,
+              "mean_critical_goodput_rps": 19.7418,
+              "mean_background_goodput_rps": 1558.61746,
+              "mean_producer_us": 7906.89876,
+              "mean_consumer_us": 49264.75656,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 20.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 20,
+              "observed_dmr": 0.2,
+              "session_misses": [
+                20
+              ],
+              "mean_session_p50_us": 203090.0,
+              "mean_session_p99_us": 314094.0,
+              "min_session_p99_us": 314094.0,
+              "max_session_p99_us": 314094.0,
+              "mean_queue_p99_us": 159276.0,
+              "mean_critical_goodput_rps": 19.9237,
+              "mean_background_goodput_rps": 1555.620209,
+              "mean_producer_us": 8466.93786,
+              "mean_consumer_us": 49854.97455,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 21.0
+            }
+          ],
+          "balanced": {
+            "sessions": 3,
+            "requests": 300,
+            "misses": 89,
+            "observed_dmr": 0.2966666666666667,
+            "session_misses": [
+              30,
+              26,
+              33
+            ],
+            "mean_session_p50_us": 213148.33333333334,
+            "mean_session_p99_us": 330455.6666666667,
+            "min_session_p99_us": 321684.0,
+            "max_session_p99_us": 338511.0,
+            "mean_queue_p99_us": 175680.0,
+            "mean_critical_goodput_rps": 19.845033333333333,
+            "mean_background_goodput_rps": 1552.3896253333332,
+            "mean_producer_us": 8450.712323333333,
+            "mean_consumer_us": 50018.715553333335,
+            "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4"
+          }
+        },
+        "NVIDIA MPS": {
+          "mode": "nvidia-mps-static-split",
+          "directional": [
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 56787.7,
+              "mean_session_p99_us": 137727.0,
+              "min_session_p99_us": 137727.0,
+              "max_session_p99_us": 137727.0,
+              "mean_queue_p99_us": 570.341,
+              "mean_critical_goodput_rps": 14.9305,
+              "mean_background_goodput_rps": 1482.591192,
+              "mean_producer_us": 9247.101130000001,
+              "mean_consumer_us": 44762.06935,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 15.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 56754.1,
+              "mean_session_p99_us": 138974.0,
+              "min_session_p99_us": 138974.0,
+              "max_session_p99_us": 138974.0,
+              "mean_queue_p99_us": 548.455,
+              "mean_critical_goodput_rps": 16.8641,
+              "mean_background_goodput_rps": 1442.878194,
+              "mean_producer_us": 9562.51546,
+              "mean_consumer_us": 44899.30995,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 17.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 65732.4,
+              "mean_session_p99_us": 138062.0,
+              "min_session_p99_us": 138062.0,
+              "max_session_p99_us": 138062.0,
+              "mean_queue_p99_us": 608.057,
+              "mean_critical_goodput_rps": 18.7926,
+              "mean_background_goodput_rps": 1408.075177,
+              "mean_producer_us": 9938.25848,
+              "mean_consumer_us": 44741.80967,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 19.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 68328.5,
+              "mean_session_p99_us": 142193.0,
+              "min_session_p99_us": 142193.0,
+              "max_session_p99_us": 142193.0,
+              "mean_queue_p99_us": 633.744,
+              "mean_critical_goodput_rps": 19.7491,
+              "mean_background_goodput_rps": 1393.136317,
+              "mean_producer_us": 10051.23699,
+              "mean_consumer_us": 45163.909349999994,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 20.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 72295.6,
+              "mean_session_p99_us": 142673.0,
+              "min_session_p99_us": 142673.0,
+              "max_session_p99_us": 142673.0,
+              "mean_queue_p99_us": 717.776,
+              "mean_critical_goodput_rps": 20.6959,
+              "mean_background_goodput_rps": 1365.758123,
+              "mean_producer_us": 10617.96009,
+              "mean_consumer_us": 45686.956940000004,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 21.0
+            }
+          ],
+          "balanced": {
+            "sessions": 3,
+            "requests": 300,
+            "misses": 0,
+            "observed_dmr": 0.0,
+            "session_misses": [
+              0,
+              0,
+              0
+            ],
+            "mean_session_p50_us": 71847.43333333333,
+            "mean_session_p99_us": 140670.33333333334,
+            "min_session_p99_us": 140186.0,
+            "max_session_p99_us": 141367.0,
+            "mean_queue_p99_us": 738.531,
+            "mean_critical_goodput_rps": 20.69643333333333,
+            "mean_background_goodput_rps": 1360.31197,
+            "mean_producer_us": 10540.526306666667,
+            "mean_consumer_us": 45488.66836,
+            "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4"
+          }
+        }
+      },
+      "sources": {
+        "directional": {
+          "summary": {
+            "path": "results/p9-whisper-edge-mix-campaign-r03-20260814/directional/speech-plus-vision/summary.json",
+            "sha256": "33844fe4e102ab751c8738e7760d59f8c869366b5a95d8748f358a221b59a3e7"
+          },
+          "provenance": {
+            "path": "results/p9-whisper-edge-mix-campaign-r03-20260814/directional/speech-plus-vision/provenance.json",
+            "sha256": "e257c7ba8f706f37923598ffa9dd618b639a0ed49c0876de31f24ce354f80d4d"
+          }
+        },
+        "balanced": {
+          "summary": {
+            "path": "results/p9-whisper-edge-mix-campaign-r03-20260814/balanced/speech-plus-vision/summary.json",
+            "sha256": "ec381e464992c2424ee7a05de4252b69466c49058e803b1a0ff3afcd11a8fa1c"
+          },
+          "provenance": {
+            "path": "results/p9-whisper-edge-mix-campaign-r03-20260814/balanced/speech-plus-vision/provenance.json",
+            "sha256": "e257c7ba8f706f37923598ffa9dd618b639a0ed49c0876de31f24ce354f80d4d"
+          }
+        }
+      }
+    },
+    "speech-plus-speech": {
+      "label": "Speech + Speech",
+      "background_workers": 1,
+      "background_models": [
+        "whisper-tiny-encoder"
+      ],
+      "deployment_scope": "multi-model-multi-channel-speech-gateway-stress",
+      "balanced_rate_rps": 21.0,
+      "systems": {
+        "QUIET": {
+          "mode": "quiet",
+          "directional": [
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 56338.0,
+              "mean_session_p99_us": 139308.0,
+              "min_session_p99_us": 139308.0,
+              "max_session_p99_us": 139308.0,
+              "mean_queue_p99_us": 578.155,
+              "mean_critical_goodput_rps": 14.9253,
+              "mean_background_goodput_rps": 587.3385358,
+              "mean_producer_us": 7948.24142,
+              "mean_consumer_us": 45558.50980000001,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 15.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 57009.6,
+              "mean_session_p99_us": 140530.0,
+              "min_session_p99_us": 140530.0,
+              "max_session_p99_us": 140530.0,
+              "mean_queue_p99_us": 792.866,
+              "mean_critical_goodput_rps": 16.8527,
+              "mean_background_goodput_rps": 573.6207511,
+              "mean_producer_us": 8347.613299999999,
+              "mean_consumer_us": 46197.1675,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 17.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 65302.8,
+              "mean_session_p99_us": 141155.0,
+              "min_session_p99_us": 141155.0,
+              "max_session_p99_us": 141155.0,
+              "mean_queue_p99_us": 829.998,
+              "mean_critical_goodput_rps": 18.7759,
+              "mean_background_goodput_rps": 560.0472099,
+              "mean_producer_us": 8469.97255,
+              "mean_consumer_us": 46253.68443,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 19.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 70700.7,
+              "mean_session_p99_us": 143497.0,
+              "min_session_p99_us": 143497.0,
+              "max_session_p99_us": 143497.0,
+              "mean_queue_p99_us": 897.84,
+              "mean_critical_goodput_rps": 19.7195,
+              "mean_background_goodput_rps": 552.6661228,
+              "mean_producer_us": 8806.48312,
+              "mean_consumer_us": 46985.94421,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 20.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 87838.9,
+              "mean_session_p99_us": 163825.0,
+              "min_session_p99_us": 163825.0,
+              "max_session_p99_us": 163825.0,
+              "mean_queue_p99_us": 21636.3,
+              "mean_critical_goodput_rps": 20.6731,
+              "mean_background_goodput_rps": 540.7413158,
+              "mean_producer_us": 9064.27389,
+              "mean_consumer_us": 47043.99914,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 21.0
+            }
+          ],
+          "balanced": {
+            "sessions": 3,
+            "requests": 300,
+            "misses": 0,
+            "observed_dmr": 0.0,
+            "session_misses": [
+              0,
+              0,
+              0
+            ],
+            "mean_session_p50_us": 92296.66666666667,
+            "mean_session_p99_us": 157377.33333333334,
+            "min_session_p99_us": 145117.0,
+            "max_session_p99_us": 181138.0,
+            "mean_queue_p99_us": 15040.683333333332,
+            "mean_critical_goodput_rps": 20.661733333333334,
+            "mean_background_goodput_rps": 542.2495796333333,
+            "mean_producer_us": 9017.573636666666,
+            "mean_consumer_us": 47178.813323333336,
+            "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4"
+          }
+        },
+        "NVIDIA MIG": {
+          "mode": "nvidia-mig",
+          "directional": [
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 54796.1,
+              "mean_session_p99_us": 147037.0,
+              "min_session_p99_us": 147037.0,
+              "max_session_p99_us": 147037.0,
+              "mean_queue_p99_us": 514.8,
+              "mean_critical_goodput_rps": 14.916,
+              "mean_background_goodput_rps": 636.328009,
+              "mean_producer_us": 6598.72273,
+              "mean_consumer_us": 47063.31092,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 15.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 69364.2,
+              "mean_session_p99_us": 147851.0,
+              "min_session_p99_us": 147851.0,
+              "max_session_p99_us": 147851.0,
+              "mean_queue_p99_us": 615.523,
+              "mean_critical_goodput_rps": 16.8494,
+              "mean_background_goodput_rps": 631.2704818,
+              "mean_producer_us": 7101.46448,
+              "mean_consumer_us": 48315.35252,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 17.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 77005.9,
+              "mean_session_p99_us": 148987.0,
+              "min_session_p99_us": 148987.0,
+              "max_session_p99_us": 148987.0,
+              "mean_queue_p99_us": 676.931,
+              "mean_critical_goodput_rps": 18.768,
+              "mean_background_goodput_rps": 624.3214881,
+              "mean_producer_us": 7877.789989999999,
+              "mean_consumer_us": 49824.10344,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 19.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 139940.0,
+              "mean_session_p99_us": 217388.0,
+              "min_session_p99_us": 217388.0,
+              "max_session_p99_us": 217388.0,
+              "mean_queue_p99_us": 59606.0,
+              "mean_critical_goodput_rps": 19.4238,
+              "mean_background_goodput_rps": 622.1694557,
+              "mean_producer_us": 8498.13339,
+              "mean_consumer_us": 51323.58885,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 20.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 62,
+              "observed_dmr": 0.62,
+              "session_misses": [
+                62
+              ],
+              "mean_session_p50_us": 293158.0,
+              "mean_session_p99_us": 479109.0,
+              "min_session_p99_us": 479109.0,
+              "max_session_p99_us": 479109.0,
+              "mean_queue_p99_us": 314831.0,
+              "mean_critical_goodput_rps": 19.2559,
+              "mean_background_goodput_rps": 623.3905569,
+              "mean_producer_us": 8578.29704,
+              "mean_consumer_us": 51532.635480000004,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 21.0
+            }
+          ],
+          "balanced": {
+            "sessions": 3,
+            "requests": 300,
+            "misses": 186,
+            "observed_dmr": 0.62,
+            "session_misses": [
+              60,
+              64,
+              62
+            ],
+            "mean_session_p50_us": 291053.0,
+            "mean_session_p99_us": 474307.6666666667,
+            "min_session_p99_us": 470697.0,
+            "max_session_p99_us": 480952.0,
+            "mean_queue_p99_us": 307324.6666666667,
+            "mean_critical_goodput_rps": 19.2737,
+            "mean_background_goodput_rps": 623.0849935,
+            "mean_producer_us": 8622.36009,
+            "mean_consumer_us": 51526.886296666664,
+            "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4"
+          }
+        },
+        "NVIDIA MPS": {
+          "mode": "nvidia-mps-static-split",
+          "directional": [
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 58629.5,
+              "mean_session_p99_us": 141269.0,
+              "min_session_p99_us": 141269.0,
+              "max_session_p99_us": 141269.0,
+              "mean_queue_p99_us": 452.21,
+              "mean_critical_goodput_rps": 14.9184,
+              "mean_background_goodput_rps": 586.2715299,
+              "mean_producer_us": 9793.26893,
+              "mean_consumer_us": 45760.52443,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 15.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 58638.1,
+              "mean_session_p99_us": 142494.0,
+              "min_session_p99_us": 142494.0,
+              "max_session_p99_us": 142494.0,
+              "mean_queue_p99_us": 596.183,
+              "mean_critical_goodput_rps": 16.8475,
+              "mean_background_goodput_rps": 571.2391765,
+              "mean_producer_us": 10099.69474,
+              "mean_consumer_us": 46127.72189,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 17.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 69420.4,
+              "mean_session_p99_us": 143088.0,
+              "min_session_p99_us": 143088.0,
+              "max_session_p99_us": 143088.0,
+              "mean_queue_p99_us": 520.459,
+              "mean_critical_goodput_rps": 18.7681,
+              "mean_background_goodput_rps": 558.1263611,
+              "mean_producer_us": 10428.11164,
+              "mean_consumer_us": 46317.704060000004,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 19.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 70551.1,
+              "mean_session_p99_us": 143367.0,
+              "min_session_p99_us": 143367.0,
+              "max_session_p99_us": 143367.0,
+              "mean_queue_p99_us": 609.865,
+              "mean_critical_goodput_rps": 19.7267,
+              "mean_background_goodput_rps": 547.2511586,
+              "mean_producer_us": 10729.299879999999,
+              "mean_consumer_us": 46377.69483,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 20.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 79462.2,
+              "mean_session_p99_us": 146649.0,
+              "min_session_p99_us": 146649.0,
+              "max_session_p99_us": 146649.0,
+              "mean_queue_p99_us": 4289.47,
+              "mean_critical_goodput_rps": 20.6653,
+              "mean_background_goodput_rps": 538.554983,
+              "mean_producer_us": 11106.82531,
+              "mean_consumer_us": 46708.58597,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 21.0
+            }
+          ],
+          "balanced": {
+            "sessions": 3,
+            "requests": 300,
+            "misses": 0,
+            "observed_dmr": 0.0,
+            "session_misses": [
+              0,
+              0,
+              0
+            ],
+            "mean_session_p50_us": 82403.13333333333,
+            "mean_session_p99_us": 150689.33333333334,
+            "min_session_p99_us": 147530.0,
+            "max_session_p99_us": 155128.0,
+            "mean_queue_p99_us": 8355.07,
+            "mean_critical_goodput_rps": 20.672366666666665,
+            "mean_background_goodput_rps": 538.9344918333333,
+            "mean_producer_us": 11145.733336666666,
+            "mean_consumer_us": 46884.64161666667,
+            "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4"
+          }
+        }
+      },
+      "sources": {
+        "directional": {
+          "summary": {
+            "path": "results/p9-whisper-edge-mix-campaign-r03-20260814/directional/speech-plus-speech/summary.json",
+            "sha256": "416f5967e4879ee23a4bf0d676d60ff67f133d1f336e10aa5cfbfcbc955ba23e"
+          },
+          "provenance": {
+            "path": "results/p9-whisper-edge-mix-campaign-r03-20260814/directional/speech-plus-speech/provenance.json",
+            "sha256": "9b6ff04aeac16c11409e0566897925e81ec04296adbec606cb6b31d17e65ab7c"
+          }
+        },
+        "balanced": {
+          "summary": {
+            "path": "results/p9-whisper-edge-mix-campaign-r03-20260814/balanced/speech-plus-speech/summary.json",
+            "sha256": "2aa599dd68e80d4a3057e786f4adac5805d878a95a8899719a929dab393e6579"
+          },
+          "provenance": {
+            "path": "results/p9-whisper-edge-mix-campaign-r03-20260814/balanced/speech-plus-speech/provenance.json",
+            "sha256": "9b6ff04aeac16c11409e0566897925e81ec04296adbec606cb6b31d17e65ab7c"
+          }
+        }
+      }
+    },
+    "speech-plus-multimodal": {
+      "label": "Speech + Multimodal",
+      "background_workers": 3,
+      "background_models": [
+        "distilbert-sst2",
+        "resnet10-detection",
+        "whisper-tiny-encoder"
+      ],
+      "deployment_scope": "multimodal-robot-or-edge-gateway-stress",
+      "balanced_rate_rps": 20.0,
+      "systems": {
+        "QUIET": {
+          "mode": "quiet",
+          "directional": [
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 59646.6,
+              "mean_session_p99_us": 146683.0,
+              "min_session_p99_us": 146683.0,
+              "max_session_p99_us": 146683.0,
+              "mean_queue_p99_us": 621.56,
+              "mean_critical_goodput_rps": 14.9078,
+              "mean_background_goodput_rps": 902.3495543,
+              "mean_producer_us": 9105.57345,
+              "mean_consumer_us": 47395.96557,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 15.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 59957.1,
+              "mean_session_p99_us": 144816.0,
+              "min_session_p99_us": 144816.0,
+              "max_session_p99_us": 144816.0,
+              "mean_queue_p99_us": 598.471,
+              "mean_critical_goodput_rps": 16.8403,
+              "mean_background_goodput_rps": 873.0048711,
+              "mean_producer_us": 9441.708789999999,
+              "mean_consumer_us": 47302.19828,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 17.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 70699.3,
+              "mean_session_p99_us": 149242.0,
+              "min_session_p99_us": 149242.0,
+              "max_session_p99_us": 149242.0,
+              "mean_queue_p99_us": 693.698,
+              "mean_critical_goodput_rps": 18.7598,
+              "mean_background_goodput_rps": 851.1152835,
+              "mean_producer_us": 9781.41987,
+              "mean_consumer_us": 47748.3291,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 19.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 72374.4,
+              "mean_session_p99_us": 149221.0,
+              "min_session_p99_us": 149221.0,
+              "max_session_p99_us": 149221.0,
+              "mean_queue_p99_us": 709.591,
+              "mean_critical_goodput_rps": 19.7118,
+              "mean_background_goodput_rps": 833.8877019,
+              "mean_producer_us": 10304.42045,
+              "mean_consumer_us": 47793.495489999994,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 20.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 112966.0,
+              "mean_session_p99_us": 179813.0,
+              "min_session_p99_us": 179813.0,
+              "max_session_p99_us": 179813.0,
+              "mean_queue_p99_us": 37566.5,
+              "mean_critical_goodput_rps": 20.6079,
+              "mean_background_goodput_rps": 821.012178,
+              "mean_producer_us": 10352.86366,
+              "mean_consumer_us": 48082.48947,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 21.0
+            }
+          ],
+          "balanced": {
+            "sessions": 3,
+            "requests": 300,
+            "misses": 0,
+            "observed_dmr": 0.0,
+            "session_misses": [
+              0,
+              0,
+              0
+            ],
+            "mean_session_p50_us": 76255.7,
+            "mean_session_p99_us": 149197.0,
+            "min_session_p99_us": 148380.0,
+            "max_session_p99_us": 149986.0,
+            "mean_queue_p99_us": 833.6743333333334,
+            "mean_critical_goodput_rps": 19.700466666666667,
+            "mean_background_goodput_rps": 836.6918494333335,
+            "mean_producer_us": 10513.010686666667,
+            "mean_consumer_us": 48105.89227333333,
+            "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4"
+          }
+        },
+        "NVIDIA MIG": {
+          "mode": "nvidia-mig",
+          "directional": [
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 56374.1,
+              "mean_session_p99_us": 151881.0,
+              "min_session_p99_us": 151881.0,
+              "max_session_p99_us": 151881.0,
+              "mean_queue_p99_us": 473.817,
+              "mean_critical_goodput_rps": 14.9072,
+              "mean_background_goodput_rps": 976.7798652,
+              "mean_producer_us": 6963.07091,
+              "mean_consumer_us": 48607.67482,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 15.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 72829.8,
+              "mean_session_p99_us": 156735.0,
+              "min_session_p99_us": 156735.0,
+              "max_session_p99_us": 156735.0,
+              "mean_queue_p99_us": 531.928,
+              "mean_critical_goodput_rps": 16.8297,
+              "mean_background_goodput_rps": 962.9521960000001,
+              "mean_producer_us": 7440.95651,
+              "mean_consumer_us": 50030.2586,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 17.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 120952.0,
+              "mean_session_p99_us": 180959.0,
+              "min_session_p99_us": 180959.0,
+              "max_session_p99_us": 180959.0,
+              "mean_queue_p99_us": 23641.3,
+              "mean_critical_goodput_rps": 18.6672,
+              "mean_background_goodput_rps": 950.7213087,
+              "mean_producer_us": 8868.867680000001,
+              "mean_consumer_us": 53227.18633999999,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 19.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 56,
+              "observed_dmr": 0.56,
+              "session_misses": [
+                56
+              ],
+              "mean_session_p50_us": 259985.0,
+              "mean_session_p99_us": 411638.0,
+              "min_session_p99_us": 411638.0,
+              "max_session_p99_us": 411638.0,
+              "mean_queue_p99_us": 249204.0,
+              "mean_critical_goodput_rps": 18.6517,
+              "mean_background_goodput_rps": 950.3860973,
+              "mean_producer_us": 9216.83209,
+              "mean_consumer_us": 53240.510930000004,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 20.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 77,
+              "observed_dmr": 0.77,
+              "session_misses": [
+                77
+              ],
+              "mean_session_p50_us": 395092.0,
+              "mean_session_p99_us": 670282.0,
+              "min_session_p99_us": 670282.0,
+              "max_session_p99_us": 670282.0,
+              "mean_queue_p99_us": 481171.0,
+              "mean_critical_goodput_rps": 18.5722,
+              "mean_background_goodput_rps": 950.9901517000001,
+              "mean_producer_us": 9116.26086,
+              "mean_consumer_us": 53411.993899999994,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 21.0
+            }
+          ],
+          "balanced": {
+            "sessions": 3,
+            "requests": 300,
+            "misses": 168,
+            "observed_dmr": 0.56,
+            "session_misses": [
+              59,
+              50,
+              59
+            ],
+            "mean_session_p50_us": 264304.6666666667,
+            "mean_session_p99_us": 422364.3333333333,
+            "min_session_p99_us": 402837.0,
+            "max_session_p99_us": 435655.0,
+            "mean_queue_p99_us": 256082.0,
+            "mean_critical_goodput_rps": 18.614533333333334,
+            "mean_background_goodput_rps": 950.0227342333333,
+            "mean_producer_us": 9130.522863333334,
+            "mean_consumer_us": 53334.81427666667,
+            "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4"
+          }
+        },
+        "NVIDIA MPS": {
+          "mode": "nvidia-mps-static-split",
+          "directional": [
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 62603.8,
+              "mean_session_p99_us": 148307.0,
+              "min_session_p99_us": 148307.0,
+              "max_session_p99_us": 148307.0,
+              "mean_queue_p99_us": 552.521,
+              "mean_critical_goodput_rps": 14.9045,
+              "mean_background_goodput_rps": 888.6177771,
+              "mean_producer_us": 13354.454010000001,
+              "mean_consumer_us": 46762.07387,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 15.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 64366.7,
+              "mean_session_p99_us": 149038.0,
+              "min_session_p99_us": 149038.0,
+              "max_session_p99_us": 149038.0,
+              "mean_queue_p99_us": 459.765,
+              "mean_critical_goodput_rps": 16.8244,
+              "mean_background_goodput_rps": 869.0520902000001,
+              "mean_producer_us": 13826.41019,
+              "mean_consumer_us": 47545.86653,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 17.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 75175.0,
+              "mean_session_p99_us": 153215.0,
+              "min_session_p99_us": 153215.0,
+              "max_session_p99_us": 153215.0,
+              "mean_queue_p99_us": 575.614,
+              "mean_critical_goodput_rps": 18.7375,
+              "mean_background_goodput_rps": 836.9906705999999,
+              "mean_producer_us": 14327.94579,
+              "mean_consumer_us": 47470.317149999995,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 19.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 76970.9,
+              "mean_session_p99_us": 149752.0,
+              "min_session_p99_us": 149752.0,
+              "max_session_p99_us": 149752.0,
+              "mean_queue_p99_us": 804.754,
+              "mean_critical_goodput_rps": 19.6847,
+              "mean_background_goodput_rps": 827.5759611999999,
+              "mean_producer_us": 14856.155139999999,
+              "mean_consumer_us": 47530.741500000004,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 20.0
+            },
+            {
+              "sessions": 1,
+              "requests": 100,
+              "misses": 0,
+              "observed_dmr": 0.0,
+              "session_misses": [
+                0
+              ],
+              "mean_session_p50_us": 97184.4,
+              "mean_session_p99_us": 166150.0,
+              "min_session_p99_us": 166150.0,
+              "max_session_p99_us": 166150.0,
+              "mean_queue_p99_us": 23789.8,
+              "mean_critical_goodput_rps": 20.6281,
+              "mean_background_goodput_rps": 808.0213668,
+              "mean_producer_us": 15366.18291,
+              "mean_consumer_us": 47976.67142,
+              "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4",
+              "rate_rps": 21.0
+            }
+          ],
+          "balanced": {
+            "sessions": 3,
+            "requests": 300,
+            "misses": 0,
+            "observed_dmr": 0.0,
+            "session_misses": [
+              0,
+              0,
+              0
+            ],
+            "mean_session_p50_us": 78019.46666666667,
+            "mean_session_p99_us": 153710.66666666666,
+            "min_session_p99_us": 152239.0,
+            "max_session_p99_us": 155217.0,
+            "mean_queue_p99_us": 4254.91,
+            "mean_critical_goodput_rps": 19.6893,
+            "mean_background_goodput_rps": 825.8899015999999,
+            "mean_producer_us": 14900.438033333334,
+            "mean_consumer_us": 47902.981023333334,
+            "output_sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4"
+          }
+        }
+      },
+      "sources": {
+        "directional": {
+          "summary": {
+            "path": "results/p9-whisper-edge-mix-campaign-r03-20260814/directional/speech-plus-multimodal/summary.json",
+            "sha256": "9187e8083c85e1d3989feb8990d467f2ab770b449e057dfdc5dc639a64cc4bbf"
+          },
+          "provenance": {
+            "path": "results/p9-whisper-edge-mix-campaign-r03-20260814/directional/speech-plus-multimodal/provenance.json",
+            "sha256": "5c531371c60381e3d5fcfd659d98dd0de6a86f2a0b5efe3a49b04a00ec933db9"
+          }
+        },
+        "balanced": {
+          "summary": {
+            "path": "results/p9-whisper-edge-mix-campaign-r03-20260814/balanced/speech-plus-multimodal/summary.json",
+            "sha256": "0e2c2770b2106722ebc43b28dd0b2de94df62aef0a4f4fbd06d8c3002b30df93"
+          },
+          "provenance": {
+            "path": "results/p9-whisper-edge-mix-campaign-r03-20260814/balanced/speech-plus-multimodal/provenance.json",
+            "sha256": "5c531371c60381e3d5fcfd659d98dd0de6a86f2a0b5efe3a49b04a00ec933db9"
+          }
+        }
+      }
+    }
+  },
+  "output_contract": {
+    "kind": "byte-identical-across-all-runs",
+    "sha256": "f94bc4aca9808d4edebca26a9157375f91dfa5d5f20587fdcea64f953590d8f4"
+  },
+  "balanced_totals": {
+    "all_system_requests": 3600,
+    "quiet_plus_mps_misses": 0
+  },
+  "campaign": {
+    "path": "results/p9-whisper-edge-mix-campaign-r03-20260814/campaign.json",
+    "sha256": "bc580248038935c9520274b8db30e63d4b40f9c822d06daa09308448dea5e378"
+  },
+  "input_provenance": {
+    "path": "results/p9-whisper-asr-crossover-inputs-102-20260814/provenance.json",
+    "sha256": "a98c8e21bfdfd6001f33103dd040c865e3ebad2c3b2debb36ef2bedb7032af92"
+  },
+  "artifact_sha256": {
+    "build-r39/jdg-mig-whisper-asr": "a1079d57f15725a533b3e261ba9cf473f0164ba05bb69b4565df04b4649d59e3",
+    "build-r39/jdg-trt-bench": "c8da37265f93b0ad6a6e8f0a040225959df8e9144fe31c33b753da06b028f963",
+    "results/p9-whisper-asr-crossover-inputs-102-20260814/inputs.bin": "1cc20e21f65e05efd35e44a94b72dd0e210c5f35c51c6f80f9f9b0d259573a19",
+    "models/engines/mig-1g-q100/whisper-tiny-encoder-fp32.engine": "b060eda89641bcd3090549283995a94cafa68d3769878e06d0d270d6131f36ed",
+    "models/engines/mig-2g-q100/whisper-tiny-encoder-fp32.engine": "b2628138239a436204bcbc82670341a564c0e987c8b8a166329da951dfec8112",
+    "models/engines/mig-2g-q100/whisper-tiny-decoder-initial-4-fp32.engine": "048ae3d2db80f20f4860c6c5430541d9061c53c8d35755d4ac308eb4924c7827",
+    "models/engines/mig-2g-q100/whisper-tiny-decoder-with-past-fp32.engine": "6a014c20daca49491ba69ce03b02feefa8536f00efc5d1569fc64ee099f0eee1",
+    "models/engines/mig-1g-q100/distilbert-sst2.engine": "ed46a5cf2cecbd1bd2fdcaecdc93397e7774d4ec8ccd9c09cffe3ab4829cfd2c",
+    "benchmarks/mig_whisper_asr.cpp": "f2e392f604f53b168a81a208fad8bdb3ab264d34f167156a5f8e28ab47c8f171",
+    "scripts/run_p9_whisper_asr_mig_crossover.py": "70130f5b026f254a043fbce15004347c570a3a6cd6bdcb4fdb496e11a3434823",
+    "models/engines/mig-1g-q100/resnet10-detection.engine": "6fa09a785289b9868bf710cf4211e130a4b16bce43e02cd8175f69f9867514c1",
+    "models/engines/mig-1g-q100/whisper-tiny-encoder.engine": "2bae7a38cd8bacca68429363f9055eba1ce82d45354612f05e6502395afed2ad"
+  },
+  "claim_guard": "The model combinations and tenant topology are plausible Jetson deployments, but fixed-rate arrivals, saturated background queues, and cyclic input replay are stress conditions rather than a field trace. Both split modes have zero balanced misses, so this campaign motivates stage placement over pure MIG; it does not establish a protection-gate advantage over static MPS.",
+  "generator": {
+    "path": "analysis/generate_p9_whisper_edge_mix_figures.py",
+    "sha256": "173d83fc4fe473ad0aada38d1a9300311c0aa1a74539e548c79a4b740a8d3303"
+  },
+  "table_sha256": {
+    "paper/eurosys27/generated/p9-whisper-edge-mix-results.tex": "d11ac37942c25306afd0f77ff3fb03c661a71a4ed0d57151eeff3a92910a5cef"
+  },
+  "figure_sha256": {
+    "paper/eurosys27/figures/p9-whisper-edge-mix-frontier.pdf": "4fc382a9c8e3e7e40c471ed7b47939aeb907b2b01543302434a6f1154639767d",
+    "paper/eurosys27/figures/p9-whisper-edge-mix-frontier.png": "735fa308066369b72303ac6b845e1af69a10fb785b8b53bcc1b17e63337c748f",
+    "paper/eurosys27/figures/p9-whisper-edge-mix-balanced.pdf": "afacd42baa89533afeaa28a6c64f758a71ed321b47ec42963d34521897b25be2",
+    "paper/eurosys27/figures/p9-whisper-edge-mix-balanced.png": "c2af1d68cfe435c847ccadd10188e533e672c256ac5f454beb9a8d5b1f8a2937"
+  }
+}

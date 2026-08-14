@@ -26,11 +26,26 @@ class Mode:
     gate_background: bool
 
 
+@dataclass(frozen=True)
+class Background:
+    model_name: str
+    engine: pathlib.Path
+
+
 MODES = (
     Mode("nvidia-mig", "2g", "big", False),
     Mode("nvidia-mps-static-split", "1g", "small", False),
     Mode("quiet", "1g", "small", True),
 )
+
+
+def parse_additional_background(value: str) -> tuple[str, pathlib.Path]:
+    model_name, separator, engine = value.partition("=")
+    if not separator or not model_name.strip() or not engine.strip():
+        raise argparse.ArgumentTypeError(
+            "--additional-background expects MODEL_NAME=ENGINE_PATH"
+        )
+    return model_name.strip(), pathlib.Path(engine)
 
 
 def sha256(path: pathlib.Path) -> str:
@@ -112,6 +127,24 @@ def stop_background(process: subprocess.Popen[str]) -> tuple[dict[str, Any], str
     return json.loads(stdout), stderr
 
 
+def stop_backgrounds(
+    processes: list[subprocess.Popen[str]],
+) -> list[tuple[dict[str, Any], str]]:
+    results: list[tuple[dict[str, Any], str]] = []
+    errors: list[Exception] = []
+    for process in processes:
+        try:
+            results.append(stop_background(process))
+        except Exception as error:  # Preserve cleanup for every remaining worker.
+            errors.append(error)
+    if errors:
+        raise RuntimeError(
+            "one or more background workers failed during cleanup: "
+            + "; ".join(str(error) for error in errors)
+        )
+    return results
+
+
 def percentile(values: list[float], probability: float) -> float:
     ordered = sorted(values)
     position = probability * (len(ordered) - 1)
@@ -161,24 +194,36 @@ def run_one(
             "CUDA_MPS_ACTIVE_THREAD_PERCENTAGE": "100",
         }
     )
-    background = subprocess.Popen(
-        [
-            "taskset", "--cpu-list", "0", str(args.background_binary),
-            "--engine", str(args.background_engine),
-            "--model-name", "distilbert-sst2", "--role", "pressure",
-            "--duration-seconds", "3600", "--burst-size", "1",
-            "--period-ms", str(args.background_period_ms),
-            "--warmup", str(args.warmup), "--include-transfers", "true",
-            "--priority", "default", "--start-paused", "true",
-        ],
-        cwd=repo,
-        env=background_environment,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-    )
-    wait_paused(background)
-    os.kill(background.pid, signal.SIGCONT)
+    backgrounds: list[subprocess.Popen[str]] = []
+    try:
+        for index, specification in enumerate(args.backgrounds):
+            background = subprocess.Popen(
+                [
+                    "taskset", "--cpu-list", str(index),
+                    str(args.background_binary),
+                    "--engine", str(specification.engine),
+                    "--model-name", specification.model_name,
+                    "--role", "pressure", "--duration-seconds", "3600",
+                    "--burst-size", "1",
+                    "--period-ms", str(args.background_period_ms),
+                    "--warmup", str(args.warmup),
+                    "--include-transfers", "true", "--priority", "default",
+                    "--start-paused", "true",
+                ],
+                cwd=repo,
+                env=background_environment,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+            backgrounds.append(background)
+            wait_paused(background)
+        for background in backgrounds:
+            os.kill(background.pid, signal.SIGCONT)
+    except Exception:
+        if backgrounds:
+            stop_backgrounds(backgrounds)
+        raise
 
     encoder = args.encoder_2g if mode.encoder_profile == "2g" else args.encoder_1g
     producer = (
@@ -207,7 +252,9 @@ def run_one(
         ),
     ]
     if mode.gate_background:
-        command.extend(("--gate-pids", str(background.pid)))
+        command.extend(
+            ("--gate-pids", ",".join(str(worker.pid) for worker in backgrounds))
+        )
     (run_dir / "command.json").write_text(
         json.dumps(command, indent=2) + "\n", encoding="utf-8"
     )
@@ -222,35 +269,78 @@ def run_one(
             timeout=180,
         )
     except Exception:
-        stop_background(background)
+        stop_backgrounds(backgrounds)
         raise
-    background_result, background_stderr = stop_background(background)
+    background_results = stop_backgrounds(backgrounds)
     pipeline = json.loads(completed.stdout)
     (run_dir / "pipeline.json").write_text(
         json.dumps(pipeline, indent=2) + "\n", encoding="utf-8"
     )
     (run_dir / "pipeline.stderr").write_text(completed.stderr, encoding="utf-8")
-    (run_dir / "background.json").write_text(
-        json.dumps(background_result, indent=2) + "\n", encoding="utf-8"
+    workers = [
+        {
+            "model_name": specification.model_name,
+            "engine": str(specification.engine),
+            "result": worker_result,
+        }
+        for specification, (worker_result, _) in zip(
+            args.backgrounds, background_results, strict=True
+        )
+    ]
+    background_goodput = sum(
+        float(worker["result"]["throughput_per_second"]) for worker in workers
     )
-    (run_dir / "background.stderr").write_text(background_stderr, encoding="utf-8")
+    background_completed = sum(
+        int(worker["result"]["completed_requests"]) for worker in workers
+    )
+    (run_dir / "background.json").write_text(
+        json.dumps(
+            {
+                "workers": workers,
+                "completed_requests": background_completed,
+                "throughput_per_second": background_goodput,
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    (run_dir / "background.stderr").write_text(
+        "".join(
+            f"worker {index} ({specification.model_name}):\n{stderr}"
+            for index, (specification, (_, stderr)) in enumerate(
+                zip(args.backgrounds, background_results, strict=True)
+            )
+        ),
+        encoding="utf-8",
+    )
     if (
         pipeline.get("status") != "ok"
-        or int(background_result.get("completed_requests", 0)) <= 0
-        or float(background_result.get("throughput_per_second", 0.0)) <= 0.0
+        or background_completed <= 0
+        or background_goodput <= 0.0
+        or any(
+            int(worker["result"].get("completed_requests", 0)) <= 0
+            or float(worker["result"].get("throughput_per_second", 0.0)) <= 0.0
+            for worker in workers
+        )
     ):
         raise RuntimeError(f"{mode.name} run did not complete successfully")
     result = {
         "session": session,
         "rate_rps": rate_rps,
         "mode": mode.name,
+        "scenario_id": args.scenario_id,
+        "background_model_names": [
+            specification.model_name for specification in args.backgrounds
+        ],
+        "background_workers": len(args.backgrounds),
         "deadline_misses": int(pipeline["deadline_misses"]),
         "requests": args.requests,
         "p50_us": float(pipeline["p50_us"]),
         "p99_us": float(pipeline["p99_us"]),
         "queue_p99_us": float(pipeline["queue_p99_us"]),
         "request_goodput_rps": float(pipeline["request_goodput_rps"]),
-        "background_goodput_rps": float(background_result["throughput_per_second"]),
+        "background_goodput_rps": background_goodput,
         "output_sha256": sha256(run_dir / "asr-output.bin"),
         "gated_processes": int(pipeline["gated_processes"]),
         **stage_metrics(run_dir / "pipeline.csv", args.warmup),
@@ -285,6 +375,29 @@ def aggregate(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return result
 
 
+def scenario_metadata(args: argparse.Namespace) -> dict[str, Any]:
+    """Return the deployment interpretation frozen into every raw summary."""
+    return {
+        "id": args.scenario_id,
+        "label": args.scenario_label,
+        "description": args.scenario_description,
+        "foreground": "Whisper-Tiny encoder-decoder ASR",
+        "background_models": [
+            specification.model_name for specification in args.backgrounds
+        ],
+        "background_engines": [
+            str(specification.engine) for specification in args.backgrounds
+        ],
+        "background_workers": len(args.backgrounds),
+        "background_release": (
+            "saturated-backlog"
+            if args.background_period_ms == 0.0
+            else f"periodic-{args.background_period_ms:g}ms"
+        ),
+        "deployment_scope": args.deployment_scope,
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     repo = pathlib.Path(__file__).resolve().parents[1]
@@ -299,6 +412,28 @@ def main() -> int:
     parser.add_argument("--decoder-initial", type=pathlib.Path, default=repo / "models/engines/mig-2g-q100/whisper-tiny-decoder-initial-4-fp32.engine")
     parser.add_argument("--decoder-with-past", type=pathlib.Path, default=repo / "models/engines/mig-2g-q100/whisper-tiny-decoder-with-past-fp32.engine")
     parser.add_argument("--background-engine", type=pathlib.Path, default=repo / "models/engines/mig-1g-q100/distilbert-sst2.engine")
+    parser.add_argument("--background-model-name", default="distilbert-sst2")
+    parser.add_argument(
+        "--additional-background",
+        action="append",
+        type=parse_additional_background,
+        default=[],
+        metavar="MODEL_NAME=ENGINE_PATH",
+    )
+    parser.add_argument("--scenario-id", default="speech-plus-nlp")
+    parser.add_argument("--scenario-label", default="Speech + NLP")
+    parser.add_argument(
+        "--scenario-description",
+        default="interactive ASR foreground with queued NLP classification",
+    )
+    parser.add_argument(
+        "--deployment-scope",
+        default="multi-channel-or-queued-edge-gateway-stress",
+    )
+    parser.add_argument(
+        "--input-policy",
+        default="cyclic-performance-replay-not-accuracy-expansion",
+    )
     parser.add_argument("--rates", type=float, nargs="+", required=True)
     parser.add_argument("--sessions", type=int, default=1)
     parser.add_argument("--requests", type=int, default=100)
@@ -318,6 +453,16 @@ def main() -> int:
         setattr(args, name, getattr(args, name).resolve())
         if not getattr(args, name).is_file():
             raise ValueError(f"--{name.replace('_', '-')} is not a file")
+    additional_backgrounds: list[Background] = []
+    for model_name, engine in args.additional_background:
+        resolved = (args.repo / engine).resolve() if not engine.is_absolute() else engine.resolve()
+        if not resolved.is_file():
+            raise ValueError("--additional-background engine is not a file")
+        additional_backgrounds.append(Background(model_name, resolved))
+    args.backgrounds = [
+        Background(args.background_model_name.strip(), args.background_engine),
+        *additional_backgrounds,
+    ]
     if args.result_dir.exists():
         raise ValueError("result directory already exists")
     if args.sessions <= 0 or args.requests <= 0 or args.warmup < 0:
@@ -328,13 +473,28 @@ def main() -> int:
         raise ValueError("rates must be unique and non-negative")
     if input_count(args.input_trace) != args.warmup + args.requests:
         raise ValueError("input trace count differs from warmup plus requests")
+    if (
+        not args.scenario_id
+        or any(
+            character not in "abcdefghijklmnopqrstuvwxyz0123456789-"
+            for character in args.scenario_id
+        )
+        or not args.scenario_label.strip()
+        or not args.scenario_description.strip()
+        or not args.background_model_name.strip()
+        or len({item.model_name for item in args.backgrounds}) != len(args.backgrounds)
+        or not args.deployment_scope.strip()
+        or not args.input_policy.strip()
+    ):
+        raise ValueError("scenario metadata is invalid")
     args.result_dir.mkdir(parents=True)
     mig = load_env(args.mig_env)
 
     artifacts = (
         args.binary, args.background_binary, args.input_trace,
         args.encoder_1g, args.encoder_2g, args.decoder_initial,
-        args.decoder_with_past, args.background_engine,
+        args.decoder_with_past,
+        *(specification.engine for specification in args.backgrounds),
         args.repo / "benchmarks/mig_whisper_asr.cpp",
         pathlib.Path(__file__).resolve(),
     )
@@ -362,10 +522,16 @@ def main() -> int:
         "kind": "p9-whisper-asr-mig-crossover",
         "evidence_class": "exploratory-nonthermal-directional",
         "thermal_campaign": False,
-        "input_policy": "cyclic-performance-replay-not-accuracy-expansion",
+        "input_policy": args.input_policy,
+        "scenario": scenario_metadata(args),
+        "study_design": (
+            "balanced-repeated" if args.sessions >= 3 and len(args.rates) == 1
+            else "directional-sweep"
+        ),
         "pipeline_slots": args.pipeline_slots,
         "deadline_us": args.deadline_us,
         "background_period_ms": args.background_period_ms,
+        "background_workers": len(args.backgrounds),
         "comparator_output_contract": "byte-identical",
         "rows": rows,
         "aggregate": aggregate(rows),
