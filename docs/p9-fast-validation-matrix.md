@@ -10,7 +10,7 @@ published functional rows, vendor controls, and one proposed row:
 
 | Class | Row | Role |
 |---|---|---|
-| Vendor | NVIDIA MIG | fixed 2g+1g physical isolation; no BE goodput when both slices are reserved |
+| Vendor | NVIDIA MIG | primary row co-locates the critical DAG on 2g and isolates BE on 1g; split-stage no-BE layout is a capacity control |
 | Vendor | NVIDIA MPS | fixed topology with explicit SM-quota sharing |
 | SOTA | Orion (Thor port) | upstream operation-aware scheduling, only after differential gate |
 | SOTA | XSched (Thor port) | upstream XQueue/HPF suspend-resume, only after native gate |
@@ -18,14 +18,13 @@ published functional rows, vendor controls, and one proposed row:
 | SOTA context | EdgeServing (literature-only) | time division, batching, and early exit; numeric port requires accuracy-equivalent adapter |
 | Proposed | QUIET | dependent-DAG placement, reservation, and cooperative quiescence |
 
-The **active exploratory smoke matrix** is intentionally smaller:
-`NVIDIA MPS`, `XSched (Thor port)`, and `QUIET`. MIG is a capacity/isolation
-oracle. XSched is not currently numeric-eligible: its native path is verified,
-but the shared learned-workload accuracy, thermal, and session gates still
-remain. Orion and Pantheon are retained in the inventory but remain
-functional-only until their native differential and application-accuracy gates
-pass. A row can be named in the inventory without being eligible for numeric
-ranking.
+The public directional gate keeps six rows in one fixed order: `QUIET`,
+`NVIDIA MIG`, `NVIDIA MPS`, `XSched`, `Orion`, and `Pantheon`. MIG is a full
+90-request numeric row under its BE-capable 2g-DAG+1g-BE topology. This does
+not make it a formal row: independent repeated-session and thermal evidence is
+still required. Orion's differential fidelity gate and the repeated-session
+gates for Orion and Pantheon also remain open. A row can be numeric in the
+directional gate without being eligible for formal ranking.
 
 For learned workloads, the active launcher fails before creating a result
 directory or starting a GPU child unless `APPLICATION_ACCURACY_GATE` is a
@@ -70,9 +69,10 @@ For each point record:
 - stage compute, edge transport, gate/drain, and output-verification costs.
 
 Only a row with correctness, a faithful-port gate, and CP95 DMR qualification
-can enter the same-SLO goodput frontier. A pure MIG capacity control and an
-infeasible gpulet planner remain useful negative evidence but are excluded from
-that frontier.
+can enter the same-SLO goodput frontier. The split-stage MIG capacity control
+and an infeasible gpulet planner remain useful negative evidence but are
+excluded from that frontier; the BE-capable MIG topology remains in the public
+directional graph.
 
 ## Immediate decision gates
 

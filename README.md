@@ -58,7 +58,7 @@ and 2,224.448-us deadline. Every row reaches the application accuracy gate.
 | System | Requests | Misses | Observed DMR | CP95 DMR | p99 (us) | BE requests/s | Accuracy | Scope |
 |---|---:|---:|---:|---:|---:|---:|---:|---|
 | **QUIET** | 90 | **0** | **0.0000%** | 3.2738% | 1,933.446 | 249.600 | 0.8333 | Proposed system, common gate |
-| NVIDIA MIG | 90 | **0** | **0.0000%** | 3.2738% | **1,652.861** | N/A | 0.8333 | Physical-capacity endpoint; both slices serve the critical DAG, so no BE tenant is admitted |
+| NVIDIA MIG | 90 | **0** | **0.0000%** | 3.2738% | **1,514.253** | 249.319 | 0.8444 | Vendor isolation baseline; critical DAG on 2g and BE on isolated 1g |
 | NVIDIA MPS | 90 | **0** | **0.0000%** | 3.2738% | 1,749.850 | 249.161 | 0.8333 | Vendor sharing baseline |
 | [XSched](baselines/xsched/) (OSDI 2025) | 90 | 90 | 100.0000% | 100.0000% | 3,893.452 | 211.756 | 0.8333 | Pinned native XQueue runtime |
 | [Orion](baselines/orion/) (EuroSys 2024) | 90 | 90 | 100.0000% | 100.0000% | 5,573.205 | 166.267 | 0.8333 | Executed Thor port; upstream differential-fidelity gate remains open |
@@ -70,16 +70,17 @@ and 2,224.448-us deadline. Every row reaches the application accuracy gate.
 
 This is a directional coverage gate, not a formal ranking. With only 90
 requests, even a zero-miss row has a 3.2738% one-sided CP95 bound and cannot
-certify the 0.05% DMR target. MIG's BE entry is **N/A**, not zero measured
-goodput: fixed 1g+2g physical isolation gives both instances to the two
-critical stages, so that layout never admits a BE tenant.
+certify the 0.05% DMR target. MIG is included as a complete comparator using
+its valid BE-capable layout: producer and consumer share 2g while the BE
+tenant runs on the isolated 1g instance. Its 249.319 requests/s is measured
+goodput, not an inferred value.
 
 The checked-in compact summary is
 [`p9-six-system-imagenette-gate.json`](paper/eurosys27/generated/p9-six-system-imagenette-gate.json),
 and its raw-input/output hashes are bound by
 [`p9-six-system-imagenette-gate-provenance.json`](paper/eurosys27/generated/p9-six-system-imagenette-gate-provenance.json).
 
-### MIG topology partial comparison
+### MIG topology selection and capacity control
 
 Thor cannot be divided into three simultaneous 1g MIG instances. The `3g`
 capacity label describes the whole GPU, not three independently placeable 1g
@@ -90,8 +91,8 @@ Consequently, there are two relevant two-instance layouts:
 
 | MIG layout | Producer | Consumer | BE tenant | Requests | Misses | p99 (us) | BE requests/s | Accuracy | Comparison scope |
 |---|---|---|---|---:|---:|---:|---:|---:|---|
-| Split critical stages | 1g | 2g | Not admitted | 90 | 0 | 1,652.861 | N/A | 0.8333 | Fixed six-system capacity endpoint |
-| Colocated critical DAG | 2g | Same 2g | Isolated 1g | 90 | 0 | **1,514.253** | **249.319** | 0.8444 | Partial topology variant |
+| Split critical stages | 1g | 2g | Not admitted | 90 | 0 | 1,652.861 | N/A | 0.8333 | Secondary no-BE capacity control |
+| Colocated critical DAG | 2g | Same 2g | Isolated 1g | 90 | 0 | **1,514.253** | **249.319** | 0.8444 | **Primary six-system MIG row** |
 
 <p align="center">
   <img src="paper/eurosys27/figures/p9-mig-topology-partial.png" width="100%" alt="Two MIG topology variants use the same 90 inputs, arrivals, and deadline. Split stages use the 1g and 2g instances and cannot admit best-effort work; colocated producer and consumer use 2g while best-effort work runs on 1g.">
@@ -103,9 +104,10 @@ requests/s, while its FP16 producer plan changes one prediction in the
 favourable direction (0.8333 to 0.8444 accuracy) and passes the configured
 0.02 exploratory tolerance. TensorRT plans are MIG-profile-specific, so the
 producer plan had to be rebuilt for 2g; stage placement and engine tactics
-therefore differ from the fixed roster. This row answers whether MIG can
-admit BE by colocating the DAG, but it is a **partial comparison**, not a
-formal six-system ranking point.
+therefore differ between the two MIG controls. The BE-capable colocated row is
+the MIG value repeated in the primary six-system table and all three graph
+panels. It remains a one-session directional result rather than a formal
+repeated-session ranking point.
 
 ## Formal promotion ledger — same fixed roster
 
@@ -117,7 +119,7 @@ row is marked explicitly rather than silently disappearing.
 | System | Formal requests | Misses | CP95 DMR | p99 (us) | BE requests/s | Promotion status |
 |---|---:|---:|---:|---:|---:|---|
 | **QUIET** | 6,600 | **0** | **0.0454%** | **1,902.987** | 249.909 | **Confidence-qualified formal row** |
-| NVIDIA MIG | — | — | — | — | — | Common gate measured above; not enrolled because the capacity endpoint admits no BE tenant for the joint DMR-goodput objective |
+| NVIDIA MIG | — | — | — | — | — | Complete 90-request row measured above; independent repeated-session and thermal campaign not yet run |
 | NVIDIA MPS | 6,600 | 2 | 0.0954% | 2,045.606 | **249.941** | Formal row; misses the 0.05% confidence target |
 | XSched | 6,600 | 6,600 | 100.0000% | 4,351.332 | 97.845 | Formal native row; SLO-infeasible |
 | Orion | — | — | — | — | — | Common gate measured above; differential fidelity, repeated-session, and thermal gates remain open |
@@ -141,7 +143,7 @@ it is not used to rescale latency.
 | System | Measured inputs | Reference accuracy | Candidate accuracy | Delta | Output/input binding |
 |---|---:|---:|---:|---:|---|
 | **QUIET** | 90 | 0.8333 | 0.8333 | 0.0000 | Passed |
-| NVIDIA MIG | 90 | 0.8333 | 0.8333 | 0.0000 | Passed |
+| NVIDIA MIG | 90 | 0.8333 | 0.8444 | +0.0111 | Passed |
 | NVIDIA MPS | 90 | 0.8333 | 0.8333 | 0.0000 | Passed |
 | XSched | 90 | 0.8333 | 0.8333 | 0.0000 | Passed |
 | Orion | 90 | 0.8333 | 0.8333 | 0.0000 | Passed |

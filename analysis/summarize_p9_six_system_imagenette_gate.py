@@ -4,10 +4,10 @@
 The gate exists to make comparator coverage explicit.  Every displayed row
 uses the same 90 labelled inputs, operational arrival trace, current runtime
 lock, and 2,224.448-us deadline.  It is deliberately not a formal ranking:
-the run has one directional session, the fixed-stage MIG row is a no-BE
-capacity endpoint, and Orion and Pantheon retain their native-port
-timing/fidelity scopes.  A separate partial control co-locates the critical
-DAG on 2g and reserves 1g for BE; it never enters the fixed six-system rank.
+the run has one directional session, MIG selects its valid BE-capable
+2g-DAG+1g-BE topology, and Orion and Pantheon retain their native-port
+timing/fidelity scopes.  The split-stage MIG layout remains visible as a
+secondary capacity control because it admits no BE tenant.
 """
 
 from __future__ import annotations
@@ -550,9 +550,26 @@ def summarize(
 ) -> dict[str, Any]:
     common, common_sha = _common(common_path)
     _, lock_sha, deadline = _deadline(deadline_path)
+    split_mig = _pipeline_row(
+        "NVIDIA MIG",
+        mig_path.resolve(),
+        common,
+        common_sha,
+        lock_sha,
+        deadline,
+    )
+    colocated_mig, mig_constraints = _colocated_mig_row(
+        mig_colocated_path.resolve(), common, common_sha, lock_sha, deadline
+    )
+    primary_mig = {
+        **colocated_mig,
+        "system": "NVIDIA MIG",
+        "evidence_scope": "vendor-mig-valid-2g-dag-1g-be-common-gate",
+        "comparison_role": "primary-six-system-directional-comparator",
+    }
     systems = {
         "QUIET": _pipeline_row("QUIET", quiet_path.resolve(), common, common_sha, lock_sha, deadline),
-        "NVIDIA MIG": _pipeline_row("NVIDIA MIG", mig_path.resolve(), common, common_sha, lock_sha, deadline),
+        "NVIDIA MIG": primary_mig,
         "NVIDIA MPS": _pipeline_row("NVIDIA MPS", mps_path.resolve(), common, common_sha, lock_sha, deadline),
         "XSched": _xsched_row(xsched_path.resolve(), common, common_sha, lock_sha, deadline),
         "Orion": _orion_row(orion_path.resolve(), common, common_sha, lock_sha, deadline),
@@ -560,16 +577,13 @@ def summarize(
     }
     if tuple(systems) != SYSTEM_ORDER:
         raise ValueError("fixed comparator display order differs")
-    colocated_mig, mig_constraints = _colocated_mig_row(
-        mig_colocated_path.resolve(), common, common_sha, lock_sha, deadline
-    )
     return {
         "schema_version": 1,
         "kind": "p9-six-system-imagenette-common-gate",
         "proposed_system": "QUIET",
         "system_order": list(SYSTEM_ORDER),
         "workload": "resnet50-classification",
-        "scope": "single-directional-common-input-arrival-deadline-gate",
+        "scope": "single-directional-common-input-arrival-deadline-valid-system-topology-gate",
         "formal": False,
         "ranking_allowed": False,
         "requests_per_system": REQUESTS,
@@ -585,15 +599,23 @@ def summarize(
         },
         "systems": systems,
         "partial_topology_comparisons": {
-            colocated_mig["system"]: colocated_mig,
+            "NVIDIA MIG (split 1g P + 2g C)": {
+                **split_mig,
+                "system": "NVIDIA MIG (split 1g P + 2g C)",
+                "comparison_role": "secondary-capacity-control",
+            },
+        },
+        "mig_topology_comparisons": {
+            "split-critical-stages": split_mig,
+            "colocated-critical-dag": colocated_mig,
         },
         "mig_topology_constraints": mig_constraints,
         "claim_guard": (
             "Every row is measured on the same labelled 90-input contract and frozen deadline. "
-            "The fixed figure reports coverage and SLO feasibility, not a formal ranking: the "
-            "fixed-stage MIG row reserves both slices and its BE metric is not applicable. The "
-            "separate colocated-MIG control admits BE by changing stage placement and therefore "
-            "remains partial evidence. Orion's differential fidelity gate remains open, Pantheon "
+            "The fixed figure reports coverage and SLO feasibility, not a formal ranking. The "
+            "primary MIG row uses its valid BE-capable topology (2g critical DAG + 1g BE); the "
+            "split-stage no-BE layout remains a secondary topology control. Orion's differential "
+            "fidelity gate remains open, Pantheon "
             "floors its integer-microsecond deadline, and no row has session/thermal power."
         ),
     }

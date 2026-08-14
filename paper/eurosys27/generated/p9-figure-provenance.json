@@ -11,7 +11,7 @@
     },
     "comparators": {
       "path": "docs/p9-comparator-manifest.json",
-      "sha256": "189193a14aa59943ac6d7c9bfa5bc10c55c4638d278c7b216793d5c269b04a17"
+      "sha256": "a03e2ef13b9d2565064d7dbf3007263763037c322adc917b2ba905cb9f70031f"
     },
     "deadline": {
       "path": "results/p9-resnet50-imagenette-calibration-current-r06-20260811/deadline-lock.json",
@@ -51,7 +51,7 @@
     },
     "six_system": {
       "path": "paper/eurosys27/generated/p9-six-system-imagenette-gate.json",
-      "sha256": "fdd908e951d82c5de712fa1c1f5e233ebfb9219b9ea9ad299fd650f021f16383"
+      "sha256": "cb54daba60d74bdf19410f0b468914d024778c922362c72d0e5051f1f75dfe0b"
     },
     "structural": {
       "path": "results/p9-structural-limit-evidence-20260809/summary.json",
@@ -84,7 +84,7 @@
     "paper/eurosys27/figures/p9-session-stability.png": "15f35f748473fdf0120784ccc3f3c22d8c2cce0dd1299d93ad1dc322b731d784",
     "paper/eurosys27/figures/p9-stage-timeline.pdf": "34703ffe461a3e0dc9ec1388f823f8796fedf54004f5468b0fdf04817c35e48a",
     "paper/eurosys27/figures/p9-stage-timeline.png": "e8583ff9cd9631f90ffe7e30afd764d90013bc9467980366e4b3c64c783ade89",
-    "paper/eurosys27/generated/p9-current-results.tex": "f4184f45f7c821b5113e1bbca13da8f8bc8d16437b41bc86c401ea9847263839"
+    "paper/eurosys27/generated/p9-current-results.tex": "5c2957754e53182099ac1af2e01ecf6fbc6e1618b515fd427b185d802c6c95c5"
   },
   "schema_version": 1
 }
