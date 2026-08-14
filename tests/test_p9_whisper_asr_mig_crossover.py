@@ -1,3 +1,4 @@
+import argparse
 import importlib.util
 import pathlib
 import sys
@@ -44,6 +45,43 @@ class WhisperAsrMigCrossoverTest(unittest.TestCase):
         self.assertEqual(result[0]["sessions"], 2)
         self.assertEqual(result[0]["requests"], 200)
         self.assertEqual(result[0]["deadline_misses"], 5)
+
+    def test_scenario_metadata_binds_real_edge_mix(self) -> None:
+        args = argparse.Namespace(
+            scenario_id="speech-plus-vision",
+            scenario_label="Speech + Vision",
+            scenario_description="ASR with queued camera analytics",
+            background_model_name="resnet10-detection",
+            background_engine=ROOT / "models/example.engine",
+            backgrounds=[
+                MODULE.Background(
+                    "resnet10-detection", ROOT / "models/example.engine"
+                ),
+                MODULE.Background(
+                    "distilbert-sst2", ROOT / "models/example-nlp.engine"
+                ),
+            ],
+            background_period_ms=0.0,
+            deployment_scope="multi-sensor-robot-or-edge-gateway-stress",
+        )
+        result = MODULE.scenario_metadata(args)
+        self.assertEqual(result["id"], "speech-plus-vision")
+        self.assertEqual(
+            result["background_models"],
+            ["resnet10-detection", "distilbert-sst2"],
+        )
+        self.assertEqual(result["background_workers"], 2)
+        self.assertEqual(result["background_release"], "saturated-backlog")
+        self.assertIn("multi-sensor", result["deployment_scope"])
+
+    def test_additional_background_requires_explicit_model_and_engine(self) -> None:
+        model, engine = MODULE.parse_additional_background(
+            "whisper-tiny-encoder=models/whisper.engine"
+        )
+        self.assertEqual(model, "whisper-tiny-encoder")
+        self.assertEqual(engine, pathlib.Path("models/whisper.engine"))
+        with self.assertRaises(argparse.ArgumentTypeError):
+            MODULE.parse_additional_background("models/whisper.engine")
 
 
 if __name__ == "__main__":
